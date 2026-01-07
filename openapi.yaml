@@ -1,0 +1,255 @@
+openapi: 3.0.3
+info:
+  title: DigiQ Lift Share API
+  description: Backend API contract for DigiQ ride sharing platform
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+
+tags:
+  - name: Auth
+  - name: Trips
+  - name: Bookings
+  - name: Driver
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login passenger or driver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+
+  /trips/search:
+    get:
+      tags: [Trips]
+      summary: Search available trips
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of trips
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trip'
+
+  /bookings:
+    post:
+      tags: [Bookings]
+      summary: Create booking (Passenger)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Invalid request
+        '409':
+          description: Seats unavailable or duplicate booking
+
+  /driver/bookings/pending:
+    get:
+      tags: [Driver]
+      summary: Get pending booking requests (Driver)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pending bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DriverBooking'
+
+  /bookings/{bookingId}/respond:
+    post:
+      tags: [Bookings]
+      summary: Driver responds to booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingDecisionRequest'
+      responses:
+        '200':
+          description: Booking updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+
+  /driver/verification/submit:
+    post:
+      tags: [Driver]
+      summary: Submit driver verification
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Verification submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverVerificationResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        fullName:
+          type: string
+        role:
+          type: string
+          enum: [passenger, driver]
+        verificationStatus:
+          type: string
+          enum: [none, pending, approved, rejected]
+
+    Trip:
+      type: object
+      properties:
+        id:
+          type: string
+        driverName:
+          type: string
+        rating:
+          type: number
+        price:
+          type: number
+        seatsLeft:
+          type: integer
+
+    CreateBookingRequest:
+      type: object
+      required: [tripId, pickup]
+      properties:
+        tripId:
+          type: string
+        pickup:
+          $ref: '#/components/schemas/PickupAddress'
+
+    PickupAddress:
+      type: object
+      required: [addressLine, area]
+      properties:
+        addressLine:
+          type: string
+        area:
+          type: string
+        notes:
+          type: string
+
+    BookingDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approved, rejected]
+
+    BookingResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+
+    DriverBooking:
+      type: object
+      properties:
+        id:
+          type: string
+        passengerName:
+          type: string
+        pickup:
+          $ref: '#/components/schemas/PickupAddress'
+
+    DriverVerificationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending]
+

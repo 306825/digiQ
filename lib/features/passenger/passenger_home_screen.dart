@@ -1,15 +1,18 @@
-import 'package:digiQ/features/driver/driver_booking_list_screen.dart';
+import 'package:digiQ/providers/auth_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'trip_search_results_screen.dart';
 
-class PassengerHomeScreen extends StatefulWidget {
+class PassengerHomeScreen extends ConsumerStatefulWidget {
   const PassengerHomeScreen({super.key});
 
   @override
-  State<PassengerHomeScreen> createState() => _PassengerHomeScreenState();
+  ConsumerState<PassengerHomeScreen> createState() =>
+      _PassengerHomeScreenState();
 }
 
-class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
+class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
   final fromController = TextEditingController();
   final toController = TextEditingController();
   DateTime? selectedDate;
@@ -97,17 +100,16 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
                 child: const Text("Search Trips"),
               ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const DriverBookingListScreen(),
-                  ),
-                );
-              },
-              child: const Text("View Trip Requests"),
-            ),
+            if (kDebugMode) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.logout),
+                label: const Text('DEBUG: Logout (Clear Local Auth)'),
+                onPressed: () async {
+                  await ref.read(authProvider.notifier).logout();
+                },
+              ),
+            ],
           ],
         ),
       ),

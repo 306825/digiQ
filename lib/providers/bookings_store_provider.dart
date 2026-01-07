@@ -1,32 +1,69 @@
-import 'package:flutter_riverpod/legacy.dart';
-import '../models/booking_entity.dart';
+import 'dart:convert';
 
-class BookingsStore extends StateNotifier<List<BookingEntity>> {
-  BookingsStore() : super([]);
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-  void addBooking(BookingEntity booking) {
+import '../models/booking_model.dart';
+
+class BookingsStore extends Notifier<List<Booking>> {
+  static const _storageKey = 'bookings';
+
+  @override
+  List<Booking> build() {
+    _restoreBookings();
+    return [];
+  }
+
+  /* --------------------------------------------------------------------------
+   * Persistence helpers
+   * -------------------------------------------------------------------------- */
+
+  Future<void> _restoreBookings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_storageKey);
+    if (jsonString == null) return;
+
+    final List<dynamic> decoded = jsonDecode(jsonString);
+    state = decoded
+        .map((e) => Booking.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> _persistBookings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = state.map((b) => b.toJson()).toList();
+    await prefs.setString(_storageKey, jsonEncode(jsonList));
+  }
+
+  /* --------------------------------------------------------------------------
+   * Public API (unchanged)
+   * -------------------------------------------------------------------------- */
+
+  void addBooking(Booking booking) {
     state = [...state, booking];
+    _persistBookings();
   }
 
   void updateStatus(String bookingId, BookingStatus status) {
-    state = state.map((b) {
-      if (b.id == bookingId) {
-        return b.copyWith(status: status);
-      }
-      return b;
-    }).toList();
+    state = [
+      for (final booking in state)
+        if (booking.id == bookingId)
+          booking.copyWith(status: status)
+        else
+          booking,
+    ];
+    _persistBookings();
   }
 
-  List<BookingEntity> passengerBookings() {
+  List<Booking> passengerBookings() {
     return state;
   }
 
-  List<BookingEntity> pendingDriverBookings() {
+  List<Booking> pendingDriverBookings() {
     return state.where((b) => b.status == BookingStatus.pending).toList();
   }
 }
 
-final bookingsStoreProvider =
-    StateNotifierProvider<BookingsStore, List<BookingEntity>>(
-      (ref) => BookingsStore(),
-    );
+final bookingsStoreProvider = NotifierProvider<BookingsStore, List<Booking>>(
+  BookingsStore.new,
+);

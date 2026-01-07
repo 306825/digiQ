@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../providers/bookings_store_provider.dart';
-import '../../models/booking_entity.dart';
+import '../../models/booking_model.dart';
 
 class MyBookingsScreen extends ConsumerWidget {
   const MyBookingsScreen({super.key});
@@ -22,20 +23,28 @@ class MyBookingsScreen extends ConsumerWidget {
           final booking = bookings[index];
 
           return ListTile(
-            title: Text(booking.pickupAddress),
+            title: Text(booking.pickup.toString()),
             subtitle: Text(
               booking.status.name.toUpperCase(),
               style: TextStyle(
-                color: booking.status == BookingStatus.confirmed
-                    ? Colors.green
-                    : booking.status == BookingStatus.rejected
-                    ? Colors.red
-                    : Colors.orange,
+                color: _statusColor(booking.status),
+                fontWeight: FontWeight.bold,
               ),
             ),
           );
         },
       ),
     );
+  }
+
+  Color _statusColor(BookingStatus status) {
+    switch (status) {
+      case BookingStatus.approved:
+        return Colors.green;
+      case BookingStatus.rejected:
+        return Colors.red;
+      case BookingStatus.pending:
+        return Colors.orange;
+    }
   }
 }
