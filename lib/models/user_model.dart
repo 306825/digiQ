@@ -38,7 +38,7 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as String,
+      id: json['_id'] as String,
       fullName: json['fullName'] as String,
       role: UserRole.values.firstWhere((e) => e.name == json['role']),
       verificationStatus: DriverVerificationStatus.values.firstWhere(

@@ -1,10 +1,9 @@
+import 'package:digiQ/core/api/booking_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/trip_model.dart';
-import '../../models/booking_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/bookings_store_provider.dart';
 import '../shared/widgets/app_text_field.dart';
 import '../shared/widgets/primary_button.dart';
 
@@ -37,7 +36,6 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
     if (_isSubmitting) return;
 
     final user = ref.read(authProvider).user;
-
     if (user == null) {
       _showSnack('User not authenticated');
       return;
@@ -54,35 +52,34 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
 
     setState(() => _isSubmitting = true);
 
-    final pickup = PickupAddress(
-      addressLine: address,
-      area: area,
-      notes: notes.isEmpty ? null : notes,
-    );
+    final api = ref.read(bookingApiProvider);
 
-    final booking = Booking(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      tripId: widget.trip.id,
-      passengerName: user.fullName,
-      pickup: pickup,
-      status: BookingStatus.pending,
-    );
+    try {
+      await api.createBooking(
+        tripId: widget.trip.id,
+        pickup: {
+          'addressLine': address,
+          'area': area,
+          if (notes.isNotEmpty) 'notes': notes,
+        },
+      );
 
-    // Persist locally (API later)
-    ref.read(bookingsStoreProvider.notifier).addBooking(booking);
+      if (!mounted) return;
 
-    if (!mounted) return;
+      _showSnack(
+        'Booking request sent. Waiting for driver confirmation.',
+      );
 
-    _showSnack(
-      'Booking request sent. Waiting for driver confirmation.',
-    );
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
 
-    // Give user feedback before navigation
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (!mounted) return;
-
-    Navigator.popUntil(context, (route) => route.isFirst);
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('Failed to submit booking');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   void _showSnack(String message) {

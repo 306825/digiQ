@@ -1,4 +1,6 @@
+import 'package:digiQ/features/passenger/my_bookings_screen.dart';
 import 'package:digiQ/providers/auth_provider.dart';
+import 'package:digiQ/providers/passenger_bookings_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -110,6 +112,19 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                 },
               ),
             ],
+            ElevatedButton(
+              onPressed: () {
+                ref.invalidate(passengerBookingsProvider);
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MyBookingsScreen(),
+                  ),
+                );
+              },
+              child: const Text('My Bookings'),
+            ),
           ],
         ),
       ),

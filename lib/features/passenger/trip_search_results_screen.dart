@@ -1,7 +1,6 @@
+import 'package:digiQ/models/trip_search_params.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../models/trip_model.dart';
 import '../../providers/trip_search_provider.dart';
 import 'trip_details_screen.dart';
 
@@ -71,7 +70,7 @@ class _TripSearchResultsScreenState
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final trip = trips[index];
-              final isFull = trip.seatsLeft == 0;
+              final isFull = trip.seatsAvailable == 0;
 
               return ListTile(
                 enabled: !isFull,
@@ -83,10 +82,10 @@ class _TripSearchResultsScreenState
                   ),
                 ),
                 subtitle: Text(
-                  '${trip.driverName} • ⭐ ${trip.rating}',
+                  '${trip.driverName} • ⭐ 1',
                 ),
                 trailing: Text(
-                  isFull ? 'Full' : '${trip.seatsLeft} seats',
+                  isFull ? 'Full' : '${trip.seatsAvailable} seats',
                   style: TextStyle(
                     color: isFull ? Colors.red : Colors.grey[700],
                     fontWeight: FontWeight.w500,

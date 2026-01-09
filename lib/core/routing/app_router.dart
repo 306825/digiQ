@@ -17,36 +17,39 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final user = authState.user;
       final location = state.matchedLocation;
 
-      final isLoggingIn = location == '/login';
+      final isLogin = location == '/login';
 
-      // 1️⃣ NOT AUTHENTICATED → ALWAYS LOGIN
-      if (status != AuthStatus.authenticated) {
-        return isLoggingIn ? null : '/login';
+      // 🟡 0. AUTH STILL INITIALIZING → DO NOTHING
+      if (status == AuthStatus.initializing) {
+        return null;
       }
 
-      // 2️⃣ AUTHENTICATED BUT USER NOT READY (edge safety)
+      // 🔒 1. NOT AUTHENTICATED → FORCE LOGIN
+      if (status == AuthStatus.unauthenticated) {
+        return isLogin ? null : '/login';
+      }
+
+      // 🛑 Safety
       if (user == null) {
         return '/login';
       }
 
-      // 3️⃣ DRIVER FLOW
+      // 🚗 2. DRIVER FLOW
       if (user.role == UserRole.driver) {
-        // Needs verification
         if (!user.isDriverVerified) {
           return location == '/driver/verify' ? null : '/driver/verify';
         }
 
-        // Verified driver
-        if (location == '/login' || location == '/driver/verify') {
+        if (isLogin || location == '/driver/verify') {
           return '/driver/home';
         }
 
         return null;
       }
 
-      // 4️⃣ PASSENGER FLOW
+      // 🧍 3. PASSENGER FLOW
       if (user.role == UserRole.passenger) {
-        if (isLoggingIn) {
+        if (isLogin) {
           return '/passenger';
         }
         return null;
@@ -57,19 +60,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginScreen(),
+        builder: (_, __) => const LoginScreen(),
       ),
       GoRoute(
         path: '/passenger',
-        builder: (context, state) => const PassengerHomeScreen(),
+        builder: (_, __) => const PassengerHomeScreen(),
       ),
       GoRoute(
         path: '/driver/home',
-        builder: (context, state) => const DriverHomeScreen(),
+        builder: (_, __) => const DriverHomeScreen(),
       ),
       GoRoute(
         path: '/driver/verify',
-        builder: (context, state) => const DriverVerificationScreen(),
+        builder: (_, __) => const DriverVerificationScreen(),
       ),
     ],
   );

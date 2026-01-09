@@ -9,7 +9,7 @@ class TripDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isFull = trip.seatsLeft == 0;
+    final isFull = trip.seatsAvailable == 0;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Trip Details')),
@@ -29,7 +29,7 @@ class TripDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${trip.driverName} • ⭐ ${trip.rating}',
+                    '${trip.driverName} • ⭐ 1',
                     style: const TextStyle(fontSize: 16),
                   ),
                 ],
@@ -65,7 +65,7 @@ class TripDetailsScreen extends StatelessWidget {
                   Text(
                     isFull
                         ? 'This trip is fully booked'
-                        : '${trip.seatsLeft} seats remaining',
+                        : '${trip.seatsAvailable} seats remaining',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,

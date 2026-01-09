@@ -1,6 +1,5 @@
-import 'package:digiQ/models/booking_model.dart';
+import 'package:digiQ/features/driver/create_trip_screen.dart';
 import 'package:digiQ/providers/auth_provider.dart';
-import 'package:digiQ/providers/bookings_store_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,6 +26,23 @@ class DriverHomeScreen extends ConsumerWidget {
                   _DriverStatusCard(isVerified: user.isDriverVerified),
                   const SizedBox(height: 24),
 
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CreateTripScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text('Create Trip'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
                   // 🔴 VERIFIED DRIVER: VIEW BOOKINGS
                   if (user.isDriverVerified)
                     SizedBox(
@@ -44,32 +60,6 @@ class DriverHomeScreen extends ConsumerWidget {
                         child: const Text('View Booking Requests'),
                       ),
                     ),
-                  if (kDebugMode) ...[
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          ref.read(bookingsStoreProvider.notifier).addBooking(
-                                Booking(
-                                  id: DateTime.now()
-                                      .millisecondsSinceEpoch
-                                      .toString(),
-                                  tripId: 'trip_1',
-                                  passengerName: 'Debug Passenger',
-                                  pickup: const PickupAddress(
-                                    addressLine: '123 Main Street',
-                                    area: 'Sandton',
-                                  ),
-                                  status: BookingStatus.pending,
-                                ),
-                              );
-                        },
-                        child: const Text('🐞 Add Debug Booking'),
-                      ),
-                    ),
-                  ],
 
                   // 🟡 UNVERIFIED DRIVER: COMPLETE VERIFICATION
                   if (!user.isDriverVerified)

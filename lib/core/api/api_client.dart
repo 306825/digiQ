@@ -13,5 +13,7 @@ class ApiClient {
               'Content-Type': 'application/json',
             },
           ),
-        );
+        ) {
+    print('🔥 API BASE URL = ${dio.options.baseUrl}');
+  }
 }

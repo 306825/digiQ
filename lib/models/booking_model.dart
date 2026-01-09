@@ -14,10 +14,6 @@ class PickupAddress {
   @override
   String toString() => '$addressLine, $area';
 
-  /* --------------------------------------------------------------------------
-   * JSON serialization
-   * -------------------------------------------------------------------------- */
-
   factory PickupAddress.fromJson(Map<String, dynamic> json) {
     return PickupAddress(
       addressLine: json['addressLine'] as String,
@@ -41,6 +37,8 @@ class Booking {
   final String passengerName;
   final PickupAddress pickup;
   final BookingStatus status;
+  final DateTime updatedAt;
+  final DateTime createdAt;
 
   const Booking({
     required this.id,
@@ -48,33 +46,34 @@ class Booking {
     required this.passengerName,
     required this.pickup,
     required this.status,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   Booking copyWith({BookingStatus? status}) {
     return Booking(
-      id: id,
-      tripId: tripId,
-      passengerName: passengerName,
-      pickup: pickup,
-      status: status ?? this.status,
-    );
+        id: id,
+        tripId: tripId,
+        passengerName: passengerName,
+        pickup: pickup,
+        status: status ?? this.status,
+        createdAt: createdAt,
+        updatedAt: updatedAt);
   }
-
-  /* --------------------------------------------------------------------------
-   * JSON serialization
-   * -------------------------------------------------------------------------- */
 
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
-      id: json['id'] as String,
-      tripId: json['tripId'] as String,
-      passengerName: json['passengerName'] as String,
+      id: json['_id'] as String,
+      tripId: json['tripId'].toString(),
+      passengerName: (json['passengerName'] as String?) ?? 'Unknown passenger',
       pickup: PickupAddress.fromJson(
         json['pickup'] as Map<String, dynamic>,
       ),
       status: BookingStatus.values.firstWhere(
         (e) => e.name == json['status'],
       ),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
 
