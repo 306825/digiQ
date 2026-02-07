@@ -1,17 +1,19 @@
+import 'package:digiQ/models/booking_model.dart';
+import 'package:digiQ/models/driver_booking_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api/booking_api.dart';
-import '../models/booking_model.dart';
 
-class DriverBookingsNotifier extends AsyncNotifier<List<Booking>> {
+class DriverBookingsNotifier extends AsyncNotifier<List<DriverBooking>> {
   final Set<String> _processing = {};
 
   @override
-  Future<List<Booking>> build() async {
+  Future<List<DriverBooking>> build() async {
     final api = ref.read(bookingApiProvider);
     final response = await api.getPendingBookings();
+
     final list = response.data as List<dynamic>;
-    return list.map((e) => Booking.fromJson(e)).toList();
+    return list.map((e) => DriverBooking.fromJson(e)).toList();
   }
 
   bool isProcessing(String bookingId) => _processing.contains(bookingId);
@@ -22,7 +24,7 @@ class DriverBookingsNotifier extends AsyncNotifier<List<Booking>> {
   }) async {
     _processing.add(bookingId);
 
-    // force UI rebuild so spinner shows
+    // Force rebuild so spinner shows
     state = AsyncData([...state.value ?? []]);
 
     try {
@@ -31,10 +33,13 @@ class DriverBookingsNotifier extends AsyncNotifier<List<Booking>> {
             status: status.name,
           );
 
-      // remove booking ONLY after backend success
-      state = AsyncData(
-        state.value!.where((b) => b.id != bookingId).toList(),
-      );
+      // 🔥 IMPORTANT:
+      // Re-fetch pending bookings from backend
+      // This removes:
+      // - approved booking
+      // - auto-rejected bookings
+      state = const AsyncLoading();
+      state = await AsyncValue.guard(build);
     } finally {
       _processing.remove(bookingId);
     }
@@ -42,6 +47,6 @@ class DriverBookingsNotifier extends AsyncNotifier<List<Booking>> {
 }
 
 final driverBookingsProvider =
-    AsyncNotifierProvider<DriverBookingsNotifier, List<Booking>>(
+    AsyncNotifierProvider<DriverBookingsNotifier, List<DriverBooking>>(
   DriverBookingsNotifier.new,
 );

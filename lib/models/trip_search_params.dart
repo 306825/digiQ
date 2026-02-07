@@ -1,11 +1,9 @@
 class TripSearchParams {
-  final String from;
-  final String to;
+  final String routeId;
   final DateTime date;
 
   const TripSearchParams({
-    required this.from,
-    required this.to,
+    required this.routeId,
     required this.date,
   });
 }

@@ -1,39 +1,38 @@
-import 'package:digiQ/models/trip_model.dart';
-import 'package:digiQ/models/trip_search_params.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/api/api_providers.dart';
+import '../models/trip_model.dart';
+import '../models/trip_search_params.dart';
 
-class TripSearchNotifier extends Notifier<AsyncValue<List<Trip>>> {
+class TripSearchNotifier extends AsyncNotifier<List<Trip>> {
   @override
-  AsyncValue<List<Trip>> build() {
-    return const AsyncValue.loading();
+  Future<List<Trip>> build() async {
+    // Default empty state
+    return [];
   }
 
   Future<void> search(TripSearchParams params) async {
-    state = const AsyncValue.loading();
+    state = const AsyncLoading();
 
-    // TEMP MOCK DATA — matches Trip model exactly
-    state = AsyncValue.data([
-      Trip(
-        id: 'mock-trip-1',
-        driverId: 'mock-driver-1',
-        driverName: 'Thabo',
-        from: params.from,
-        to: params.to,
+    try {
+      final api = ref.read(tripsApiProvider);
+
+      final trips = await api.searchTrips(
+        routeId: params.routeId,
         date: params.date,
-        seatsTotal: 3,
-        seatsAvailable: 2,
-        price: 250.0,
-        status: 'open',
-      ),
-    ]);
+      );
+
+      state = AsyncData(trips);
+    } catch (e, stack) {
+      state = AsyncError(e, stack);
+    }
   }
 
   void reset() {
-    state = const AsyncValue.loading();
+    state = const AsyncData([]);
   }
 }
 
 final tripSearchProvider =
-    NotifierProvider<TripSearchNotifier, AsyncValue<List<Trip>>>(
+    AsyncNotifierProvider<TripSearchNotifier, List<Trip>>(
   TripSearchNotifier.new,
 );

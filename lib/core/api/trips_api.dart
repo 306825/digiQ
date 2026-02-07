@@ -1,29 +1,23 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'api_providers.dart'; // where apiClientProvider lives
-
-final tripsApiProvider = Provider<TripsApi>((ref) {
-  final dio = ref.read(apiClientProvider).dio;
-  return TripsApi(dio);
-});
+import '../../models/trip_model.dart';
 
 class TripsApi {
   final Dio dio;
 
   TripsApi(this.dio);
 
-  Future<Response> createTrip({
-    required String from,
-    required String to,
+  Future<void> createTrip({
+    required String routeId,
+    required String departureWindow,
     required DateTime date,
     required int seatsTotal,
     required double price,
-  }) {
-    return dio.post(
+  }) async {
+    await dio.post(
       '/trips',
       data: {
-        'from': from,
-        'to': to,
+        'routeId': routeId,
+        'departureWindow': departureWindow,
         'date': date.toIso8601String(),
         'seatsTotal': seatsTotal,
         'price': price,
@@ -31,7 +25,38 @@ class TripsApi {
     );
   }
 
-  Future<Response> getMyTrips() {
-    return dio.get('/trips/mine');
+  Future<List<Trip>> getMyTrips() async {
+    final response = await dio.get('/trips/mine');
+
+    if (response.data is! List) {
+      throw Exception('Invalid trips payload');
+    }
+
+    final list = response.data as List;
+
+    return list.map((e) => Trip.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<Trip>> searchTrips({
+    required String routeId,
+    required DateTime date,
+  }) async {
+    final response = await dio.get(
+      '/trips/search',
+      queryParameters: {
+        'routeId': routeId,
+        'date': date.toIso8601String(),
+      },
+    );
+
+    if (response.data is! List) {
+      throw Exception('Invalid search payload');
+    }
+
+    final list = response.data as List;
+
+    return list
+        .map((e) => Trip.fromSearchJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

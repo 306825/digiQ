@@ -1,18 +1,21 @@
+import 'package:digiQ/features/shared/widgets/user_avatar.dart';
+import 'package:digiQ/models/route_model.dart';
+import 'package:digiQ/models/trip_model.dart';
 import 'package:digiQ/models/trip_search_params.dart';
+import 'package:digiQ/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/trip_search_provider.dart';
 import 'trip_details_screen.dart';
 
 class TripSearchResultsScreen extends ConsumerStatefulWidget {
-  final String from;
-  final String to;
+  final RouteModel route;
   final DateTime date;
 
   const TripSearchResultsScreen({
     super.key,
-    required this.from,
-    required this.to,
+    required this.route,
     required this.date,
   });
 
@@ -30,8 +33,7 @@ class _TripSearchResultsScreenState
     Future.microtask(() {
       ref.read(tripSearchProvider.notifier).search(
             TripSearchParams(
-              from: widget.from,
-              to: widget.to,
+              routeId: widget.route.id,
               date: widget.date,
             ),
           );
@@ -41,19 +43,43 @@ class _TripSearchResultsScreenState
   @override
   Widget build(BuildContext context) {
     final tripsAsync = ref.watch(tripSearchProvider);
+    final theme = Theme.of(context);
+
+    final formattedDate = widget.date.toLocal().toString().split(' ')[0];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.from} → ${widget.to}'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.route.label),
+            Text(
+              formattedDate,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.hintColor,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await ref.read(authProvider.notifier).logout();
+              if (!context.mounted) return;
+              context.go('/login');
+            },
+          ),
+        ],
       ),
       body: tripsAsync.when(
         loading: () => const _LoadingState(),
-        error: (error, _) => _ErrorState(
+        error: (error, stack) => _ErrorState(
+          error: error,
           onRetry: () {
             ref.read(tripSearchProvider.notifier).search(
                   TripSearchParams(
-                    from: widget.from,
-                    to: widget.to,
+                    routeId: widget.route.id,
                     date: widget.date,
                   ),
                 );
@@ -65,46 +91,167 @@ class _TripSearchResultsScreenState
           }
 
           return ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.all(20),
             itemCount: trips.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (_, __) => const SizedBox(height: 14),
             itemBuilder: (context, index) {
               final trip = trips[index];
-              final isFull = trip.seatsAvailable == 0;
-
-              return ListTile(
-                enabled: !isFull,
-                title: Text(
-                  'R${trip.price}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                subtitle: Text(
-                  '${trip.driverName} • ⭐ 1',
-                ),
-                trailing: Text(
-                  isFull ? 'Full' : '${trip.seatsAvailable} seats',
-                  style: TextStyle(
-                    color: isFull ? Colors.red : Colors.grey[700],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                onTap: isFull
-                    ? null
-                    : () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TripDetailsScreen(trip: trip),
-                          ),
-                        );
-                      },
+              return _TripCard(
+                trip: trip,
+                //routeLabel: widget.route.label,
               );
             },
           );
         },
+      ),
+    );
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Trip Card
+ * -------------------------------------------------------------------------- */
+class _TripCard extends StatelessWidget {
+  final Trip trip;
+
+  const _TripCard({required this.trip});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isFull = trip.seatsAvailable == 0;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: isFull
+            ? null
+            : () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TripDetailsScreen(trip: trip),
+                  ),
+                );
+              },
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // ── LEFT: INFO ─────────────────────────────
+              Expanded(
+                flex: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 💰 PRICE
+                    Text(
+                      'R${trip.price.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    // 👤 DRIVER
+                    Row(
+                      children: [
+                        UserAvatar(
+                          displayName: trip.driverName,
+                          imageUrl: trip.driverProfileImageUrl,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            trip.driverName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 🪑 SEATS REMAINING
+                    // 🪑 SEATS ROW (aligned)
+                    Row(
+                      children: [
+                        Text(
+                          '${trip.seatsAvailable} seats remaining',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isFull ? Colors.red : theme.colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // ── RIGHT: CAR + TOTAL SEATS ───────────────
+              Expanded(
+                flex: 6, // 🔥 image dominates
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 🚗 CAR IMAGE (BIGGER)
+                    SizedBox(
+                      height: 150, // 🔥 BIGGER than before
+                      child: Image.asset(
+                        'assets/branding/image_car_suv.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // 🟢 TOTAL SEATS PILL — SOLID GREEN
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green, // ✅ solid green
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${trip.seatsTotal} seats total',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white, // ✅ white text
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -119,13 +266,20 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final theme = Theme.of(context);
+
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 12),
-          Text('Searching for available trips...'),
+          CircularProgressIndicator(
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Finding available trips...',
+            style: theme.textTheme.bodyMedium,
+          ),
         ],
       ),
     );
@@ -137,26 +291,33 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.search_off, size: 48, color: Colors.grey),
-            SizedBox(height: 16),
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 72,
+              color: theme.colorScheme.primary.withOpacity(0.4),
+            ),
+            const SizedBox(height: 20),
             Text(
-              'No trips found',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+              'No trips available',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
-              'Try adjusting your date or locations.',
+              'Try another route or date.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.black54,
+              ),
             ),
           ],
         ),
@@ -167,33 +328,47 @@ class _EmptyState extends StatelessWidget {
 
 class _ErrorState extends StatelessWidget {
   final VoidCallback onRetry;
+  final Object error;
 
-  const _ErrorState({required this.onRetry});
+  const _ErrorState({required this.onRetry, required this.error});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            Icon(
+              Icons.error_outline,
+              size: 72,
+              color: theme.colorScheme.error,
+            ),
             const SizedBox(height: 16),
             const Text(
-              'Failed to load trips',
+              'Something went wrong',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
               ),
             ),
+            // 🔥 THIS IS WHAT WE NEED
+            Text(
+              error.toString(),
+              style: const TextStyle(fontSize: 12),
+            ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Please check your connection and try again.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.hintColor,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: onRetry,
               child: const Text('Retry'),

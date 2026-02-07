@@ -1,11 +1,11 @@
+import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/core/api/booking_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../models/trip_model.dart';
-import '../../providers/auth_provider.dart';
 import '../shared/widgets/app_text_field.dart';
 import '../shared/widgets/primary_button.dart';
+import 'payfast_webview_screen.dart'; // <-- IMPORTANT
 
 class PickupAddressScreen extends ConsumerStatefulWidget {
   final Trip trip;
@@ -32,14 +32,8 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
     super.dispose();
   }
 
-  void _submitBooking() async {
+  Future<void> _submitBooking() async {
     if (_isSubmitting) return;
-
-    final user = ref.read(authProvider).user;
-    if (user == null) {
-      _showSnack('User not authenticated');
-      return;
-    }
 
     final address = _addressController.text.trim();
     final area = _areaController.text.trim();
@@ -52,10 +46,14 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
 
     setState(() => _isSubmitting = true);
 
-    final api = ref.read(bookingApiProvider);
+    final bookingApi = ref.read(bookingApiProvider);
+    final paymentsApi = ref.read(paymentsApiProvider);
 
     try {
-      await api.createBooking(
+      debugPrint('🔥 SUBMIT BOOKING PRESSED');
+
+      // 1️⃣ Create booking first
+      final bookingRes = await bookingApi.createBooking(
         tripId: widget.trip.id,
         pickup: {
           'addressLine': address,
@@ -64,19 +62,46 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
         },
       );
 
-      if (!mounted) return;
+      final bookingId = bookingRes.data['bookingId'] as String;
+      debugPrint('✅ BOOKING CREATED: $bookingId');
 
-      _showSnack(
-        'Booking request sent. Waiting for driver confirmation.',
+      // 2️⃣ Ask backend to prepare PayFast payment
+      debugPrint('🔥 ABOUT TO CALL PAYFAST INITIATE');
+
+      final paymentInit = await paymentsApi.initiatePayfast(
+        bookingId: bookingId,
       );
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      final processUrl = paymentInit['processUrl'] as String;
+      final payload = Map<String, String>.from(paymentInit['payload'] as Map);
+
+      debugPrint('✅ PAYFAST INIT OK: $processUrl');
+
+      // 3️⃣ OPEN IN OUR OWN WEBVIEW (FIXES YOUR 404)
+      final paid = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PayfastWebViewScreen(
+            processUrl: processUrl,
+            payload: payload,
+          ),
+        ),
+      );
+
+      // 4️⃣ Handle result (UI only — backend is authoritative)
       if (!mounted) return;
+
+      if (paid == true) {
+        _showSnack('Payment initiated. Waiting for confirmation from PayFast.');
+      } else {
+        _showSnack('Payment cancelled.');
+      }
 
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
+      debugPrint('❌ PAYMENT INIT ERROR: $e');
       if (!mounted) return;
-      _showSnack('Failed to submit booking');
+      _showSnack('Failed to initiate payment');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -91,36 +116,82 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pickup Address')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      appBar: AppBar(
+        title: const Text('Pickup Details'),
+        centerTitle: true,
+      ),
+      body: SafeArea(
         child: Column(
           children: [
-            AppTextField(
-              labelText: 'Street address',
-              controller: _addressController,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Where should the driver pick you up?',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${widget.trip.from} → ${widget.trip.to}',
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
-            AppTextField(
-              labelText: 'Area',
-              controller: _areaController,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Card(
+                      elevation: 1.5,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            AppTextField(
+                              labelText: 'Street address',
+                              controller: _addressController,
+                            ),
+                            const SizedBox(height: 12),
+                            AppTextField(
+                              labelText: 'Area / Suburb',
+                              controller: _areaController,
+                            ),
+                            const SizedBox(height: 12),
+                            AppTextField(
+                              labelText: 'Notes (optional)',
+                              controller: _notesController,
+                              multiline: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
-            AppTextField(
-              labelText: 'Notes (optional)',
-              controller: _notesController,
-              multiline: true,
-            ),
-            const SizedBox(height: 24),
-            PrimaryButton(
-              text: _isSubmitting ? 'Submitting…' : 'Submit Booking',
-              isLoading: _isSubmitting,
-              onPressed: _isSubmitting ? null : _submitBooking,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Your pickup details will be shared with the driver.',
-              style: TextStyle(color: Colors.grey),
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: PrimaryButton(
+                  text: _isSubmitting ? 'Submitting…' : 'Confirm Pickup',
+                  isLoading: _isSubmitting,
+                  onPressed: _isSubmitting ? null : _submitBooking,
+                ),
+              ),
             ),
           ],
         ),

@@ -2,13 +2,19 @@ class Trip {
   final String id;
   final String driverId;
   final String driverName;
+
   final String from;
   final String to;
+
   final DateTime date;
+  final String departureWindow;
+
   final int seatsTotal;
   final int seatsAvailable;
   final double price;
+
   final String status;
+  final String? driverProfileImageUrl;
 
   const Trip({
     required this.id,
@@ -17,21 +23,28 @@ class Trip {
     required this.from,
     required this.to,
     required this.date,
+    required this.departureWindow,
     required this.seatsTotal,
     required this.seatsAvailable,
     required this.price,
     required this.status,
+    this.driverProfileImageUrl,
   });
 
-  /// 🔁 BACKEND → APP
+  /* --------------------------------------------------------------------------
+   * BACKEND → APP (Driver / Mongo shape)
+   * -------------------------------------------------------------------------- */
   factory Trip.fromJson(Map<String, dynamic> json) {
+    final snapshot = json['routeSnapshot'] as Map<String, dynamic>?;
+
     return Trip(
       id: json['_id'] as String,
       driverId: json['driverId'].toString(),
       driverName: json['driverName'] as String,
-      from: json['from'] as String,
-      to: json['to'] as String,
-      date: DateTime.parse(json['date']),
+      from: snapshot?['fromLabel'] ?? '',
+      to: snapshot?['toLabel'] ?? '',
+      date: DateTime.parse(json['date'] as String),
+      departureWindow: json['departureWindow'] as String,
       seatsTotal: json['seatsTotal'] as int,
       seatsAvailable: json['seatsAvailable'] as int,
       price: (json['price'] as num).toDouble(),
@@ -39,12 +52,43 @@ class Trip {
     );
   }
 
-  /// 🔁 APP → BACKEND (future-proof)
+  /* --------------------------------------------------------------------------
+   * BACKEND → APP (Passenger search DTO)
+   * -------------------------------------------------------------------------- */
+  factory Trip.fromSearchJson(Map<String, dynamic> json) {
+    return Trip(
+      id: json['id'] as String,
+
+      // 🔹 Not provided by search DTO
+      driverId: '',
+
+      driverName: json['driverName'] as String,
+
+      from: json['route']['from'] as String,
+      to: json['route']['to'] as String,
+
+      date: DateTime.parse(json['date'] as String),
+      departureWindow: (json['departureWindow'] as String?) ?? 'Unspecified',
+
+      seatsTotal: json['seatsTotal'] as int,
+      seatsAvailable: json['seatsAvailable'] as int,
+      price: (json['price'] as num).toDouble(),
+
+      // 🔹 Search results are always open
+      status: 'open',
+
+      // 🖼️ THIS WAS MISSING
+      driverProfileImageUrl: json['driverProfileImageUrl'] as String?,
+    );
+  }
+
+  /* --------------------------------------------------------------------------
+   * APP → BACKEND (future-proof)
+   * -------------------------------------------------------------------------- */
   Map<String, dynamic> toJson() {
     return {
-      'from': from,
-      'to': to,
       'date': date.toIso8601String(),
+      'departureWindow': departureWindow,
       'seatsTotal': seatsTotal,
       'price': price,
     };

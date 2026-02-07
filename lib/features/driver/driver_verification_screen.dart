@@ -1,174 +1,335 @@
+import 'package:digiQ/core/api/api_providers.dart';
+import 'package:digiQ/features/driver/widgets/documents_upload_tile.dart';
+import 'package:digiQ/models/user_model.dart';
+import 'package:digiQ/providers/auth_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../providers/auth_provider.dart';
-import '../../models/user_model.dart';
-import 'package:flutter/foundation.dart';
-
-class DriverVerificationScreen extends ConsumerWidget {
+class DriverVerificationScreen extends ConsumerStatefulWidget {
   const DriverVerificationScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final user = authState.user;
+  ConsumerState<DriverVerificationScreen> createState() =>
+      _DriverVerificationScreenState();
+}
+
+class _DriverVerificationScreenState
+    extends ConsumerState<DriverVerificationScreen> {
+  final firstNameCtrl = TextEditingController();
+  final lastNameCtrl = TextEditingController();
+  final addressCtrl = TextEditingController();
+
+  final Map<String, String> uploadedDocs = {};
+  bool submitting = false;
+
+  bool get allDocsUploaded => uploadedDocs.length == 5;
+
+  bool get isFormValid =>
+      firstNameCtrl.text.isNotEmpty &&
+      lastNameCtrl.text.isNotEmpty &&
+      addressCtrl.text.isNotEmpty &&
+      allDocsUploaded;
+
+  @override
+  void dispose() {
+    firstNameCtrl.dispose();
+    lastNameCtrl.dispose();
+    addressCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!isFormValid || submitting) return;
+
+    setState(() => submitting = true);
+
+    try {
+      final api = ref.read(driverApiProvider);
+
+      await api.submitVerification(
+        firstName: firstNameCtrl.text.trim(),
+        lastName: lastNameCtrl.text.trim(),
+        address: addressCtrl.text.trim(),
+        documents: uploadedDocs,
+      );
+
+      // 🔄 Refresh authoritative user state
+      await ref.read(authProvider.notifier).refreshMe();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Verification submitted successfully'),
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ Submit failed: $e');
+
+      if (e is DioException) {
+        debugPrint('STATUS: ${e.response?.statusCode}');
+        debugPrint('DATA: ${e.response?.data}');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to submit verification'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = ref.watch(authProvider).user;
 
     if (user == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     final status = user.verificationStatus;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Driver Verification')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Verify your driver account',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+      appBar: AppBar(
+        title: const Text('Driver Verification'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await ref.read(authProvider.notifier).logout();
+              if (!context.mounted) return;
+              context.go('/login');
+            },
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _StatusCard(status: status),
 
-            const SizedBox(height: 12),
-
-            Text(_descriptionFor(status)),
-
-            const SizedBox(height: 24),
-
-            const _RequirementTile(
-              icon: Icons.badge,
-              text: 'Valid driver’s license',
-            ),
-            const _RequirementTile(
-              icon: Icons.directions_car,
-              text: 'Vehicle details',
-            ),
-            const _RequirementTile(
-              icon: Icons.assignment_turned_in,
-              text: 'Proof of ownership or permission',
-            ),
-            // 🧪 DEBUG CONTROLS (REMOVE BEFORE PRODUCTION)
-            if (kDebugMode) ...[
               const SizedBox(height: 24),
-              const Divider(),
-              const SizedBox(height: 12),
-              const Text(
-                'Debug Controls',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        ref
-                            .read(authProvider.notifier)
-                            .approveDriverVerification();
-                      },
-                      child: const Text('Approve Verification'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        ref
-                            .read(authProvider.notifier)
-                            .rejectDriverVerification();
-                      },
-                      child: const Text('Reject Verification'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
 
-            const Spacer(),
+              // 🟠 PENDING STATE
+              if (status == DriverVerificationStatus.pending) ...[
+                const Text(
+                  'Your documents are being reviewed. This usually takes a short time.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Refresh Status'),
+                    onPressed: () async {
+                      await ref.read(authProvider.notifier).refreshMe();
+                    },
+                  ),
+                ),
+              ],
 
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _canSubmit(status)
-                    ? () async {
-                        ref
-                            .read(authProvider.notifier)
-                            .submitDriverVerification();
-                      }
-                    : null,
-                child: Text(_buttonLabelFor(status)),
-              ),
-            ),
-            if (kDebugMode) ...[
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.logout),
-                label: const Text('DEBUG: Logout (Clear Local Auth)'),
-                onPressed: () async {
-                  await ref.read(authProvider.notifier).logout();
-                },
-              ),
+              // 🟡 FORM (NONE or REJECTED)
+              if (status == DriverVerificationStatus.none ||
+                  status == DriverVerificationStatus.rejected) ...[
+                _SectionCard(
+                  title: '👤 Personal Details',
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: firstNameCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'First Name',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: lastNameCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Surname',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: addressCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Residential Address',
+                        ),
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: '📎 Required Documents',
+                  child: Column(
+                    children: [
+                      DocumentUploadTile(
+                        title: 'ID Document',
+                        type: 'id',
+                        onUploaded: (key) {
+                          setState(() => uploadedDocs['id'] = key);
+                        },
+                      ),
+                      DocumentUploadTile(
+                        title: 'Driver License',
+                        type: 'license',
+                        onUploaded: (key) {
+                          setState(() => uploadedDocs['license'] = key);
+                        },
+                      ),
+                      DocumentUploadTile(
+                        title: 'Permit',
+                        type: 'permit',
+                        onUploaded: (key) {
+                          setState(() => uploadedDocs['permit'] = key);
+                        },
+                      ),
+                      DocumentUploadTile(
+                        title: 'PrDP',
+                        type: 'prdp',
+                        onUploaded: (key) {
+                          setState(() => uploadedDocs['prdp'] = key);
+                        },
+                      ),
+                      DocumentUploadTile(
+                        title: 'Proof of Address',
+                        type: 'proof',
+                        onUploaded: (key) {
+                          setState(() => uploadedDocs['proof'] = key);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: isFormValid && !submitting ? _submit : null,
+                    child: submitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Submit For Verification'),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
-
-  bool _canSubmit(DriverVerificationStatus status) {
-    return status == DriverVerificationStatus.none ||
-        status == DriverVerificationStatus.rejected;
-  }
-
-  String _buttonLabelFor(DriverVerificationStatus status) {
-    switch (status) {
-      case DriverVerificationStatus.none:
-        return 'Submit for Verification';
-      case DriverVerificationStatus.pending:
-        return 'Verification Under Review';
-      case DriverVerificationStatus.approved:
-        return 'Driver Verified';
-      case DriverVerificationStatus.rejected:
-        return 'Resubmit Verification';
-    }
-  }
-
-  String _descriptionFor(DriverVerificationStatus status) {
-    switch (status) {
-      case DriverVerificationStatus.none:
-        return 'To accept booking requests, we need to verify your '
-            'driver details.';
-      case DriverVerificationStatus.pending:
-        return 'Your verification documents have been submitted and are '
-            'currently under review.';
-      case DriverVerificationStatus.approved:
-        return 'Your driver account has been verified. You can now accept '
-            'booking requests.';
-      case DriverVerificationStatus.rejected:
-        return 'Your verification was rejected. Please review your details '
-            'and resubmit.';
-    }
-  }
 }
 
-class _RequirementTile extends StatelessWidget {
-  final IconData icon;
-  final String text;
+/* --------------------------------------------------------------------------
+ * UI Components
+ * -------------------------------------------------------------------------- */
 
-  const _RequirementTile({required this.icon, required this.text});
+class _StatusCard extends StatelessWidget {
+  final DriverVerificationStatus status;
+
+  const _StatusCard({required this.status});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    late String text;
+    late Color color;
+    late IconData icon;
+
+    switch (status) {
+      case DriverVerificationStatus.approved:
+        text = 'You are a verified driver';
+        color = Colors.green;
+        icon = Icons.check_circle;
+        break;
+      case DriverVerificationStatus.pending:
+        text = 'Verification Pending';
+        color = Colors.orange;
+        icon = Icons.hourglass_top;
+        break;
+      case DriverVerificationStatus.rejected:
+        text = 'Verification Rejected';
+        color = Colors.red;
+        icon = Icons.error;
+        break;
+      case DriverVerificationStatus.none:
+        text = 'Verification Required';
+        color = Colors.grey;
+        icon = Icons.info;
+        break;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.blue),
+          Icon(icon, color: color, size: 28),
           const SizedBox(width: 12),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 16))),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _SectionCard({
+    required this.title,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          child,
         ],
       ),
     );

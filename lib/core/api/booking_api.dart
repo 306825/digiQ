@@ -14,7 +14,6 @@ class BookingApi {
     required String tripId,
     required Map<String, dynamic> pickup,
   }) {
-    print('🚨 SENDING PICKUP TO BACKEND: $pickup');
     return dio.post(
       '/bookings',
       data: {
@@ -49,6 +48,13 @@ class BookingApi {
       '/bookings/$bookingId',
       data: {'status': status},
     );
+  }
+
+  /* --------------------------------------------------------------------------
+ * CANCEL BOOKING (Passenger)
+ * -------------------------------------------------------------------------- */
+  Future<Response> cancelBooking(String bookingId) {
+    return dio.patch('/bookings/$bookingId/cancel');
   }
 }
 

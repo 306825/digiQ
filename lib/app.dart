@@ -1,3 +1,4 @@
+import 'package:digiQ/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,10 +14,11 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Lift Share',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.blue,
-      ),
+      // theme: ThemeData(
+      //   useMaterial3: true,
+      //   colorSchemeSeed: Colors.blue,
+      // ),
+      theme: AppTheme.light(),
       routerConfig: router,
     );
   }

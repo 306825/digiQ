@@ -1,7 +1,8 @@
+import 'package:digiQ/features/shared/widgets/user_avatar.dart';
+import 'package:digiQ/models/booking_model.dart';
+import 'package:digiQ/models/driver_booking_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../models/booking_model.dart';
 import '../../providers/driver_bookings_provider.dart';
 
 class DriverBookingListScreen extends ConsumerStatefulWidget {
@@ -18,8 +19,7 @@ class _DriverBookingListScreenState
   void initState() {
     super.initState();
 
-    // 🔥 CRITICAL FIX:
-    // Ensure fresh fetch whenever screen is opened
+    // 🔥 Always refresh when screen opens
     Future.microtask(() {
       ref.invalidate(driverBookingsProvider);
     });
@@ -30,26 +30,24 @@ class _DriverBookingListScreenState
     final bookingsAsync = ref.watch(driverBookingsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Booking Requests')),
+      appBar: AppBar(
+        title: const Text('Booking Requests'),
+        centerTitle: true,
+      ),
       body: bookingsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Failed to load bookings')),
+        loading: () => const _LoadingState(),
+        error: (_, __) => const _ErrorState(),
         data: (bookings) {
           if (bookings.isEmpty) {
-            return const Center(
-              child: Text(
-                'No pending booking requests',
-                style: TextStyle(color: Colors.grey),
-              ),
-            );
+            return const _EmptyState();
           }
 
-          return ListView.builder(
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
             itemCount: bookings.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (_, index) {
-              return _BookingRequestCard(
-                booking: bookings[index],
-              );
+              return _BookingCard(booking: bookings[index]);
             },
           );
         },
@@ -58,96 +56,132 @@ class _DriverBookingListScreenState
   }
 }
 
-class _BookingRequestCard extends ConsumerWidget {
-  final Booking booking;
+/* --------------------------------------------------------------------------
+ * Booking Card
+ * -------------------------------------------------------------------------- */
 
-  const _BookingRequestCard({required this.booking});
+class _BookingCard extends ConsumerWidget {
+  final DriverBooking booking;
+
+  const _BookingCard({required this.booking});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(driverBookingsProvider.notifier);
     final isProcessing = notifier.isProcessing(booking.id);
 
-    return Card(
-      margin: const EdgeInsets.all(12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              booking.passengerName,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Passenger row
+          Row(
+            children: [
+              UserAvatar(
+                displayName: booking.passengerName,
+                imageUrl: booking.passengerProfileImageUrl,
+                size: 36,
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              booking.pickup.toString(),
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  booking.passengerName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
 
-            // 🔄 Spinner per booking
-            if (isProcessing)
-              const Center(
+          const SizedBox(height: 12),
+
+          // Pickup
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_outlined, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${booking.address}, ${booking.area}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          if (isProcessing)
+            const Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
                 child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        try {
-                          await notifier.respond(
-                            bookingId: booking.id,
-                            status: BookingStatus.approved,
-                          );
-
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Booking approved'),
-                              ),
-                            );
-                          }
-                        } catch (_) {
-                          _showError(context);
-                        }
-                      },
-                      child: const Text('Accept'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async {
-                        try {
-                          await notifier.respond(
-                            bookingId: booking.id,
-                            status: BookingStatus.rejected,
-                          );
-
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Booking rejected'),
-                              ),
-                            );
-                          }
-                        } catch (_) {
-                          _showError(context);
-                        }
-                      },
-                      child: const Text('Reject'),
-                    ),
-                  ),
-                ],
               ),
-          ],
-        ),
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.check),
+                    label: const Text('Accept'),
+                    onPressed: () async {
+                      try {
+                        await notifier.respond(
+                          bookingId: booking.id,
+                          status: BookingStatus.approved,
+                        );
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Booking approved'),
+                            ),
+                          );
+                        }
+                      } catch (_) {
+                        _showError(context);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.close),
+                    label: const Text('Reject'),
+                    onPressed: () async {
+                      try {
+                        await notifier.respond(
+                          bookingId: booking.id,
+                          status: BookingStatus.rejected,
+                        );
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Booking rejected'),
+                            ),
+                          );
+                        }
+                      } catch (_) {
+                        _showError(context);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }
@@ -156,6 +190,65 @@ class _BookingRequestCard extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Failed to update booking. Please try again.'),
+      ),
+    );
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * UI States
+ * -------------------------------------------------------------------------- */
+
+class _LoadingState extends StatelessWidget {
+  const _LoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text('Failed to load booking requests'),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.inbox_outlined, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No booking requests yet',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'When passengers request a seat, they’ll appear here.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
       ),
     );
   }

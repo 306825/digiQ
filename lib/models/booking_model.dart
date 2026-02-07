@@ -77,6 +77,22 @@ class Booking {
     );
   }
 
+  factory Booking.fromDriverPendingJson(Map<String, dynamic> json) {
+    return Booking(
+      id: json['id'] as String, // ✅ backend sends `id`, not `_id`
+      tripId: '', // ❌ not provided for drivers (safe empty)
+      passengerName: (json['passengerName'] as String?) ?? 'Unknown passenger',
+      pickup: PickupAddress.fromJson(
+        json['pickup'] as Map<String, dynamic>,
+      ),
+      status: BookingStatus.values.firstWhere(
+        (e) => e.name == json['status'],
+      ),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['createdAt']), // reuse createdAt
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
