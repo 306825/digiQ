@@ -27,13 +27,29 @@ class TripsApi {
 
   Future<List<Trip>> getMyTrips() async {
     final response = await dio.get('/trips/mine');
+    print("FIRST TRIP RAW: ${response.data[0]}");
 
     if (response.data is! List) {
       throw Exception('Invalid trips payload');
     }
 
     final list = response.data as List;
+    print('---------Number of trips is: ${list.length}');
 
+    for (var i = 0; i < list.length; i++) {
+      print("trip: ${list[0]}");
+      try {
+        print('about to convert');
+        Trip.fromJson(list[i] as Map<String, dynamic>);
+        print('converted');
+      } catch (e) {
+        print("❌ BAD TRIP AT INDEX $i:");
+        print(list[i]);
+        rethrow;
+      }
+    }
+
+    // If all are valid, then map normally
     return list.map((e) => Trip.fromJson(e as Map<String, dynamic>)).toList();
   }
 

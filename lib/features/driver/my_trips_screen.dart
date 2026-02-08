@@ -31,7 +31,13 @@ class MyTripsScreen extends ConsumerWidget {
                     itemCount: trips.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 14),
                     itemBuilder: (_, index) {
-                      return _TripCard(trip: trips[index]);
+                      try {
+                        return _TripCard(trip: trips[index]);
+                      } catch (e, st) {
+                        print("🔥 CRASH RENDERING TRIP INDEX $index: $e");
+                        print(st);
+                        return const SizedBox.shrink();
+                      }
                     },
                   ),
           );
@@ -117,7 +123,9 @@ class _TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOpen = trip.status == 'open';
+    print("RENDERING TRIP: ${trip.toJson()}");
+
+    final isOpen = (trip.status ?? 'closed') == 'open';
     final statusColor = isOpen ? Colors.green : Colors.grey;
 
     return Card(
@@ -137,7 +145,8 @@ class _TripCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${trip.from} → ${trip.to}',
+                    '${trip.from.isNotEmpty ? trip.from : "Unknown"} → '
+                    '${trip.to.isNotEmpty ? trip.to : "Unknown"}',
                     style: const TextStyle(
                       fontSize: 16.5,
                       fontWeight: FontWeight.w600,
@@ -166,7 +175,9 @@ class _TripCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  _formatDate(trip.date),
+                  trip.date != null
+                      ? _formatDate(trip.date)
+                      : 'Date unavailable',
                   style: const TextStyle(color: Colors.grey),
                 ),
               ],
@@ -181,7 +192,8 @@ class _TripCard extends StatelessWidget {
               children: [
                 _Pill(
                   icon: Icons.event_seat,
-                  label: '${trip.seatsAvailable}/${trip.seatsTotal} seats',
+                  label:
+                      '${trip.seatsAvailable ?? 0}/${trip.seatsTotal ?? 0} seats',
                   color: Colors.blueGrey,
                 ),
                 _Pill(

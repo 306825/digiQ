@@ -2,7 +2,6 @@ import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/features/driver/widgets/documents_upload_tile.dart';
 import 'package:digiQ/models/user_model.dart';
 import 'package:digiQ/providers/auth_provider.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,42 +19,148 @@ class _DriverVerificationScreenState
   final firstNameCtrl = TextEditingController();
   final lastNameCtrl = TextEditingController();
   final addressCtrl = TextEditingController();
+  // ---- NEW: BANKING DETAILS ----
+  final accountNameCtrl = TextEditingController();
+  final accountNumberCtrl = TextEditingController();
+  final branchCodeCtrl = TextEditingController();
+  String? bankName;
+  String accountType = 'cheque';
+
+  String? bankNameError;
+  String? accountNameError;
+  String? accountNumberError;
 
   final Map<String, String> uploadedDocs = {};
   bool submitting = false;
 
-  bool get allDocsUploaded => uploadedDocs.length == 5;
+  bool get allDocsUploaded => uploadedDocs.length == 6;
 
-  bool get isFormValid =>
-      firstNameCtrl.text.isNotEmpty &&
-      lastNameCtrl.text.isNotEmpty &&
-      addressCtrl.text.isNotEmpty &&
-      allDocsUploaded;
+  // bool get isFormValid =>
+  //     firstNameCtrl.text.isNotEmpty &&
+  //     lastNameCtrl.text.isNotEmpty &&
+  //     addressCtrl.text.isNotEmpty &&
+  //     allDocsUploaded;
 
   @override
   void dispose() {
     firstNameCtrl.dispose();
     lastNameCtrl.dispose();
     addressCtrl.dispose();
+
+    accountNameCtrl.dispose();
+    accountNumberCtrl.dispose();
+    branchCodeCtrl.dispose();
+
     super.dispose();
   }
 
+  bool validateForm() {
+    bool valid = true;
+
+    setState(() {
+      bankNameError = null;
+      accountNameError = null;
+      accountNumberError = null;
+
+      if (bankName == null) {
+        bankNameError = 'Please select your bank';
+        valid = false;
+      }
+
+      if (accountNameCtrl.text.trim().isEmpty) {
+        accountNameError = 'Account holder name is required';
+        valid = false;
+      }
+
+      if (accountNumberCtrl.text.trim().isEmpty) {
+        accountNumberError = 'Account number is required';
+        valid = false;
+      }
+    });
+
+    return valid &&
+        firstNameCtrl.text.isNotEmpty &&
+        lastNameCtrl.text.isNotEmpty &&
+        addressCtrl.text.isNotEmpty &&
+        uploadedDocs.length == 6;
+  }
+
+  // Future<void> _submit() async {
+  //   if (!isFormValid || submitting) return;
+
+  //   setState(() => submitting = true);
+
+  //   try {
+  //     final api = ref.read(driverApiProvider);
+
+  //     await api.submitVerification(
+  //       firstName: firstNameCtrl.text.trim(),
+  //       lastName: lastNameCtrl.text.trim(),
+  //       address: addressCtrl.text.trim(),
+  //       documents: uploadedDocs,
+  //     );
+
+  //     // 🔄 Refresh authoritative user state
+  //     await ref.read(authProvider.notifier).refreshMe();
+
+  //     if (!mounted) return;
+
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Verification submitted successfully'),
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     debugPrint('❌ Submit failed: $e');
+
+  //     if (e is DioException) {
+  //       debugPrint('STATUS: ${e.response?.statusCode}');
+  //       debugPrint('DATA: ${e.response?.data}');
+  //     }
+
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Failed to submit verification'),
+  //         ),
+  //       );
+  //     }
+  //   } finally {
+  //     if (mounted) setState(() => submitting = false);
+  //   }
+  // }
+
   Future<void> _submit() async {
-    if (!isFormValid || submitting) return;
+    if (submitting || !validateForm()) return;
 
     setState(() => submitting = true);
 
     try {
       final api = ref.read(driverApiProvider);
 
+      // 1️⃣ FIRST: save banking details
+      // await api.submitBankDetails(
+      //   bankName: bankName!,
+      //   accountName: accountNameCtrl.text.trim(),
+      //   accountNumber: accountNumberCtrl.text.trim(),
+      //   branchCode: branchCodeCtrl.text.trim(),
+      //   accountType: accountType,
+      // );
+
+      // 2️⃣ THEN: submit verification + documents
       await api.submitVerification(
         firstName: firstNameCtrl.text.trim(),
         lastName: lastNameCtrl.text.trim(),
         address: addressCtrl.text.trim(),
+        bankName: bankName!,
+        accountName: accountNameCtrl.text.trim(),
+        accountNumber: accountNumberCtrl.text.trim(),
+        branchCode: branchCodeCtrl.text.trim(),
+        accountType: accountType,
         documents: uploadedDocs,
       );
 
-      // 🔄 Refresh authoritative user state
+      // Refresh user state
       await ref.read(authProvider.notifier).refreshMe();
 
       if (!mounted) return;
@@ -67,11 +172,6 @@ class _DriverVerificationScreenState
       );
     } catch (e) {
       debugPrint('❌ Submit failed: $e');
-
-      if (e is DioException) {
-        debugPrint('STATUS: ${e.response?.statusCode}');
-        debugPrint('DATA: ${e.response?.data}');
-      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -174,6 +274,108 @@ class _DriverVerificationScreenState
                 ),
                 const SizedBox(height: 16),
                 _SectionCard(
+                  title: '🏦 Banking Details',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ---- Bank dropdown ----
+                      DropdownButtonFormField<String>(
+                        value: bankName,
+                        decoration: const InputDecoration(
+                          labelText: 'Select your bank',
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'FNB', child: Text('FNB')),
+                          DropdownMenuItem(value: 'ABSA', child: Text('ABSA')),
+                          DropdownMenuItem(
+                              value: 'Standard Bank',
+                              child: Text('Standard Bank')),
+                          DropdownMenuItem(
+                              value: 'Nedbank', child: Text('Nedbank')),
+                          DropdownMenuItem(
+                              value: 'Capitec', child: Text('Capitec')),
+                          DropdownMenuItem(
+                              value: 'TymeBank', child: Text('TymeBank')),
+                          DropdownMenuItem(
+                              value: 'Investec', child: Text('Investec')),
+                        ],
+                        onChanged: (value) {
+                          setState(() => bankName = value);
+                        },
+                      ),
+                      if (bankNameError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(bankNameError!,
+                              style: const TextStyle(
+                                  color: Colors.red, fontSize: 12)),
+                        ),
+
+                      const SizedBox(height: 12),
+
+                      // ---- Account holder ----
+                      TextField(
+                        controller: accountNameCtrl,
+                        decoration: const InputDecoration(
+                            labelText: 'Account Holder Name'),
+                      ),
+                      if (accountNameError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(accountNameError!,
+                              style: const TextStyle(
+                                  color: Colors.red, fontSize: 12)),
+                        ),
+
+                      const SizedBox(height: 12),
+
+                      // ---- Account number ----
+                      TextField(
+                        controller: accountNumberCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration:
+                            const InputDecoration(labelText: 'Account Number'),
+                      ),
+                      if (accountNumberError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(accountNumberError!,
+                              style: const TextStyle(
+                                  color: Colors.red, fontSize: 12)),
+                        ),
+
+                      const SizedBox(height: 12),
+
+                      // ---- Branch code ----
+                      TextField(
+                        controller: branchCodeCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                            labelText: 'Branch Code (optional)'),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ---- Account type ----
+                      DropdownButtonFormField<String>(
+                        value: accountType,
+                        decoration:
+                            const InputDecoration(labelText: 'Account Type'),
+                        items: const [
+                          DropdownMenuItem(
+                              value: 'cheque', child: Text('Cheque Account')),
+                          DropdownMenuItem(
+                              value: 'savings', child: Text('Savings Account')),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) setState(() => accountType = v);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
                   title: '📎 Required Documents',
                   child: Column(
                     children: [
@@ -212,6 +414,13 @@ class _DriverVerificationScreenState
                           setState(() => uploadedDocs['proof'] = key);
                         },
                       ),
+                      DocumentUploadTile(
+                        title: 'Proof of Banking Details',
+                        type: 'bank',
+                        onUploaded: (key) {
+                          setState(() => uploadedDocs['bank'] = key);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -220,7 +429,13 @@ class _DriverVerificationScreenState
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: isFormValid && !submitting ? _submit : null,
+                    onPressed: submitting
+                        ? null
+                        : () async {
+                            if (validateForm()) {
+                              await _submit();
+                            }
+                          },
                     child: submitting
                         ? const SizedBox(
                             width: 18,

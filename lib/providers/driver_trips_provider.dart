@@ -7,20 +7,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class DriverTripsNotifier extends AsyncNotifier<List<Trip>> {
   @override
   Future<List<Trip>> build() async {
-    final api = ref.read(tripsApiProvider);
-
     try {
-      final response = await api.getMyTrips();
-      final List list = response;
-      return list.map((e) => Trip.fromJson(e)).toList();
+      final trips = await ref.read(tripsApiProvider).getMyTrips();
+      return trips;
     } catch (e) {
       if (e is DioException && e.response?.statusCode == 403) {
         ref.read(authProvider.notifier).refreshMe();
       }
       rethrow;
     }
-
-    //return api.getMyTrips();
   }
 
   Future<void> refresh() async {

@@ -38,17 +38,17 @@ class Trip {
     final snapshot = json['routeSnapshot'] as Map<String, dynamic>?;
 
     return Trip(
-      id: json['_id'] as String,
-      driverId: json['driverId'].toString(),
-      driverName: json['driverName'] as String,
-      from: snapshot?['fromLabel'] ?? '',
-      to: snapshot?['toLabel'] ?? '',
+      id: json['_id'].toString(),
+      driverId: json['driverId']?.toString() ?? '',
+      driverName: json['driverName'] ?? 'Driver',
+      from: snapshot?['fromLabel'] ?? 'Unknown',
+      to: snapshot?['toLabel'] ?? 'Unknown',
       date: DateTime.parse(json['date'] as String),
-      departureWindow: json['departureWindow'] as String,
-      seatsTotal: json['seatsTotal'] as int,
-      seatsAvailable: json['seatsAvailable'] as int,
+      departureWindow: json['departureWindow'] ?? 'Unspecified',
+      seatsTotal: (json['seatsTotal'] as num).toInt(),
+      seatsAvailable: (json['seatsAvailable'] as num?)?.toInt() ?? 0,
       price: (json['price'] as num).toDouble(),
-      status: json['status'] as String,
+      status: json['status'] ?? 'closed',
     );
   }
 
@@ -87,10 +87,18 @@ class Trip {
    * -------------------------------------------------------------------------- */
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
+      'driverId': driverId,
+      'driverName': driverName,
+      'from': from,
+      'to': to,
       'date': date.toIso8601String(),
       'departureWindow': departureWindow,
       'seatsTotal': seatsTotal,
+      'seatsAvailable': seatsAvailable,
       'price': price,
+      'status': status,
+      'driverProfileImageUrl': driverProfileImageUrl,
     };
   }
 }

@@ -37,8 +37,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       // 2️⃣ Authenticated but user not hydrated yet (bootstrap race)
-      if (status == AuthStatus.authenticated && user == null) {
-        return null; // wait
+      // 2️⃣ BLOCK ALL REDIRECTS while auth is settling
+      if (status == AuthStatus.authenticating ||
+          (status == AuthStatus.authenticated && user == null)) {
+        return null;
       }
 
       // ✅ From here user is guaranteed non-null
@@ -115,6 +117,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/deactivated',
         builder: (_, __) => const AccountDeactivatedScreen(),
       ),
+      // GoRoute(
+      //   path: '/driver/bank-details',
+      //   builder: (_, __) => const DriverBankDetailsScreen(),
+      // ),
     ],
   );
 });

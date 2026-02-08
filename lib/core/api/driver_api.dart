@@ -16,10 +16,36 @@ class DriverApi {
     await dio.post('/drivers/verification/request');
   }
 
+  // Future<void> submitBankDetails({
+  //   required String bankName,
+  //   required String accountName,
+  //   required String accountNumber,
+  //   required String branchCode,
+  //   required String accountType,
+  // }) async {
+  //   await dio.post(
+  //     '/drivers/verification/bank-details',
+  //     data: {
+  //       'bankName': bankName,
+  //       'accountName': accountName,
+  //       'accountNumber': accountNumber,
+  //       'branchCode': branchCode,
+  //       'accountType': accountType,
+  //     },
+  //   );
+  // }
+
   Future<void> submitVerification({
     required String firstName,
     required String lastName,
     required String address,
+
+    // ✅ NEW — banking fields
+    required String bankName,
+    required String accountName,
+    required String accountNumber,
+    required String branchCode,
+    required String accountType,
     required Map<String, String> documents,
   }) async {
     await dio.post(
@@ -28,6 +54,14 @@ class DriverApi {
         'firstName': firstName,
         'lastName': lastName,
         'residentialAddress': address,
+
+        // 🏦 banking details
+        'bankName': bankName,
+        'accountName': accountName,
+        'accountNumber': accountNumber,
+        'branchCode': branchCode,
+        'accountType': accountType,
+
         'documents': documents,
       },
     );
