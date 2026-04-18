@@ -7,9 +7,12 @@ class AdminDriversNotifier extends AsyncNotifier<List<UserModel>> {
   @override
   Future<List<UserModel>> build() async {
     debugPrint('🔥 ADMIN DRIVERS PROVIDER BUILD CALLED');
-    final api = ref.read(adminApiProvider);
-    final response = await api.getDrivers();
 
+    final api = ref.read(adminApiProvider);
+    debugPrint("TOKEN HEADER = ${api.dio.options.headers['Authorization']}");
+    final response = await api.getDrivers();
+    debugPrint(response.data.toString());
+    debugPrint('RAW RESPONSE: ${response.data}');
     final List list = response.data;
     return list.map((e) => UserModel.fromJson(e)).toList();
   }
@@ -28,6 +31,18 @@ class AdminDriversNotifier extends AsyncNotifier<List<UserModel>> {
   Future<void> activate(String driverId) async {
     final api = ref.read(adminApiProvider);
     await api.activateDriver(driverId);
+    await refresh();
+  }
+
+  Future<void> approve(String driverId) async {
+    final api = ref.read(adminApiProvider);
+    await api.approveDriver(driverId);
+    await refresh();
+  }
+
+  Future<void> reject(String driverId) async {
+    final api = ref.read(adminApiProvider);
+    await api.rejectDriver(driverId);
     await refresh();
   }
 }

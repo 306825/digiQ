@@ -19,7 +19,8 @@ class _DriverVerificationScreenState
   final firstNameCtrl = TextEditingController();
   final lastNameCtrl = TextEditingController();
   final addressCtrl = TextEditingController();
-  // ---- NEW: BANKING DETAILS ----
+  DateTime? driversLicenseExpiry;
+  DateTime? prdpExpiry;
   final accountNameCtrl = TextEditingController();
   final accountNumberCtrl = TextEditingController();
   final branchCodeCtrl = TextEditingController();
@@ -34,12 +35,6 @@ class _DriverVerificationScreenState
   bool submitting = false;
 
   bool get allDocsUploaded => uploadedDocs.length == 6;
-
-  // bool get isFormValid =>
-  //     firstNameCtrl.text.isNotEmpty &&
-  //     lastNameCtrl.text.isNotEmpty &&
-  //     addressCtrl.text.isNotEmpty &&
-  //     allDocsUploaded;
 
   @override
   void dispose() {
@@ -57,78 +52,55 @@ class _DriverVerificationScreenState
   bool validateForm() {
     bool valid = true;
 
+    // Reset errors
     setState(() {
       bankNameError = null;
       accountNameError = null;
       accountNumberError = null;
-
-      if (bankName == null) {
-        bankNameError = 'Please select your bank';
-        valid = false;
-      }
-
-      if (accountNameCtrl.text.trim().isEmpty) {
-        accountNameError = 'Account holder name is required';
-        valid = false;
-      }
-
-      if (accountNumberCtrl.text.trim().isEmpty) {
-        accountNumberError = 'Account number is required';
-        valid = false;
-      }
     });
 
-    return valid &&
-        firstNameCtrl.text.isNotEmpty &&
-        lastNameCtrl.text.isNotEmpty &&
-        addressCtrl.text.isNotEmpty &&
-        uploadedDocs.length == 6;
+    if (driversLicenseExpiry == null || prdpExpiry == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select expiry dates')),
+      );
+      valid = false;
+    }
+
+    // ✅ Required fields
+    if (firstNameCtrl.text.trim().isEmpty ||
+        lastNameCtrl.text.trim().isEmpty ||
+        addressCtrl.text.trim().isEmpty) {
+      valid = false;
+    }
+
+    // ✅ Required documents ONLY
+    final requiredDocs = ['id', 'license', 'prdp'];
+
+    for (final doc in requiredDocs) {
+      if (!uploadedDocs.containsKey(doc)) {
+        valid = false;
+      }
+    }
+
+    return valid;
   }
 
-  // Future<void> _submit() async {
-  //   if (!isFormValid || submitting) return;
+  Future<void> _pickDate({
+    required Function(DateTime) onSelected,
+  }) async {
+    final now = DateTime.now();
 
-  //   setState(() => submitting = true);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now.subtract(const Duration(days: 3650)),
+      lastDate: now.add(const Duration(days: 3650)),
+    );
 
-  //   try {
-  //     final api = ref.read(driverApiProvider);
-
-  //     await api.submitVerification(
-  //       firstName: firstNameCtrl.text.trim(),
-  //       lastName: lastNameCtrl.text.trim(),
-  //       address: addressCtrl.text.trim(),
-  //       documents: uploadedDocs,
-  //     );
-
-  //     // 🔄 Refresh authoritative user state
-  //     await ref.read(authProvider.notifier).refreshMe();
-
-  //     if (!mounted) return;
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Verification submitted successfully'),
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     debugPrint('❌ Submit failed: $e');
-
-  //     if (e is DioException) {
-  //       debugPrint('STATUS: ${e.response?.statusCode}');
-  //       debugPrint('DATA: ${e.response?.data}');
-  //     }
-
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(
-  //           content: Text('Failed to submit verification'),
-  //         ),
-  //       );
-  //     }
-  //   } finally {
-  //     if (mounted) setState(() => submitting = false);
-  //   }
-  // }
+    if (picked != null) {
+      onSelected(picked);
+    }
+  }
 
   Future<void> _submit() async {
     if (submitting || !validateForm()) return;
@@ -138,24 +110,22 @@ class _DriverVerificationScreenState
     try {
       final api = ref.read(driverApiProvider);
 
-      // 1️⃣ FIRST: save banking details
-      // await api.submitBankDetails(
-      //   bankName: bankName!,
-      //   accountName: accountNameCtrl.text.trim(),
-      //   accountNumber: accountNumberCtrl.text.trim(),
-      //   branchCode: branchCodeCtrl.text.trim(),
-      //   accountType: accountType,
-      // );
-
-      // 2️⃣ THEN: submit verification + documents
       await api.submitVerification(
         firstName: firstNameCtrl.text.trim(),
         lastName: lastNameCtrl.text.trim(),
         address: addressCtrl.text.trim(),
-        bankName: bankName!,
-        accountName: accountNameCtrl.text.trim(),
-        accountNumber: accountNumberCtrl.text.trim(),
-        branchCode: branchCodeCtrl.text.trim(),
+        driversLicenseExpiry: driversLicenseExpiry!.toIso8601String(),
+        prdpExpiry: prdpExpiry!.toIso8601String(),
+        bankName: bankName,
+        accountName: accountNameCtrl.text.trim().isEmpty
+            ? null
+            : accountNameCtrl.text.trim(),
+        accountNumber: accountNumberCtrl.text.trim().isEmpty
+            ? null
+            : accountNumberCtrl.text.trim(),
+        branchCode: branchCodeCtrl.text.trim().isEmpty
+            ? null
+            : branchCodeCtrl.text.trim(),
         accountType: accountType,
         documents: uploadedDocs,
       );
@@ -376,12 +346,13 @@ class _DriverVerificationScreenState
                 ),
                 const SizedBox(height: 16),
                 _SectionCard(
-                  title: '📎 Required Documents',
+                  title: '📎 Required Documents (Minimum)',
                   child: Column(
                     children: [
                       DocumentUploadTile(
                         title: 'ID Document',
                         type: 'id',
+                        uploaded: uploadedDocs.containsKey('id'),
                         onUploaded: (key) {
                           setState(() => uploadedDocs['id'] = key);
                         },
@@ -389,6 +360,7 @@ class _DriverVerificationScreenState
                       DocumentUploadTile(
                         title: 'Driver License',
                         type: 'license',
+                        uploaded: uploadedDocs.containsKey('license'),
                         onUploaded: (key) {
                           setState(() => uploadedDocs['license'] = key);
                         },
@@ -396,6 +368,7 @@ class _DriverVerificationScreenState
                       DocumentUploadTile(
                         title: 'Permit',
                         type: 'permit',
+                        uploaded: uploadedDocs.containsKey('permit'),
                         onUploaded: (key) {
                           setState(() => uploadedDocs['permit'] = key);
                         },
@@ -403,6 +376,7 @@ class _DriverVerificationScreenState
                       DocumentUploadTile(
                         title: 'PrDP',
                         type: 'prdp',
+                        uploaded: uploadedDocs.containsKey('prdp'),
                         onUploaded: (key) {
                           setState(() => uploadedDocs['prdp'] = key);
                         },
@@ -410,6 +384,7 @@ class _DriverVerificationScreenState
                       DocumentUploadTile(
                         title: 'Proof of Address',
                         type: 'proof',
+                        uploaded: uploadedDocs.containsKey('proof'),
                         onUploaded: (key) {
                           setState(() => uploadedDocs['proof'] = key);
                         },
@@ -417,8 +392,53 @@ class _DriverVerificationScreenState
                       DocumentUploadTile(
                         title: 'Proof of Banking Details',
                         type: 'bank',
+                        uploaded: uploadedDocs.containsKey('bank'),
                         onUploaded: (key) {
                           setState(() => uploadedDocs['bank'] = key);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: '📅 Document Expiry',
+                  child: Column(
+                    children: [
+                      ListTile(
+                        title: const Text('Driver License Expiry'),
+                        subtitle: Text(
+                          driversLicenseExpiry == null
+                              ? 'Select date'
+                              : driversLicenseExpiry!
+                                  .toLocal()
+                                  .toString()
+                                  .split(' ')[0],
+                        ),
+                        trailing: const Icon(Icons.calendar_today),
+                        onTap: () {
+                          _pickDate(
+                            onSelected: (date) {
+                              setState(() => driversLicenseExpiry = date);
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      ListTile(
+                        title: const Text('PrDP Expiry'),
+                        subtitle: Text(
+                          prdpExpiry == null
+                              ? 'Select date'
+                              : prdpExpiry!.toLocal().toString().split(' ')[0],
+                        ),
+                        trailing: const Icon(Icons.calendar_today),
+                        onTap: () {
+                          _pickDate(
+                            onSelected: (date) {
+                              setState(() => prdpExpiry = date);
+                            },
+                          );
                         },
                       ),
                     ],

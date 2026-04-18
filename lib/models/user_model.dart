@@ -1,18 +1,22 @@
+import 'package:digiQ/models/driver_profile_model.dart';
 import 'package:flutter/material.dart';
 
 enum UserRole { passenger, driver, admin }
 
 enum DriverVerificationStatus { none, pending, approved, rejected }
 
+enum VehicleVerificationStatus { pending, approved, rejected, none }
+
 class UserModel {
   final String id;
   final String fullName;
+  final String email;
   final UserRole role;
   final DriverVerificationStatus verificationStatus;
   final bool? isActive;
-
-  // 🖼️ NEW
+  final DriverProfile? driverProfile;
   final String? profileImageUrl;
+  final VehicleVerificationStatus vehicleStatus;
 
   const UserModel({
     required this.id,
@@ -21,13 +25,16 @@ class UserModel {
     required this.verificationStatus,
     this.isActive = true,
     this.profileImageUrl,
+    this.driverProfile,
+    required this.email,
+    required this.vehicleStatus,
   });
 
   bool get isDriver => role == UserRole.driver;
   bool get isDriverVerified =>
       verificationStatus == DriverVerificationStatus.approved;
   bool get isVerificationPending =>
-      verificationStatus == DriverVerificationStatus.pending;
+      verificationStatus == DriverVerificationStatus.none;
 
   UserModel copyWith({
     String? id,
@@ -38,13 +45,14 @@ class UserModel {
     String? profileImageUrl,
   }) {
     return UserModel(
-      id: id ?? this.id,
-      fullName: fullName ?? this.fullName,
-      role: role ?? this.role,
-      verificationStatus: verificationStatus ?? this.verificationStatus,
-      isActive: isActive ?? this.isActive,
-      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
-    );
+        id: id ?? this.id,
+        fullName: fullName ?? this.fullName,
+        role: role ?? this.role,
+        verificationStatus: verificationStatus ?? this.verificationStatus,
+        isActive: isActive ?? this.isActive,
+        profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+        email: email,
+        vehicleStatus: vehicleStatus);
   }
 
   /* --------------------------------------------------------------------------
@@ -53,15 +61,35 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['_id'] as String,
+      id: json['_id'] ?? json['id'],
       fullName: json['fullName'] as String,
       role: _parseUserRole(json['role']),
       verificationStatus: _parseVerificationStatus(json['verificationStatus']),
       isActive: json['isActive'] as bool? ?? true,
-
-      // 🖼️ SAFE OPTIONAL
+      driverProfile: json['driverProfile'] != null
+          ? DriverProfile.fromJson(json['driverProfile'])
+          : null,
+      email: json['identifier'],
       profileImageUrl: json['profileImageUrl'] as String?,
+      vehicleStatus: _parseVehicleStatus(json['vehicleStatus']),
     );
+  }
+
+  static VehicleVerificationStatus _parseVehicleStatus(dynamic value) {
+    if (value == null) return VehicleVerificationStatus.none;
+
+    final normalized = value.toString().toLowerCase();
+
+    switch (normalized) {
+      case 'approved':
+        return VehicleVerificationStatus.approved;
+      case 'pending':
+        return VehicleVerificationStatus.pending;
+      case 'rejected':
+        return VehicleVerificationStatus.rejected;
+      default:
+        return VehicleVerificationStatus.none;
+    }
   }
 
   static UserRole _parseUserRole(dynamic value) {

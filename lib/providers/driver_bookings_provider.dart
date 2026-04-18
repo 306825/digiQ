@@ -1,5 +1,6 @@
 import 'package:digiQ/models/booking_model.dart';
 import 'package:digiQ/models/driver_booking_model.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api/booking_api.dart';
@@ -9,11 +10,28 @@ class DriverBookingsNotifier extends AsyncNotifier<List<DriverBooking>> {
 
   @override
   Future<List<DriverBooking>> build() async {
-    final api = ref.read(bookingApiProvider);
-    final response = await api.getPendingBookings();
+    try {
+      print('🚀 FETCHING BOOKINGS...');
 
-    final list = response.data as List<dynamic>;
-    return list.map((e) => DriverBooking.fromJson(e)).toList();
+      final api = ref.read(bookingApiProvider);
+      final response = await api.getPendingBookings();
+
+      print('✅ RESPONSE RECEIVED');
+      print('📦 RAW: ${response.data}');
+
+      final list = response.data as List<dynamic>;
+      return list.map((e) => DriverBooking.fromJson(e)).toList();
+    } catch (e, stack) {
+      print('❌ BOOKINGS ERROR: $e');
+      print(stack);
+
+      if (e is DioException && e.response?.statusCode == 403) {
+        print('⛔ Access denied - stopping retry loop');
+        return []; // 🔥 THIS STOPS THE LOOP
+      }
+
+      rethrow; // only rethrow unexpected errors
+    }
   }
 
   bool isProcessing(String bookingId) => _processing.contains(bookingId);

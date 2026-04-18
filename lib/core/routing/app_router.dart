@@ -1,58 +1,83 @@
-import 'package:digiQ/features/admin/admin_drivers_screen.dart';
 import 'package:digiQ/features/admin/admin_home_screen.dart';
+import 'package:digiQ/features/admin/admin_incidents_screen.dart';
 import 'package:digiQ/features/admin/widgets/admin_routes_tab.dart';
 import 'package:digiQ/features/auth/account_deactivated_screen.dart';
+import 'package:digiQ/features/auth/forgot_password_screen.dart';
 import 'package:digiQ/features/auth/login_screen.dart';
+import 'package:digiQ/features/auth/privacy_screen.dart';
+import 'package:digiQ/features/auth/reset_password_screen.dart';
 import 'package:digiQ/features/auth/signup_screen.dart';
+import 'package:digiQ/features/auth/terms_screen.dart';
+import 'package:digiQ/features/auth/verify_email.dart';
 import 'package:digiQ/features/driver/driver_home_screen.dart';
+import 'package:digiQ/features/driver/driver_vehicle_screen.dart';
 import 'package:digiQ/features/driver/driver_verification_screen.dart';
+import 'package:digiQ/features/passenger/booking_detaills_screen.dart';
 import 'package:digiQ/features/passenger/passenger_home_screen.dart';
 import 'package:digiQ/models/user_model.dart';
 import 'package:digiQ/providers/auth_provider.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+/// ✅ Notifier that tells GoRouter to refresh when auth changes
+class RouterRefreshNotifier extends ChangeNotifier {
+  RouterRefreshNotifier(Ref ref) {
+    ref.listen<AuthState>(authProvider, (_, __) {
+      notifyListeners();
+    });
+  }
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final refreshNotifier = RouterRefreshNotifier(ref);
 
   return GoRouter(
+    refreshListenable: refreshNotifier,
     initialLocation: '/login',
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
       final status = authState.status;
       final user = authState.user;
       final location = state.matchedLocation;
 
       final isLogin = location == '/login';
       final isSignup = location == '/signup';
+      final isForgotPassword = location == '/forgot-password';
+      final isResetPassword = location.startsWith('/reset-password');
+      final isTerms = location == '/terms';
+      final isPrivacy = location == '/privacy';
 
-      // 0️⃣ Still bootstrapping
-      if (status == AuthStatus.initializing) {
-        return null;
-      }
+      // 0️⃣ Bootstrapping
+      if (status == AuthStatus.initializing) return null;
 
       // 1️⃣ Not authenticated
       if (status == AuthStatus.unauthenticated) {
-        if (isLogin || isSignup) return null;
+        if (isLogin ||
+            isSignup ||
+            isForgotPassword ||
+            isResetPassword ||
+            isTerms ||
+            isPrivacy) {
+          return null;
+        }
         return '/login';
       }
 
-      // 2️⃣ Authenticated but user not hydrated yet (bootstrap race)
-      // 2️⃣ BLOCK ALL REDIRECTS while auth is settling
-      if (status == AuthStatus.authenticating ||
-          (status == AuthStatus.authenticated && user == null)) {
+      // 2️⃣ Auth settling
+      if (status == AuthStatus.authenticating || user == null) {
         return null;
       }
 
-      // ✅ From here user is guaranteed non-null
-      final role = user!.role;
+      final role = user.role;
 
-      // 🛡️ ADMIN FLOW
+      // 🛡️ ADMIN
       if (role == UserRole.admin) {
         if (isLogin || isSignup) return '/admin';
         return null;
       }
 
-      // 🚗 DRIVER FLOW
+      // 🚗 DRIVER
       if (role == UserRole.driver) {
         final needsVerification =
             user.verificationStatus != DriverVerificationStatus.approved;
@@ -61,14 +86,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return location == '/driver/verify' ? null : '/driver/verify';
         }
 
-        if (isLogin || location == '/driver/verify') {
+        if (location == '/login') {
           return '/driver/home';
         }
 
         return null;
       }
 
-      // 🧍 PASSENGER FLOW
+      // 🧍 PASSENGER
       if (role == UserRole.passenger) {
         if (isLogin) return '/passenger';
         return null;
@@ -77,50 +102,60 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(path: '/', redirect: (_, __) => '/login'),
+      GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
+      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(
-        path: '/',
-        redirect: (_, __) => '/login',
-      ),
+          path: '/passenger', builder: (_, __) => const PassengerHomeScreen()),
+      GoRoute(path: '/admin', builder: (_, __) => const AdminHomeScreen()),
+      GoRoute(path: '/driver/home', builder: (_, __) => DriverHomeScreen()),
       GoRoute(
-        path: '/signup',
-        builder: (_, __) => const SignupScreen(),
-      ),
+          path: '/driver/verify',
+          builder: (_, __) => DriverVerificationScreen()),
       GoRoute(
-        path: '/login',
-        builder: (_, __) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/passenger',
-        builder: (_, __) => const PassengerHomeScreen(),
-      ),
-      GoRoute(
-        path: '/admin',
-        builder: (_, __) => const AdminHomeScreen(),
-      ),
-      GoRoute(
-        path: '/driver/home',
-        builder: (_, __) => DriverHomeScreen(),
-      ),
-      GoRoute(
-        path: '/driver/verify',
-        builder: (_, __) => DriverVerificationScreen(),
-      ),
-      GoRoute(
-        path: '/admin/routes',
-        builder: (_, __) => const AdminRoutesTab(),
-      ),
-      GoRoute(
-        path: '/admin/drivers',
-        builder: (_, __) => const AdminDriversScreen(),
-      ),
-      GoRoute(
-        path: '/deactivated',
-        builder: (_, __) => const AccountDeactivatedScreen(),
-      ),
+          path: '/admin/routes', builder: (_, __) => const AdminRoutesTab()),
       // GoRoute(
-      //   path: '/driver/bank-details',
-      //   builder: (_, __) => const DriverBankDetailsScreen(),
-      // ),
+      //     path: '/admin/drivers',
+      //     builder: (_, __) => const AdminDriversScreen()),
+      GoRoute(
+          path: '/deactivated',
+          builder: (_, __) => const AccountDeactivatedScreen()),
+      GoRoute(
+          path: '/verify-email', builder: (_, __) => const VerifyEmailScreen()),
+      GoRoute(
+          path: '/forgot-password',
+          builder: (_, __) => const ForgotPasswordScreen()),
+      GoRoute(
+        path: '/reset-password',
+        builder: (_, state) {
+          final token = state.uri.queryParameters['token'];
+          return ResetPasswordScreen(resetToken: token);
+        },
+      ),
+      GoRoute(
+        path: '/terms',
+        builder: (_, __) => const TermsScreen(),
+      ),
+      GoRoute(
+        path: '/privacy',
+        builder: (_, __) => const PrivacyScreen(),
+      ),
+      GoRoute(
+        path: '/booking/:id',
+        builder: (context, state) {
+          final bookingId = state.pathParameters['id']!;
+          return BookingDetailsScreen(bookingId: bookingId);
+        },
+      ),
+      GoRoute(
+        path: '/admin/incidents',
+        builder: (_, __) => const AdminIncidentsScreen(),
+      ),
+
+      GoRoute(
+        path: '/driver/vehicle',
+        builder: (_, __) => const DriverVehicleScreen(),
+      ),
     ],
   );
 });

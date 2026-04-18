@@ -1,3 +1,4 @@
+import 'package:digiQ/features/admin/admin_driver_detail_screen.dart';
 import 'package:digiQ/features/shared/widgets/user_avatar.dart';
 import 'package:digiQ/models/user_model.dart';
 import 'package:digiQ/providers/admin_drivers_provider.dart';
@@ -20,20 +21,80 @@ class AdminDriversTab extends ConsumerWidget {
           return const _EmptyState();
         }
 
+        final pending = drivers
+            .where(
+                (d) => d.verificationStatus == DriverVerificationStatus.pending)
+            .toList();
+
+        final approved = drivers
+            .where((d) =>
+                d.verificationStatus == DriverVerificationStatus.approved)
+            .toList();
+
+        final others = drivers
+            .where((d) =>
+                d.verificationStatus == DriverVerificationStatus.none ||
+                d.verificationStatus == DriverVerificationStatus.rejected)
+            .toList();
+
         return RefreshIndicator(
           onRefresh: () async {
             await ref.read(adminDriversProvider.notifier).refresh();
           },
-          child: ListView.separated(
+          child: ListView(
             padding: const EdgeInsets.all(16),
-            itemCount: drivers.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (_, index) {
-              return DriverCard(driver: drivers[index]);
-            },
+            children: [
+              _DriverSection(
+                title: 'Pending Verification',
+                drivers: pending,
+              ),
+              const SizedBox(height: 24),
+              _DriverSection(
+                title: 'Active Drivers',
+                drivers: approved,
+              ),
+              const SizedBox(height: 24),
+              _DriverSection(
+                title: 'Other Drivers',
+                drivers: others,
+              ),
+            ],
           ),
         );
       },
+    );
+  }
+}
+
+class _DriverSection extends StatelessWidget {
+  final String title;
+  final List<UserModel> drivers;
+
+  const _DriverSection({
+    required this.title,
+    required this.drivers,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (drivers.isEmpty) return const SizedBox();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...drivers.map((d) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: DriverCard(driver: d),
+            )),
+      ],
     );
   }
 }
@@ -48,106 +109,140 @@ class DriverCard extends ConsumerWidget {
     final notifier = ref.read(adminDriversProvider.notifier);
 
     final isActive = driver.isActive ?? true;
-    //final isVerified = driver.isDriverVerified;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.textMuted),
-        color: AppTheme.surface,
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Header ───────────────────────────────
-          Row(
-            children: [
-              UserAvatar(
-                displayName: driver.fullName,
-                imageUrl: driver.profileImageUrl,
-                size: 44, // radius 22 × 2
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  driver.fullName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+    final isVerified =
+        driver.verificationStatus == DriverVerificationStatus.approved;
+    final hasApprovedVehicle =
+        driver.vehicleStatus == VehicleVerificationStatus.approved;
+
+    final canOperate = isActive && isVerified && hasApprovedVehicle;
+
+    String statusMessage() {
+      if (!isVerified) return 'Driver not verified';
+      if (driver.vehicleStatus != VehicleVerificationStatus.approved) {
+        return 'Vehicle not approved';
+      }
+      if (!isActive) return 'Driver inactive';
+      return 'Driver can operate';
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AdminDriverDetailScreen(driver: driver),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.textMuted),
+          color: AppTheme.surface,
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ───────────────────────────────
+            Row(
+              children: [
+                UserAvatar(
+                  displayName: driver.fullName,
+                  imageUrl: driver.profileImageUrl,
+                  size: 44, // radius 22 × 2
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    driver.fullName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-              _ActiveDot(isActive: isActive),
-            ],
-          ),
+                _ActiveDot(isActive: isActive),
+              ],
+            ),
 
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          // ── Status row ───────────────────────────
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _StatusPill(
-                label: isActive ? 'Active' : 'Inactive',
-                color: isActive ? AppTheme.success : AppTheme.danger,
-              ),
-              _StatusPill(
-                label: _verificationLabel(driver.verificationStatus),
-                color: _verificationColor(driver.verificationStatus),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── Action ───────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isActive ? 'Driver Active' : 'Driver Deactivated',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: isActive ? AppTheme.success : AppTheme.danger,
-                    ),
+            // ── Status row ───────────────────────────
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _StatusPill(
+                  label: isActive ? 'Active' : 'Inactive',
+                  color: isActive ? AppTheme.success : AppTheme.danger,
+                ),
+                _StatusPill(
+                  label: _verificationLabel(driver.verificationStatus),
+                  color: _verificationColor(driver.verificationStatus),
+                ),
+                if (driver.vehicleStatus != VehicleVerificationStatus.none)
+                  _StatusPill(
+                    label: _vehicleLabel(driver.vehicleStatus),
+                    color: _vehicleColor(driver.vehicleStatus),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isActive
-                        ? 'Driver can create and accept trips'
-                        : 'Driver is blocked from operating',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textDark,
-                    ),
-                  ),
-                ],
-              ),
-              Switch.adaptive(
-                value: isActive,
-                activeColor: AppTheme.success,
-                onChanged: (value) async {
-                  // ⚠️ Confirm before deactivation
-                  if (!value) {
-                    final confirmed = await _confirmDeactivate(context);
-                    if (!confirmed) return;
-                  }
+              ],
+            ),
 
-                  if (value) {
-                    await notifier.activate(driver.id);
-                  } else {
-                    await notifier.deactivate(driver.id);
-                  }
-                },
-              ),
-            ],
-          ),
-        ],
+            const SizedBox(height: 16),
+
+            // ── Action ───────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      canOperate ? 'Driver Active' : 'Driver Cannot Operate',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: isActive ? AppTheme.success : AppTheme.danger,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      canOperate
+                          ? 'Driver can create and accept trips'
+                          : statusMessage(),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textDark,
+                      ),
+                    )
+                  ],
+                ),
+                Switch.adaptive(
+                  value: canOperate,
+                  activeColor: AppTheme.success,
+                  onChanged: driver.verificationStatus !=
+                          DriverVerificationStatus.approved
+                      ? null
+                      : (value) async {
+                          // ⚠️ Confirm before deactivation
+                          if (!value) {
+                            final confirmed = await _confirmDeactivate(context);
+                            if (!confirmed) return;
+                          }
+
+                          if (value) {
+                            await notifier.activate(driver.id);
+                          } else {
+                            await notifier.deactivate(driver.id);
+                          }
+                        },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -205,6 +300,32 @@ class DriverCard extends ConsumerWidget {
     }
 
     //return AppTheme.textMuted;
+  }
+
+  String _vehicleLabel(VehicleVerificationStatus status) {
+    switch (status) {
+      case VehicleVerificationStatus.approved:
+        return 'Vehicle Approved';
+      case VehicleVerificationStatus.pending:
+        return 'Vehicle Pending';
+      case VehicleVerificationStatus.rejected:
+        return 'Vehicle Rejected';
+      case VehicleVerificationStatus.none:
+        return 'No Vehicle';
+    }
+  }
+
+  Color _vehicleColor(VehicleVerificationStatus status) {
+    switch (status) {
+      case VehicleVerificationStatus.approved:
+        return AppTheme.success;
+      case VehicleVerificationStatus.pending:
+        return AppTheme.warning;
+      case VehicleVerificationStatus.rejected:
+        return AppTheme.danger;
+      case VehicleVerificationStatus.none:
+        return AppTheme.textMuted;
+    }
   }
 }
 

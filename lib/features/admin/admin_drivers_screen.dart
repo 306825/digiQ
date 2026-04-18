@@ -1,3 +1,4 @@
+import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/providers/admin_drivers_provider.dart';
 import 'package:digiQ/models/user_model.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +28,22 @@ class AdminDriversScreen extends ConsumerWidget {
       ),
       body: driversAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Failed to load drivers')),
+        //error: (_, __) => const Center(child: Text('Failed to load drivers')),
+        error: (error, stack) {
+          debugPrint("❌ DRIVER LOAD ERROR: $error");
+          debugPrint("STACK: $stack");
+
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Failed to load drivers\n\n$error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          );
+        },
         data: (drivers) {
           if (drivers.isEmpty) {
             return const Center(child: Text('No drivers found'));
@@ -88,6 +104,24 @@ class _DriverTile extends ConsumerWidget {
                 },
                 child: const Text('Activate'),
               ),
+            if (driver.verificationStatus == DriverVerificationStatus.pending)
+              ElevatedButton(
+                onPressed: () async {
+                  await ref
+                      .read(adminDriversProvider.notifier)
+                      .approve(driver.id);
+                },
+                child: const Text("Approve"),
+              ),
+            if (driver.verificationStatus == DriverVerificationStatus.pending)
+              OutlinedButton(
+                onPressed: () async {
+                  await ref
+                      .read(adminDriversProvider.notifier)
+                      .reject(driver.id);
+                },
+                child: const Text("Reject"),
+              ),
           ],
         ),
       ),
@@ -122,3 +156,70 @@ class _StatusChip extends StatelessWidget {
     );
   }
 }
+
+class AdminDriversNotifier extends AsyncNotifier<List<UserModel>> {
+  /* --------------------------------------------------------------------------
+   * LOAD ALL DRIVERS
+   * -------------------------------------------------------------------------- */
+  @override
+  Future<List<UserModel>> build() async {
+    print('🔥 ADMIN DRIVERS PROVIDER BUILD CALLED');
+
+    final api = ref.read(adminApiProvider);
+    final response = await api.getDrivers();
+
+    final List list = response.data;
+
+    print("📦 DRIVERS RAW = $list");
+
+    return list.map((e) => UserModel.fromJson(e)).toList();
+  }
+
+  /* --------------------------------------------------------------------------
+   * REFRESH
+   * -------------------------------------------------------------------------- */
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(build);
+  }
+
+  /* --------------------------------------------------------------------------
+   * APPROVE DRIVER
+   * -------------------------------------------------------------------------- */
+  Future<void> approve(String driverId) async {
+    final api = ref.read(adminApiProvider);
+    await api.approveDriver(driverId);
+    await refresh();
+  }
+
+  /* --------------------------------------------------------------------------
+   * REJECT DRIVER
+   * -------------------------------------------------------------------------- */
+  Future<void> reject(String driverId) async {
+    final api = ref.read(adminApiProvider);
+    await api.rejectDriver(driverId);
+    await refresh();
+  }
+
+  /* --------------------------------------------------------------------------
+   * DEACTIVATE DRIVER
+   * -------------------------------------------------------------------------- */
+  Future<void> deactivate(String driverId) async {
+    final api = ref.read(adminApiProvider);
+    await api.deactivateDriver(driverId);
+    await refresh();
+  }
+
+  /* --------------------------------------------------------------------------
+   * ACTIVATE DRIVER
+   * -------------------------------------------------------------------------- */
+  Future<void> activate(String driverId) async {
+    final api = ref.read(adminApiProvider);
+    await api.activateDriver(driverId);
+    await refresh();
+  }
+}
+
+final adminDriversProvider =
+    AsyncNotifierProvider<AdminDriversNotifier, List<UserModel>>(
+        AdminDriversNotifier.new);

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api/booking_api.dart';
 import '../models/booking_model.dart';
@@ -9,6 +10,7 @@ class PassengerBookingsNotifier extends AsyncNotifier<List<Booking>> {
   Future<List<Booking>> build() async {
     final api = ref.read(bookingApiProvider);
     final response = await api.getMyBookings();
+    debugPrint(response.data.toString());
     final List<dynamic> list = response.data as List<dynamic>;
     return list.map((json) => Booking.fromJson(json)).toList();
   }

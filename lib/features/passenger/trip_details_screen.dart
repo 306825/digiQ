@@ -1,15 +1,89 @@
+import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/features/shared/widgets/user_avatar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/trip_model.dart';
 import 'pickup_address_screen.dart';
 
-class TripDetailsScreen extends StatelessWidget {
+class TripDetailsScreen extends ConsumerWidget {
   final Trip trip;
 
   const TripDetailsScreen({super.key, required this.trip});
 
+  Future<void> _confirmPanic(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Emergency Alert'),
+        content: const Text(
+          'This will send an emergency alert. Only use in real emergencies.\n\nAre you sure?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('SEND ALERT'),
+          ),
+        ],
+      ),
+    );
+
+    Future<void> _confirmPanic(BuildContext context, WidgetRef ref) async {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Emergency Alert'),
+          content: const Text(
+            'This will send an emergency alert. Only use in real emergencies.\n\nAre you sure?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('SEND ALERT'),
+            ),
+          ],
+        ),
+      );
+
+      // ✅ FIX — guard context after async gap
+      if (!context.mounted) return;
+
+      if (confirmed == true) {
+        await _triggerPanic(context, ref);
+      }
+    }
+  }
+
+  Future<void> _triggerPanic(BuildContext context, WidgetRef ref) async {
+    try {
+      final tripsApi = ref.read(tripsApiProvider);
+
+      await tripsApi.sendSos(trip.id);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🚨 Emergency alert sent'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to send alert')),
+      );
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isFull = trip.seatsAvailable == 0;
 
@@ -159,6 +233,23 @@ class TripDetailsScreen extends StatelessWidget {
                       ),
                     ],
                   ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                ),
+                onPressed: () => _confirmPanic(context, ref),
+                child: const Text(
+                  '🚨 PANIC BUTTON',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),

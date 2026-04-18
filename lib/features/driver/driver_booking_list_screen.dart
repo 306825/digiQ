@@ -20,9 +20,9 @@ class _DriverBookingListScreenState
     super.initState();
 
     // 🔥 Always refresh when screen opens
-    Future.microtask(() {
-      ref.invalidate(driverBookingsProvider);
-    });
+    // Future.microtask(() {
+    //   ref.invalidate(driverBookingsProvider);
+    // });
   }
 
   @override

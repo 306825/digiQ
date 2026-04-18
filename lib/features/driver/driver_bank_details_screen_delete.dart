@@ -74,16 +74,17 @@ class _DriverBankDetailsScreenState
       final api = ref.read(driverApiProvider);
 
       await api.submitVerification(
-        bankName: bankName!,
-        accountName: accountNameCtrl.text.trim(),
-        accountNumber: accountNumberCtrl.text.trim(),
-        branchCode: branchCodeCtrl.text.trim(),
-        accountType: accountType,
-        firstName: '',
-        lastName: '',
-        address: '',
-        documents: {},
-      );
+          bankName: bankName!,
+          accountName: accountNameCtrl.text.trim(),
+          accountNumber: accountNumberCtrl.text.trim(),
+          branchCode: branchCodeCtrl.text.trim(),
+          accountType: accountType,
+          firstName: '',
+          lastName: '',
+          address: '',
+          documents: {},
+          driversLicenseExpiry: '',
+          prdpExpiry: '');
 
       if (!mounted) return;
 

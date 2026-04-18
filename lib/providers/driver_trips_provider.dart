@@ -9,10 +9,13 @@ class DriverTripsNotifier extends AsyncNotifier<List<Trip>> {
   Future<List<Trip>> build() async {
     try {
       final trips = await ref.read(tripsApiProvider).getMyTrips();
+      print('🔥 FETCHING DRIVER TRIPS');
       return trips;
     } catch (e) {
       if (e is DioException && e.response?.statusCode == 403) {
-        ref.read(authProvider.notifier).refreshMe();
+        //ref.read(authProvider.notifier).refreshMe();
+        print('❌ TRIPS ERROR: $e');
+        rethrow;
       }
       rethrow;
     }

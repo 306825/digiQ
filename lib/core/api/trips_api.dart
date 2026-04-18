@@ -75,4 +75,8 @@ class TripsApi {
         .map((e) => Trip.fromSearchJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<void> sendSos(String tripId) async {
+    await dio.post('/trips/$tripId/sos');
+  }
 }

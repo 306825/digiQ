@@ -51,9 +51,16 @@ class AuthNotifier extends Notifier<AuthState> {
 
   @override
   AuthState build() {
-    //SharedPreferences.getInstance().then((p) => p.clear());
-    _bootstrapAuth();
+    _bootstrapAuthOnce();
     return const AuthState(status: AuthStatus.initializing);
+  }
+
+  bool _bootstrapped = false;
+
+  Future<void> _bootstrapAuthOnce() async {
+    if (_bootstrapped) return;
+    _bootstrapped = true;
+    await _bootstrapAuth();
   }
 
   /* --------------------------------------------------------------------------
@@ -61,59 +68,31 @@ class AuthNotifier extends Notifier<AuthState> {
    * -------------------------------------------------------------------------- */
 
   Future<void> _bootstrapAuth() async {
-    debugPrint('🧪 BOOTSTRAP START');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString(_tokenKey);
     final cachedUserJson = prefs.getString(_userKey);
 
-    debugPrint('🧪 BOOTSTRAP TOKEN = $token');
-    debugPrint('🧪 CACHED USER JSON = $cachedUserJson');
-
-    if (token == null) {
+    if (token == null || cachedUserJson == null) {
       state = const AuthState(status: AuthStatus.unauthenticated);
       return;
     }
 
-    // ✅ Optimistically restore cached user immediately (prevents router flicker)
-    UserModel? cachedUser;
-    if (cachedUserJson != null) {
-      try {
-        cachedUser = UserModel.fromJson(jsonDecode(cachedUserJson));
-      } catch (_) {
-        cachedUser = null;
-      }
-    }
-
-    if (cachedUser != null) {
-      state = AuthState(
-        status: AuthStatus.authenticated,
-        token: token,
-        user: cachedUser,
-      );
-    }
-
     try {
+      final user = UserModel.fromJson(jsonDecode(cachedUserJson));
+
       final api = ref.read(apiClientProvider);
       api.dio.options.headers['Authorization'] = 'Bearer $token';
-
-      final response = await api.dio.get('/auth/me');
-      debugPrint('🧪 RAW USER JSON = ${response.data}');
-
-      final user = UserModel.fromJson(response.data);
-
-      await prefs.setString(_userKey, jsonEncode(user.toJson()));
 
       state = AuthState(
         status: AuthStatus.authenticated,
         token: token,
         user: user,
       );
-    } catch (e) {
-      debugPrint('❌ Bootstrap failed: $e');
 
-      await prefs.remove(_tokenKey);
-      await prefs.remove(_userKey);
-
+      //await refreshMe();
+      // Optional: background refresh (NO state loop risk)
+      //Future.microtask(() => refreshMe());
+    } catch (_) {
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
   }
@@ -137,9 +116,14 @@ class AuthNotifier extends Notifier<AuthState> {
           'identifier': identifier,
           'password': password,
         },
+      ).timeout(
+        const Duration(seconds: 10),
       );
 
+      debugPrint("🟢 RESPONSE RECEIVED: ${response.data}");
+
       final token = response.data['token'];
+
       final user = UserModel.fromJson(response.data['user']);
 
       api.dio.options.headers['Authorization'] = 'Bearer $token';
@@ -153,19 +137,21 @@ class AuthNotifier extends Notifier<AuthState> {
         token: token,
         user: user,
       );
+
+      //print("🚀 CALLING refreshMe()");
+      //await refreshMe(); // ✅ THIS LINE IS MISSING
     } on DioException catch (e) {
-      debugPrint('❌ Login failed: ${e.response?.statusCode}');
-      debugPrint('❌ Login error: ${e.response?.data}');
-
-      // 🔄 Reset state so UI unlocks
       state = const AuthState(status: AuthStatus.unauthenticated);
 
-      rethrow; // allow UI to react if needed
-    } catch (e) {
-      debugPrint('❌ Unexpected login error: $e');
+      print("❌ LOGIN ERROR STATUS: ${e.response?.statusCode}");
+      print("❌ LOGIN ERROR DATA: ${e.response?.data}");
+      final data = e.response?.data;
 
-      state = const AuthState(status: AuthStatus.unauthenticated);
-      rethrow;
+      if (data is Map && data['code'] == 'EMAIL_NOT_VERIFIED') {
+        throw Exception('EMAIL_NOT_VERIFIED');
+      }
+
+      throw Exception('INVALID_CREDENTIALS');
     }
   }
 
@@ -178,40 +164,37 @@ class AuthNotifier extends Notifier<AuthState> {
     required String identifier,
     required String password,
     required UserRole role,
+    required bool acceptedTerms,
+    required bool acceptedPrivacy,
   }) async {
     state = const AuthState(status: AuthStatus.authenticating);
 
-    final api = ref.read(apiClientProvider);
+    try {
+      final api = ref.read(apiClientProvider);
 
-    final response = await api.dio.post(
-      '/auth/register',
-      data: {
-        'fullName': fullName,
-        'identifier': identifier,
-        'password': password,
-        'role': role.name, // 'driver' or 'passenger'
-      },
-    );
+      await api.dio.post(
+        '/auth/register',
+        data: {
+          'fullName': fullName,
+          'identifier': identifier,
+          'password': password,
+          'role': role.name,
+          'acceptedTerms': acceptedTerms,
+          'acceptedPrivacy': acceptedPrivacy,
+        },
+      );
 
-    final token = response.data['token'];
-    final user = UserModel.fromJson(response.data['user']);
-
-    api.dio.options.headers['Authorization'] = 'Bearer $token';
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
-    await prefs.setString(_userKey, jsonEncode(user.toJson()));
-
-    state = AuthState(
-      status: AuthStatus.authenticated,
-      token: token,
-      user: user,
-    );
+      // ✅ Do NOT login automatically
+      state = const AuthState(status: AuthStatus.unauthenticated);
+    } catch (e) {
+      state = const AuthState(status: AuthStatus.unauthenticated);
+      // debugPrint("LOGIN FAILED: $e");
+      if (e is DioException) {
+        debugPrint("REGISTER ERROR: ${e.response?.data}");
+      }
+      rethrow;
+    }
   }
-
-  /* --------------------------------------------------------------------------
-   * Driver verification
-   * -------------------------------------------------------------------------- */
 
   /* --------------------------------------------------------------------------
    * Logout
@@ -236,14 +219,38 @@ class AuthNotifier extends Notifier<AuthState> {
     final api = ref.read(apiClientProvider);
     api.dio.options.headers['Authorization'] = 'Bearer $token';
 
-    final response = await api.dio.get('/auth/me');
-    final user = UserModel.fromJson(response.data);
+    try {
+      final response = await api.dio.get('/auth/me');
+      print("✅ API SUCCESS: $response");
+      final user = UserModel.fromJson(response.data);
+      // state = AuthState(
+      //   status: AuthStatus.authenticated,
+      //   token: token,
+      //   user: user,
+      // );
+      final currentUser = state.user;
 
-    state = AuthState(
-      status: AuthStatus.authenticated,
-      token: token,
-      user: user,
-    );
+      if (currentUser != null &&
+          currentUser.id == user.id &&
+          currentUser.fullName == user.fullName &&
+          currentUser.verificationStatus == user.verificationStatus) {
+        // 🔒 NO CHANGE → DO NOTHING
+        return;
+      }
+
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        token: token,
+        user: user,
+      );
+    } catch (e) {
+      if (e is DioException) {
+        print("❌ API ERROR STATUS: ${e.response?.statusCode}");
+        print("❌ API ERROR DATA: ${e.response?.data}");
+      } else {
+        print("❌ API ERROR: $e");
+      }
+    }
   }
 
   Future<void> updateAvatar(String imageUrl) async {

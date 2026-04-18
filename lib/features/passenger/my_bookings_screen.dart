@@ -3,6 +3,7 @@ import 'package:digiQ/models/booking_status_ui.dart';
 import 'package:digiQ/providers/passenger_bookings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});
@@ -61,9 +62,16 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
               itemCount: bookings.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (_, index) {
-                return _BookingCard(
-                  booking: bookings[index],
-                  updatedAtLabel: _formatDate(bookings[index].updatedAt),
+                final booking = bookings[index];
+
+                return GestureDetector(
+                  onTap: () {
+                    context.push('/booking/${booking.id}');
+                  },
+                  child: _BookingCard(
+                    booking: booking,
+                    updatedAtLabel: _formatDate(booking.updatedAt),
+                  ),
                 );
               },
             ),

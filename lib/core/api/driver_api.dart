@@ -39,32 +39,34 @@ class DriverApi {
     required String firstName,
     required String lastName,
     required String address,
+    required String driversLicenseExpiry,
+    required String prdpExpiry,
 
     // ✅ NEW — banking fields
-    required String bankName,
-    required String accountName,
-    required String accountNumber,
-    required String branchCode,
-    required String accountType,
+    String? bankName,
+    String? accountName,
+    String? accountNumber,
+    String? branchCode,
+    String? accountType,
     required Map<String, String> documents,
   }) async {
-    await dio.post(
-      '/drivers/verification/submit',
-      data: {
-        'firstName': firstName,
-        'lastName': lastName,
-        'residentialAddress': address,
+    final data = {
+      'firstName': firstName,
+      'lastName': lastName,
+      'residentialAddress': address,
+      'documents': documents,
+      'driversLicenseExpiry': driversLicenseExpiry,
+      'prdpExpiry': prdpExpiry
+    };
 
-        // 🏦 banking details
-        'bankName': bankName,
-        'accountName': accountName,
-        'accountNumber': accountNumber,
-        'branchCode': branchCode,
-        'accountType': accountType,
+// Only add banking fields if present
+    if (bankName != null) data['bankName'] = bankName;
+    if (accountName != null) data['accountName'] = accountName;
+    if (accountNumber != null) data['accountNumber'] = accountNumber;
+    if (branchCode != null) data['branchCode'] = branchCode;
+    if (accountType != null) data['accountType'] = accountType;
 
-        'documents': documents,
-      },
-    );
+    await dio.post('/drivers/verification/submit', data: data);
   }
 
   /* --------------------------------------------------------------------------
@@ -87,6 +89,57 @@ class DriverApi {
     return (res.data as List)
         .map((json) => DriverBooking.fromJson(json))
         .toList();
+  }
+
+  Future<void> submitVehicle({
+    required String registrationNumber,
+    String? make,
+    String? model,
+    int? year,
+    required String roadworthyDocUrl,
+    required String operatingLicenseDocUrl,
+    required String roadworthyExpiry,
+    required String operatingLicenseExpiry,
+  }) async {
+    await dio.post(
+      '/drivers/vehicle/submit',
+      data: {
+        'registrationNumber': registrationNumber,
+        'make': make,
+        'model': model,
+        'year': year,
+        'roadworthyDocUrl': roadworthyDocUrl,
+        'operatingLicenseDocUrl': operatingLicenseDocUrl,
+        'roadworthyExpiry': roadworthyExpiry,
+        'operatingLicenseExpiry': operatingLicenseExpiry,
+      },
+    );
+  }
+
+  // Future<Map<String, dynamic>?> getMyVehicle() async {
+  //   final res = await dio.get('/drivers/me/vehicle');
+  //   return res.data;
+  // }
+
+  Future<Map<String, dynamic>?> getMyVehicle() async {
+    final res = await dio.get('/drivers/me/vehicle');
+
+    final data = res.data;
+
+    // ✅ Handle null / empty response
+    if (data == null || data == '') {
+      return null;
+    }
+
+    // ✅ Ensure correct type
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+
+    // ❌ Unexpected type (log it)
+    print("⚠️ Unexpected vehicle response: $data");
+
+    return null;
   }
 
   /// Approve or reject a booking
