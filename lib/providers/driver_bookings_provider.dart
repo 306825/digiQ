@@ -26,11 +26,15 @@ class DriverBookingsNotifier extends AsyncNotifier<List<DriverBooking>> {
       print(stack);
 
       if (e is DioException && e.response?.statusCode == 403) {
-        print('⛔ Access denied - stopping retry loop');
-        return []; // 🔥 THIS STOPS THE LOOP
+        final body = e.response?.data;
+        final code = body is Map ? body['code'] : null;
+        if (code == 'VEHICLE_NOT_APPROVED') {
+          throw Exception('Your vehicle must be approved before you can receive bookings.');
+        }
+        throw Exception('Access denied. Please contact support.');
       }
 
-      rethrow; // only rethrow unexpected errors
+      rethrow;
     }
   }
 
