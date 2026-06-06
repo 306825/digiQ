@@ -1,8 +1,18 @@
+import 'package:digiQ/core/api/api_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/trip_model.dart';
 import '../../providers/driver_trips_provider.dart';
+import 'dart:async';
+
+import 'package:digiQ/core/services/tracking_service.dart';
+import 'package:geolocator/geolocator.dart';
+
+final trackingService = TrackingService();
+
+Timer? trackingTimer;
+String? activeTripId;
 
 class MyTripsScreen extends ConsumerWidget {
   const MyTripsScreen({super.key});
@@ -116,17 +126,21 @@ class _ErrorState extends StatelessWidget {
  * Trip Card
  * -------------------------------------------------------------------------- */
 
-class _TripCard extends StatelessWidget {
+class _TripCard extends ConsumerWidget {
   final Trip trip;
 
   const _TripCard({required this.trip});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     print("RENDERING TRIP: ${trip.toJson()}");
 
-    final isOpen = (trip.status ?? 'closed') == 'open';
-    final statusColor = isOpen ? Colors.green : Colors.grey;
+    final status = trip.status ?? 'scheduled';
+
+    final isScheduled = status == 'scheduled';
+    final isActive = status == 'active';
+    final isCompleted = status == 'completed';
+    final statusColor = isActive ? Colors.green : Colors.grey;
 
     return Card(
       elevation: 0.6,
@@ -197,16 +211,106 @@ class _TripCard extends StatelessWidget {
                   color: Colors.blueGrey,
                 ),
                 _Pill(
-                  icon: isOpen ? Icons.lock_open : Icons.lock,
-                  label: isOpen ? 'Open' : 'Closed',
-                  color: statusColor,
+                  icon: isActive
+                      ? Icons.play_arrow
+                      : isCompleted
+                          ? Icons.check
+                          : Icons.schedule,
+                  label: status.toUpperCase(),
+                  color: isActive
+                      ? Colors.green
+                      : isCompleted
+                          ? Colors.grey
+                          : Colors.orange,
                 ),
+                if (isScheduled)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final tripsApi = ref.read(tripsApiProvider);
+                          await tripsApi.startTrip(trip.id);
+                          await _startTracking(trip.id);
+                          await ref
+                              .read(driverTripsProvider.notifier)
+                              .refresh();
+                        },
+                        child: const Text('Start Trip'),
+                      ),
+                    ),
+                  ),
+
+                if (isActive)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade600,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () async {
+                          final tripsApi = ref.read(tripsApiProvider);
+                          await tripsApi.completeTrip(trip.id);
+                          _stopTracking();
+                          await ref
+                              .read(driverTripsProvider.notifier)
+                              .refresh();
+                        },
+                        child: const Text('Complete Trip'),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _startTracking(String tripId) async {
+    if (activeTripId == tripId) return;
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.deniedForever) return;
+
+    await trackingService.connect(
+      'https://nonembryonal-terese-unveritable.ngrok-free.dev',
+    );
+
+    activeTripId = tripId;
+    trackingService.joinTrip(tripId);
+
+    trackingTimer?.cancel();
+    trackingTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) async {
+        try {
+          final position = await Geolocator.getCurrentPosition();
+          trackingService.sendLocation(
+            tripId,
+            position.latitude,
+            position.longitude,
+          );
+        } catch (e) {
+          print('❌ Tracking error: $e');
+        }
+      },
+    );
+  }
+
+  void _stopTracking() {
+    trackingTimer?.cancel();
+    trackingTimer = null;
+    trackingService.disconnect();
+    activeTripId = null;
   }
 
   static String _formatDate(DateTime date) {

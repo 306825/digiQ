@@ -25,6 +25,18 @@ class TripsApi {
     );
   }
 
+  Future<void> startTrip(String tripId) async {
+    await dio.patch('/trips/$tripId/start');
+  }
+
+  Future<void> completeTrip(String tripId) async {
+    await dio.patch('/trips/$tripId/complete');
+  }
+
+  Future<void> sendSos(String bookingId) async {
+    await dio.post('/trips/booking/$bookingId/sos');
+  }
+
   Future<List<Trip>> getMyTrips() async {
     final response = await dio.get('/trips/mine');
     print("FIRST TRIP RAW: ${response.data[0]}");
@@ -76,7 +88,7 @@ class TripsApi {
         .toList();
   }
 
-  Future<void> sendSos(String tripId) async {
-    await dio.post('/trips/$tripId/sos');
-  }
+  // Future<void> sendSos(String tripId) async {
+  //   await dio.post('/trips/$tripId/sos');
+  // }
 }

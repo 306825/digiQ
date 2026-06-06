@@ -1,7 +1,205 @@
+import 'package:digiQ/core/api/api_providers.dart';
+import 'package:digiQ/core/api/booking_api.dart';
 import 'package:digiQ/core/api/incident_api.dart';
+import 'package:digiQ/core/services/tracking_service.dart';
+import 'package:digiQ/features/passenger/live_tracking_screen.dart';
+import 'package:digiQ/models/booking_model.dart';
 import 'package:digiQ/providers/passenger_bookings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class _InfoCard extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _InfoCard({
+    required this.title,
+    required this.children,
+  });
+
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Card(
+  //     elevation: 2,
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.circular(12),
+  //     ),
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(16),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text(
+  //             title,
+  //             style: Theme.of(context).textTheme.titleMedium,
+  //           ),
+  //           const SizedBox(height: 12),
+  //           ...children,
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 20),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// class _InfoRow extends StatelessWidget {
+//   final String label;
+//   final String value;
+
+//   const _InfoRow({required this.label, required this.value});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(vertical: 6),
+//       child: Row(
+//         children: [
+//           Text(
+//             '$label:',
+//             style: const TextStyle(fontWeight: FontWeight.w600),
+//           ),
+//           const SizedBox(width: 8),
+//           Expanded(child: Text(value)),
+//         ],
+//       ),
+//     );
+//   }
+// }
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.blue,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String status;
+
+  const _StatusChip({required this.status});
+
+  Color _getColor() {
+    switch (status) {
+      case 'open':
+        return Colors.orange;
+      case 'in_review':
+        return Colors.blue;
+      case 'resolved':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _getColor();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        'Incident status: ${status.toUpperCase()}',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
 
 final incidentByBookingProvider =
     FutureProvider.family<Map<String, dynamic>?, String>(
@@ -10,74 +208,148 @@ final incidentByBookingProvider =
   return api.getIncidentByBooking(bookingId);
 });
 
-class BookingDetailsScreen extends ConsumerWidget {
+class BookingDetailsScreen extends ConsumerStatefulWidget {
   final String bookingId;
 
   const BookingDetailsScreen({super.key, required this.bookingId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BookingDetailsScreen> createState() =>
+      _BookingDetailsScreenState();
+}
+
+class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
+  late TrackingService trackingService;
+  bool _joined = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    trackingService = TrackingService();
+
+    trackingService
+        .connect('https://nonembryonal-terese-unveritable.ngrok-free.dev');
+  }
+
+  @override
+  void dispose() {
+    trackingService.disconnect();
+    super.dispose();
+  }
+
+  Future<void> _confirmPanic(
+    BuildContext context,
+    WidgetRef ref,
+    String bookingId,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Emergency Alert'),
+        content: const Text(
+          'This will send an emergency alert. Only use in real emergencies.\n\nAre you sure?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('SEND ALERT'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _triggerPanic(context, ref, bookingId);
+    }
+  }
+
+  Future<void> _triggerPanic(
+    BuildContext context,
+    WidgetRef ref,
+    String bookingId,
+  ) async {
+    try {
+      final tripsApi = ref.read(tripsApiProvider);
+
+      await tripsApi.sendSos(bookingId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🚨 Emergency alert sent'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to send alert')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final bookingsAsync = ref.watch(passengerBookingsProvider);
-    // final incidentFuture = ref.watch(
-    //   FutureProvider((ref) {
-    //     final api = ref.read(incidentApiProvider);
-    //     return api.getIncidentByBooking(bookingId);
-    //   }),
-    // );
+
     final incidentAsync = ref.watch(
-      incidentByBookingProvider(bookingId),
+      incidentByBookingProvider(widget.bookingId),
     );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Booking Details')),
+      floatingActionButton: GestureDetector(
+        onTap: () => _confirmPanic(context, ref, widget.bookingId),
+        child: Container(
+          width: 78,
+          height: 78,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFFFF5252),
+                Color(0xFFD50000),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.4),
+                blurRadius: 18,
+                spreadRadius: 3,
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.warning_rounded,
+            color: Colors.white,
+            size: 36,
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: bookingsAsync.when(
         data: (bookings) {
-          final booking = bookings.firstWhere((b) => b.id == bookingId);
+          final booking = bookings.firstWhere((b) => b.id == widget.bookingId);
 
-          // return Padding(
-          //   padding: const EdgeInsets.all(16),
-          //   child: Column(
-          //     crossAxisAlignment: CrossAxisAlignment.start,
-          //     children: [
-          //       Text('Passenger: ${booking.passengerName}'),
-          //       const SizedBox(height: 8),
-          //       Text('Pickup: ${booking.pickup}'),
-          //       const SizedBox(height: 8),
-          //       Text('Status: ${booking.status.name}'),
-          //       const SizedBox(height: 24),
-          //       incidentAsync.when(
-          //         data: (incident) {
-          //           if (incident != null) {
-          //             return Container(
-          //               padding: const EdgeInsets.all(12),
-          //               decoration: BoxDecoration(
-          //                 color: Colors.orange.withOpacity(0.1),
-          //                 borderRadius: BorderRadius.circular(8),
-          //               ),
-          //               child: Text(
-          //                 'Incident status: ${incident['status']}',
-          //                 style: const TextStyle(fontWeight: FontWeight.bold),
-          //               ),
-          //             );
-          //           }
+          if (!_joined) {
+            _joined = true;
 
-          //           return ElevatedButton(
-          //             style: ElevatedButton.styleFrom(
-          //               backgroundColor: Colors.red,
-          //             ),
-          //             onPressed: () {
-          //               _showReportDialog(context, ref, booking.id);
-          //             },
-          //             child: const Text('Report Issue'),
-          //           );
-          //         },
-          //         loading: () =>
-          //             Center(child: const CircularProgressIndicator()),
-          //         error: (_, __) => const Text('Error loading incident'),
-          //       ),
-          //     ],
-          //   ),
-          // );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              trackingService.joinTrip(booking.tripId);
+
+              trackingService.listenToLocation((lat, lng) {
+                print('📡 Driver location: $lat, $lng');
+              });
+            });
+          }
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -85,14 +357,73 @@ class BookingDetailsScreen extends ConsumerWidget {
                 _InfoCard(
                   title: 'Booking Info',
                   children: [
-                    _InfoRow(label: 'Passenger', value: booking.passengerName),
-                    _InfoRow(label: 'Pickup', value: booking.pickup.toString()),
-                    _InfoRow(label: 'Status', value: booking.status.name),
+                    // _InfoRow(label: 'Passenger', value: booking.passengerName),
+                    // _InfoRow(label: 'Pickup', value: booking.pickup.toString()),
+                    // _InfoRow(label: 'Status', value: booking.status.name),
+                    // _InfoRow(
+                    //   label: 'Passenger Status',
+                    //   value: booking.passengerStatus.name,
+                    // ),
+                    _InfoRow(
+                      label: 'Passenger',
+                      value: booking.passengerName,
+                      icon: Icons.person,
+                      color: Colors.blue,
+                    ),
+
+                    _InfoRow(
+                      label: 'Pickup Address',
+                      value: booking.pickup.toString(),
+                      icon: Icons.location_on,
+                      color: Colors.orange,
+                    ),
+
+                    _InfoRow(
+                      label: 'Booking Status',
+                      value: booking.status.name.toUpperCase(),
+                      icon: Icons.receipt_long,
+                      color: Colors.green,
+                    ),
+
+                    _InfoRow(
+                      label: 'Passenger Status',
+                      value: booking.passengerStatus.name,
+                      icon: Icons.directions_car,
+                      color: Colors.purple,
+                    ),
+                    if (booking.passengerStatus ==
+                        PassengerStatus.awaitingPickup)
+                      ConfirmPickupButton(ref: ref, booking: booking),
                   ],
                 ),
                 const SizedBox(height: 16),
 
-                // INCIDENT SECTION
+                // Live tracking — only visible when driver has accepted
+                if (booking.status == BookingStatus.approved)
+                  _InfoCard(
+                    title: 'Track Your Driver',
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.location_on),
+                          label: const Text('View Live Location'),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LiveTrackingScreen(
+                                  tripId: booking.tripId,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                const SizedBox(height: 16),
                 _InfoCard(
                   title: 'Support',
                   children: [
@@ -116,13 +447,71 @@ class BookingDetailsScreen extends ConsumerWidget {
                           ),
                         );
                       },
-                      loading: () => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
                       error: (_, __) => const Text('Error loading incident'),
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                // SizedBox(
+                //   width: double.infinity,
+                //   child: ElevatedButton(
+                //     style: ElevatedButton.styleFrom(
+                //       backgroundColor: Colors.red,
+                //       padding: const EdgeInsets.symmetric(vertical: 14),
+                //     ),
+                //     onPressed: () => _confirmPanic(context, ref, booking.id),
+                //     child: const Text('🚨 PANIC BUTTON'),
+                //   ),
+                // ),
+                // Center(
+                //   child: GestureDetector(
+                //     onTap: () => _confirmPanic(context, ref, booking.id),
+                //     child: Container(
+                //       width: 120,
+                //       height: 120,
+                //       decoration: BoxDecoration(
+                //         shape: BoxShape.circle,
+                //         gradient: const LinearGradient(
+                //           colors: [
+                //             Color(0xFFFF5252),
+                //             Color(0xFFD50000),
+                //           ],
+                //           begin: Alignment.topLeft,
+                //           end: Alignment.bottomRight,
+                //         ),
+                //         boxShadow: [
+                //           BoxShadow(
+                //             color: Colors.red.withOpacity(0.45),
+                //             blurRadius: 20,
+                //             spreadRadius: 4,
+                //           ),
+                //         ],
+                //       ),
+                //       child: const Column(
+                //         mainAxisAlignment: MainAxisAlignment.center,
+                //         children: [
+                //           Icon(
+                //             Icons.warning_rounded,
+                //             color: Colors.white,
+                //             size: 38,
+                //           ),
+                //           SizedBox(height: 8),
+                //           Text(
+                //             'PANIC',
+                //             style: TextStyle(
+                //               color: Colors.white,
+                //               fontWeight: FontWeight.bold,
+                //               letterSpacing: 1,
+                //               fontSize: 16,
+                //             ),
+                //           ),
+                //         ],
+                //       ),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           );
@@ -173,14 +562,14 @@ class BookingDetailsScreen extends ConsumerWidget {
             ),
             ElevatedButton(
               onPressed: () async {
-                final api =
-                    ref.read(incidentApiProvider); // or incidentApi later
+                final api = ref.read(incidentApiProvider);
 
                 await api.reportIncident(
-                  bookingId: bookingId, // TEMP (we fix backend next)
+                  bookingId: bookingId,
                   type: selectedType,
                   description: controller.text,
                 );
+
                 ref.invalidate(incidentByBookingProvider(bookingId));
 
                 Navigator.pop(context);
@@ -198,99 +587,47 @@ class BookingDetailsScreen extends ConsumerWidget {
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _InfoCard({
-    required this.title,
-    required this.children,
+class ConfirmPickupButton extends StatelessWidget {
+  const ConfirmPickupButton({
+    super.key,
+    required this.ref,
+    required this.booking,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({required this.label, required this.value});
+  final WidgetRef ref;
+  final Booking booking;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Text(
-            '$label:',
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
-}
+      padding: const EdgeInsets.only(top: 16),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () async {
+            try {
+              final bookingApi = ref.read(bookingApiProvider);
 
-class _StatusChip extends StatelessWidget {
-  final String status;
+              await bookingApi.confirmPickup(booking.id);
 
-  const _StatusChip({required this.status});
+              ref.invalidate(passengerBookingsProvider);
 
-  Color _getColor() {
-    switch (status) {
-      case 'open':
-        return Colors.orange;
-      case 'in_review':
-        return Colors.blue;
-      case 'resolved':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
+              if (!context.mounted) return;
 
-  @override
-  Widget build(BuildContext context) {
-    final color = _getColor();
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'Incident status: ${status.toUpperCase()}',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✅ Pickup confirmed'),
+                ),
+              );
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Failed to confirm pickup'),
+                ),
+              );
+            }
+          },
+          child: const Text('Confirm Pickup'),
         ),
       ),
     );

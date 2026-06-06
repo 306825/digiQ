@@ -1,0 +1,55 @@
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
+class TrackingService {
+  IO.Socket? socket;
+
+  Future<void> connect(String baseUrl) async {
+    if (socket != null && socket!.connected) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token') ?? '';
+
+    socket = IO.io(
+      baseUrl,
+      IO.OptionBuilder()
+          .setTransports(['websocket'])
+          .disableAutoConnect()
+          .setAuth({'token': token})
+          .build(),
+    );
+
+    socket!.connect();
+
+    socket!.onConnect((_) => print('🟢 Connected to tracking server'));
+    socket!.onDisconnect((_) => print('🔴 Disconnected from tracking server'));
+    socket!.onError((err) => print('❌ Socket error: $err'));
+    socket!.onConnectError((err) => print('❌ Connect error: $err'));
+  }
+
+  void joinTrip(String tripId) {
+    socket?.emit('join:trip', tripId);
+  }
+
+  void sendLocation(String tripId, double lat, double lng) {
+    socket?.emit('location:update', {
+      'tripId': tripId,
+      'lat': lat,
+      'lng': lng,
+    });
+  }
+
+  void listenToLocation(Function(double lat, double lng) onUpdate) {
+    socket?.off('location:update');
+    socket?.on('location:update', (data) {
+      final lat = (data['lat'] as num).toDouble();
+      final lng = (data['lng'] as num).toDouble();
+      onUpdate(lat, lng);
+    });
+  }
+
+  void disconnect() {
+    socket?.disconnect();
+    socket = null;
+  }
+}
