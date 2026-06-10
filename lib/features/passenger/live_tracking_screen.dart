@@ -41,6 +41,8 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
   }
 
   void _onLocationUpdate(LatLng position) {
+    if (!mounted) return;
+
     final isFirst = _driverPosition == null;
 
     setState(() {
@@ -56,12 +58,10 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     });
 
     if (isFirst) {
-      // First fix — zoom to driver
       _mapController?.animateCamera(
         CameraUpdate.newLatLngZoom(position, 15),
       );
     } else {
-      // Subsequent fixes — follow smoothly
       _mapController?.animateCamera(CameraUpdate.newLatLng(position));
     }
   }
@@ -90,8 +90,8 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
             ),
             onMapCreated: (controller) => _mapController = controller,
             markers: _markers,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
+            myLocationEnabled: false,
+            myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
           ),
 

@@ -8,6 +8,7 @@ class PassengerBookingsNotifier extends AsyncNotifier<List<Booking>> {
 
   @override
   Future<List<Booking>> build() async {
+    print('🔥 PASSENGER BOOKINGS PROVIDER BUILD');
     final api = ref.read(bookingApiProvider);
     final response = await api.getMyBookings();
     debugPrint(response.data.toString());
@@ -33,9 +34,13 @@ class PassengerBookingsNotifier extends AsyncNotifier<List<Booking>> {
     }
   }
 
+  // Future<void> refresh() async {
+  //   state = const AsyncLoading();
+  //   state = await AsyncValue.guard(build);
+  // }
   Future<void> refresh() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(build);
+    ref.invalidateSelf();
+    await future;
   }
 }
 

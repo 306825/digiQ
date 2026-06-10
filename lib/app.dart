@@ -12,13 +12,11 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'Lift Share',
+      title: 'digiQ',
       debugShowCheckedModeBanner: false,
-      // theme: ThemeData(
-      //   useMaterial3: true,
-      //   colorSchemeSeed: Colors.blue,
-      // ),
       theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.system,
       routerConfig: router,
     );
   }

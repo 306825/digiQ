@@ -113,8 +113,8 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
                           const SnackBar(content: Text('Vehicle submitted')),
                         );
 
-                        //ref.invalidate(
-                        //    driverVehicleProvider); // ✅ force refresh
+                        ref.invalidate(
+                            driverVehicleProvider); // ✅ force refresh
                         Navigator.pop(context, true);
                       } finally {
                         setState(() => loading = false);

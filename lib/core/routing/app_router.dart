@@ -14,6 +14,7 @@ import 'package:digiQ/features/driver/driver_vehicle_screen.dart';
 import 'package:digiQ/features/driver/driver_verification_screen.dart';
 import 'package:digiQ/features/passenger/booking_detaills_screen.dart';
 import 'package:digiQ/features/passenger/passenger_home_screen.dart';
+import 'package:digiQ/features/shared/screens/splash_screen.dart';
 import 'package:digiQ/models/user_model.dart';
 import 'package:digiQ/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
@@ -23,18 +24,32 @@ import 'package:go_router/go_router.dart';
 /// ✅ Notifier that tells GoRouter to refresh when auth changes
 class RouterRefreshNotifier extends ChangeNotifier {
   RouterRefreshNotifier(Ref ref) {
-    ref.listen<AuthState>(authProvider, (_, __) {
-      notifyListeners();
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      final prev = previous?.status;
+      final curr = next.status;
+
+      final shouldRefresh = prev != curr &&
+          (curr == AuthStatus.authenticated ||
+              curr == AuthStatus.unauthenticated);
+
+      if (shouldRefresh) {
+        notifyListeners();
+      }
     });
   }
 }
 
+final routerRefreshNotifierProvider = Provider<RouterRefreshNotifier>((ref) {
+  return RouterRefreshNotifier(ref);
+});
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final refreshNotifier = RouterRefreshNotifier(ref);
+  //final refreshNotifier = RouterRefreshNotifier(ref);
+  final refreshNotifier = ref.read(routerRefreshNotifierProvider);
 
   return GoRouter(
     refreshListenable: refreshNotifier,
-    initialLocation: '/login',
+    initialLocation: '/splash',
     redirect: (context, state) {
       final authState = ref.read(authProvider);
       final status = authState.status;
@@ -48,8 +63,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isTerms = location == '/terms';
       final isPrivacy = location == '/privacy';
 
-      // 0️⃣ Bootstrapping
-      if (status == AuthStatus.initializing) return null;
+      // 0️⃣ Bootstrapping — hold on /splash until auth resolves
+      if (status == AuthStatus.initializing) {
+        return location == '/splash' ? null : '/splash';
+      }
 
       // 1️⃣ Not authenticated
       if (status == AuthStatus.unauthenticated) {
@@ -65,8 +82,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       // 2️⃣ Auth settling
-      if (status == AuthStatus.authenticating || user == null) {
-        return null;
+      // if (status == AuthStatus.authenticating || user == null) {
+      //   return null;
+      // }
+
+      if (status == AuthStatus.authenticating) {
+        return location == '/login' ? null : '/login';
+      }
+
+      if (user == null) {
+        return '/login';
       }
 
       final role = user.role;
@@ -103,6 +128,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/', redirect: (_, __) => '/login'),
+      GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(

@@ -22,9 +22,32 @@ class IncidentApi {
     );
   }
 
+  // Future<Map<String, dynamic>?> getIncidentByBooking(String bookingId) async {
+  //   final res = await dio.get('/incidents/booking/$bookingId');
+  //   print("🚨 INCIDENT DATA FOR BOOKING $bookingId: ${res.data}");
+  //   return res.data;
+  // }
   Future<Map<String, dynamic>?> getIncidentByBooking(String bookingId) async {
-    final res = await dio.get('/incidents/booking/$bookingId');
-    return res.data;
+    try {
+      final res = await dio.get('/incidents/booking/$bookingId');
+
+      print("🚨 INCIDENT DATA FOR BOOKING $bookingId: ${res.data}");
+
+      // ✅ Handle empty response
+      if (res.data == null || res.data.toString().isEmpty) {
+        return null;
+      }
+
+      return res.data;
+    } on DioException catch (e) {
+      // ✅ Treat "no incident" as normal
+      if (e.response?.statusCode == 404 || e.response?.statusCode == 204) {
+        return null;
+      }
+
+      print("❌ INCIDENT ERROR: $e");
+      rethrow;
+    }
   }
 
   Future<List<dynamic>> getAllIncidents() async {

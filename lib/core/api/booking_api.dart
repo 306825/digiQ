@@ -30,6 +30,10 @@ class BookingApi {
     return dio.get('/bookings/mine');
   }
 
+  Future<void> confirmPickup(String bookingId) async {
+    await dio.patch('/bookings/$bookingId/confirm-pickup');
+  }
+
   /* --------------------------------------------------------------------------
    * PENDING BOOKINGS (Driver)
    * -------------------------------------------------------------------------- */

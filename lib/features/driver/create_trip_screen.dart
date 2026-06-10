@@ -27,6 +27,19 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
   Future<void> submit() async {
     if (selectedRoute == null || selectedWindow == null || date == null) return;
 
+    // Guard: reject if the selected window has already passed for today
+    if (selectedWindow!.isExpiredForDate(date!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'The ${selectedWindow!.label} window has already passed today. '
+            'Please choose a later window or a future date.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final seats = int.tryParse(seatsCtrl.text);
     final price = double.tryParse(priceCtrl.text);
 
@@ -66,11 +79,31 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
       print(e);
       print(stack);
 
-      if (e is DioException && e.response?.statusCode == 403) {
-        await ref.read(authProvider.notifier).refreshMe();
-        return; // 🚨 stop further UI handling
+      //if (e is DioException && e.response?.statusCode == 403) {
+      if (e is DioException) {
+        print('--------------------------------------------------------------');
+        print('🔴 STATUS: ${e.response?.statusCode}');
+        print('🔴 DATA: ${e.response?.data}');
+        print('🔴 MESSAGE: ${e.message}');
+        //await ref.read(authProvider.notifier).refreshMe();
+        //return; // 🚨 stop further UI handling
       }
+      print(
+          '-------------------------check mount-------------------------------------');
 
+      if (e is DioException && e.response?.data != null) {
+        final data = e.response!.data;
+
+        if (data['code'] == 'LICENSE_EXPIRED') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('Your driver license has expired. Please update it.'),
+            ),
+          );
+          return;
+        }
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to create trip')),
@@ -130,28 +163,67 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
 
                     const SizedBox(height: 12),
 
-// ⏰ Departure Window
-                    DropdownButtonFormField<DepartureWindow>(
-                      value: selectedWindow,
-                      hint: const Text('Select departure time'),
-                      decoration: const InputDecoration(
-                        labelText: 'Departure window',
-                        prefixIcon: Icon(Icons.schedule),
-                      ),
-                      items: DepartureWindow.values
-                          .map(
-                            (w) => DropdownMenuItem(
-                              value: w,
-                              child: Text(w.label),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() => selectedWindow = value);
+                    // ── Date (must be picked before window) ──────────────
+                    _DatePickerTile(
+                      date: date,
+                      onTap: () async {
+                        final today = DateTime.now();
+                        final todayOnly =
+                            DateTime(today.year, today.month, today.day);
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: todayOnly,
+                          firstDate: todayOnly,
+                          lastDate: todayOnly.add(const Duration(days: 90)),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            date = picked;
+                            // Drop the window if it has already passed on this date
+                            if (selectedWindow != null &&
+                                selectedWindow!.isExpiredForDate(picked)) {
+                              selectedWindow = null;
+                            }
+                          });
+                        }
                       },
                     ),
 
                     const SizedBox(height: 12),
+
+                    // ── Departure Window (only available after date picked) ──
+                    Builder(builder: (context) {
+                      final available = date == null
+                          ? DepartureWindow.values
+                          : DepartureWindow.values
+                              .where((w) => !w.isExpiredForDate(date!))
+                              .toList();
+
+                      return DropdownButtonFormField<DepartureWindow>(
+                        key: ValueKey(date),
+                        initialValue: selectedWindow,
+                        hint: Text(
+                          date == null
+                              ? 'Pick a date first'
+                              : available.isEmpty
+                                  ? 'No windows available today'
+                                  : 'Select departure time',
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Departure window',
+                          prefixIcon: Icon(Icons.schedule),
+                        ),
+                        items: available
+                            .map((w) => DropdownMenuItem(
+                                  value: w,
+                                  child: Text(w.label),
+                                ))
+                            .toList(),
+                        onChanged: date == null || available.isEmpty
+                            ? null
+                            : (value) => setState(() => selectedWindow = value),
+                      );
+                    }),
 
                     const SizedBox(height: 12),
                     TextField(
@@ -175,22 +247,6 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    _DatePickerTile(
-                      date: date,
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate:
-                              DateTime.now().add(const Duration(days: 90)),
-                        );
-                        if (picked != null) {
-                          setState(() => date = picked);
-                        }
-                      },
                     ),
                   ],
                 ),

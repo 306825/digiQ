@@ -39,19 +39,7 @@ class DriverDocumentsApi {
 
     try {
       print('before REQUEST HEADERS: ${s3.options.headers}');
-      // final response = await s3.put(
-      //   uploadUrl,
-      //   data: Uint8List.fromList(bytes), // ✅ NOT a Stream
-      //   options: Options(
-      //     headers: {
-      //       'Content-Type': contentType,
-      //       //'Content-Length': bytes.length, // ✅ Important
-      //     },
-      //     responseType: ResponseType.plain,
-      //     followRedirects: false,
-      //     validateStatus: (status) => status != null && status < 500,
-      //   ),
-      // );
+
       final response = await s3.putUri(
         Uri.parse(uploadUrl), // 🔥 CRITICAL FIX
         data: Uint8List.fromList(bytes),

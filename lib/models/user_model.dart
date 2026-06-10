@@ -62,7 +62,9 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['_id'] ?? json['id'],
-      fullName: json['fullName'] as String,
+      //fullName: json['fullName'] as String,
+      fullName: (json['fullName'] as String?) ??
+          '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'.trim(),
       role: _parseUserRole(json['role']),
       verificationStatus: _parseVerificationStatus(json['verificationStatus']),
       isActive: json['isActive'] as bool? ?? true,

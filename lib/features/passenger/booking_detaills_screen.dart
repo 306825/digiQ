@@ -1,4 +1,5 @@
 import 'package:digiQ/core/api/api_providers.dart';
+import 'package:digiQ/theme/app.theme.dart';
 import 'package:digiQ/core/api/booking_api.dart';
 import 'package:digiQ/core/api/incident_api.dart';
 import 'package:digiQ/core/services/tracking_service.dart';
@@ -303,40 +304,14 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Booking Details')),
-      floatingActionButton: GestureDetector(
-        onTap: () => _confirmPanic(context, ref, widget.bookingId),
-        child: Container(
-          width: 78,
-          height: 78,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFFFF5252),
-                Color(0xFFD50000),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.red.withOpacity(0.4),
-                blurRadius: 18,
-                spreadRadius: 3,
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.warning_rounded,
-            color: Colors.white,
-            size: 36,
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: bookingsAsync.when(
         data: (bookings) {
-          final booking = bookings.firstWhere((b) => b.id == widget.bookingId);
+          final bookingOrNull =
+              bookings.where((b) => b.id == widget.bookingId).firstOrNull;
+          if (bookingOrNull == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final booking = bookingOrNull;
 
           if (!_joined) {
             _joined = true;
@@ -435,15 +410,20 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
 
                         return SizedBox(
                           width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.primary,
+                              side: const BorderSide(color: AppTheme.primary),
                               padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
+                            icon: const Icon(Icons.flag_outlined, size: 18),
+                            label: const Text('Report Issue'),
                             onPressed: () {
                               _showReportDialog(context, ref, booking.id);
                             },
-                            child: const Text('Report Issue'),
                           ),
                         );
                       },
@@ -454,64 +434,10 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // SizedBox(
-                //   width: double.infinity,
-                //   child: ElevatedButton(
-                //     style: ElevatedButton.styleFrom(
-                //       backgroundColor: Colors.red,
-                //       padding: const EdgeInsets.symmetric(vertical: 14),
-                //     ),
-                //     onPressed: () => _confirmPanic(context, ref, booking.id),
-                //     child: const Text('🚨 PANIC BUTTON'),
-                //   ),
-                // ),
-                // Center(
-                //   child: GestureDetector(
-                //     onTap: () => _confirmPanic(context, ref, booking.id),
-                //     child: Container(
-                //       width: 120,
-                //       height: 120,
-                //       decoration: BoxDecoration(
-                //         shape: BoxShape.circle,
-                //         gradient: const LinearGradient(
-                //           colors: [
-                //             Color(0xFFFF5252),
-                //             Color(0xFFD50000),
-                //           ],
-                //           begin: Alignment.topLeft,
-                //           end: Alignment.bottomRight,
-                //         ),
-                //         boxShadow: [
-                //           BoxShadow(
-                //             color: Colors.red.withOpacity(0.45),
-                //             blurRadius: 20,
-                //             spreadRadius: 4,
-                //           ),
-                //         ],
-                //       ),
-                //       child: const Column(
-                //         mainAxisAlignment: MainAxisAlignment.center,
-                //         children: [
-                //           Icon(
-                //             Icons.warning_rounded,
-                //             color: Colors.white,
-                //             size: 38,
-                //           ),
-                //           SizedBox(height: 8),
-                //           Text(
-                //             'PANIC',
-                //             style: TextStyle(
-                //               color: Colors.white,
-                //               fontWeight: FontWeight.bold,
-                //               letterSpacing: 1,
-                //               fontSize: 16,
-                //             ),
-                //           ),
-                //         ],
-                //       ),
-                //     ),
-                //   ),
-                // ),
+                _EmergencyButton(
+                  onPressed: () => _confirmPanic(context, ref, booking.id),
+                ),
+                const SizedBox(height: 8),
               ],
             ),
           );
@@ -629,6 +555,80 @@ class ConfirmPickupButton extends StatelessWidget {
           },
           child: const Text('Confirm Pickup'),
         ),
+      ),
+    );
+  }
+}
+
+class _EmergencyButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _EmergencyButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFEBEE),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFEF9A9A)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD50000).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.warning_rounded,
+              color: Color(0xFFD50000),
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Emergency Alert',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: Color(0xFFB71C1C),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Only use in a real emergency',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFE57373),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFD50000),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              textStyle: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+            onPressed: onPressed,
+            child: const Text('SOS'),
+          ),
+        ],
       ),
     );
   }

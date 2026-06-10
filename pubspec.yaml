@@ -35,6 +35,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
   flutter_riverpod: ^3.1.0
   dio: ^5.9.0
   freezed_annotation: ^3.1.0
@@ -46,6 +47,9 @@ dependencies:
   flutter_inappwebview: ^6.0.0
   url_launcher: ^6.3.2
   flutter_inappwebview_web: ^1.0.0
+  socket_io_client: ^3.1.4
+  google_maps_flutter: ^2.17.0
+  geolocator: ^14.0.2
 
 
 dev_dependencies:
@@ -58,6 +62,25 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/branding/digiq_icon.png"
+  adaptive_icon_background: "#0D47A1"
+  adaptive_icon_foreground: "assets/branding/digiq_icon_foreground.png"
+  min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#0A1E45"
+  image: assets/branding/digiq_splash_logo.png
+  android: true
+  ios: false
+  fullscreen: true
+  android_gravity: center
+  image_android: assets/branding/digiq_splash_logo.png
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -49,51 +49,62 @@ class AuthNotifier extends Notifier<AuthState> {
   static const _tokenKey = 'auth_token';
   static const _userKey = 'auth_user';
 
+  // @override
+  // AuthState build() {
+  //   _bootstrapAuthOnce();
+  //   return const AuthState(status: AuthStatus.initializing);
+  // }
+
   @override
   AuthState build() {
-    _bootstrapAuthOnce();
+    // Kick off auth restoration; the router shows /splash until this resolves.
+    Future.microtask(() => _bootstrapAuth());
     return const AuthState(status: AuthStatus.initializing);
   }
 
-  bool _bootstrapped = false;
-
-  Future<void> _bootstrapAuthOnce() async {
-    if (_bootstrapped) return;
-    _bootstrapped = true;
+  Future<void> initialize() async {
     await _bootstrapAuth();
   }
+
+  // bool _bootstrapped = false;
+
+  // Future<void> _bootstrapAuthOnce() async {
+  //   if (_bootstrapped) return;
+  //   _bootstrapped = true;
+  //   await _bootstrapAuth();
+  // }
 
   /* --------------------------------------------------------------------------
    * Restore persisted auth
    * -------------------------------------------------------------------------- */
 
   Future<void> _bootstrapAuth() async {
+    // Run auth check and a minimum splash delay in parallel so the
+    // splash is always visible long enough for the animation to play.
+    final results = await Future.wait([
+      _resolveAuthState(),
+      Future.delayed(const Duration(milliseconds: 1800)),
+    ]);
+
+    state = results[0] as AuthState;
+  }
+
+  Future<AuthState> _resolveAuthState() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString(_tokenKey);
     final cachedUserJson = prefs.getString(_userKey);
 
     if (token == null || cachedUserJson == null) {
-      state = const AuthState(status: AuthStatus.unauthenticated);
-      return;
+      return const AuthState(status: AuthStatus.unauthenticated);
     }
 
     try {
       final user = UserModel.fromJson(jsonDecode(cachedUserJson));
-
       final api = ref.read(apiClientProvider);
       api.dio.options.headers['Authorization'] = 'Bearer $token';
-
-      state = AuthState(
-        status: AuthStatus.authenticated,
-        token: token,
-        user: user,
-      );
-
-      //await refreshMe();
-      // Optional: background refresh (NO state loop risk)
-      //Future.microtask(() => refreshMe());
+      return AuthState(status: AuthStatus.authenticated, token: token, user: user);
     } catch (_) {
-      state = const AuthState(status: AuthStatus.unauthenticated);
+      return const AuthState(status: AuthStatus.unauthenticated);
     }
   }
 
@@ -124,11 +135,16 @@ class AuthNotifier extends Notifier<AuthState> {
 
       final token = response.data['token'];
 
+      debugPrint("Token: $token");
+
       final user = UserModel.fromJson(response.data['user']);
+
+      debugPrint("USER: ${user.toJson()}");
 
       api.dio.options.headers['Authorization'] = 'Bearer $token';
 
       final prefs = await SharedPreferences.getInstance();
+
       await prefs.setString(_tokenKey, token);
       await prefs.setString(_userKey, jsonEncode(user.toJson()));
 
@@ -137,21 +153,39 @@ class AuthNotifier extends Notifier<AuthState> {
         token: token,
         user: user,
       );
-
-      //print("🚀 CALLING refreshMe()");
-      //await refreshMe(); // ✅ THIS LINE IS MISSING
     } on DioException catch (e) {
-      state = const AuthState(status: AuthStatus.unauthenticated);
+      state = const AuthState(
+        status: AuthStatus.unauthenticated,
+      );
 
       print("❌ LOGIN ERROR STATUS: ${e.response?.statusCode}");
       print("❌ LOGIN ERROR DATA: ${e.response?.data}");
+
       final data = e.response?.data;
 
+      // Email not verified
       if (data is Map && data['code'] == 'EMAIL_NOT_VERIFIED') {
         throw Exception('EMAIL_NOT_VERIFIED');
       }
 
-      throw Exception('INVALID_CREDENTIALS');
+      // Invalid credentials
+      if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+        throw Exception('INVALID_CREDENTIALS');
+      }
+
+      // Ngrok/backend offline
+      if (data.toString().contains('ERR_NGROK_3200')) {
+        throw Exception('SERVER_OFFLINE');
+      }
+
+      // Timeout / no response
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        throw Exception('NETWORK_ERROR');
+      }
+
+      throw Exception('UNKNOWN_ERROR');
     }
   }
 
@@ -160,7 +194,7 @@ class AuthNotifier extends Notifier<AuthState> {
    * -------------------------------------------------------------------------- */
 
   Future<void> register({
-    required String fullName,
+    //required String fullName,
     required String identifier,
     required String password,
     required UserRole role,
@@ -175,7 +209,7 @@ class AuthNotifier extends Notifier<AuthState> {
       await api.dio.post(
         '/auth/register',
         data: {
-          'fullName': fullName,
+          // 'fullName': fullName,
           'identifier': identifier,
           'password': password,
           'role': role.name,

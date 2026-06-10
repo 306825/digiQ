@@ -22,9 +22,7 @@
 // }
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/material.dart';
 
 class ApiClient {
   final Dio dio;
@@ -36,7 +34,9 @@ class ApiClient {
                 'https://nonembryonal-terese-unveritable.ngrok-free.dev/api/v1',
             connectTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 10),
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+            },
           ),
         ) {
     dio.interceptors.add(
@@ -49,12 +49,13 @@ class ApiClient {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
-          if (kDebugMode) {
-            print("TOKEN HEADER = Bearer $token");
-          }
+          print("TOKEN HEADER = Bearer $token");
+
           return handler.next(options);
         },
       ),
     );
   }
 }
+
+final apiClient = ApiClient();
