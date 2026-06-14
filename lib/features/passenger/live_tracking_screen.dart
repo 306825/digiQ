@@ -30,7 +30,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
 
   Future<void> _connect() async {
     await _tracking.connect(
-      'https://nonembryonal-terese-unveritable.ngrok-free.dev',
+      'https://api.digiqueue.co.za',
     );
 
     _tracking.joinTrip(widget.tripId);

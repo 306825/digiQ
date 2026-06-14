@@ -282,7 +282,7 @@ class _TripCard extends ConsumerWidget {
     if (permission == LocationPermission.deniedForever) return;
 
     await trackingService.connect(
-      'https://nonembryonal-terese-unveritable.ngrok-free.dev',
+      'https://api.digiqueue.co.za',
     );
 
     activeTripId = tripId;

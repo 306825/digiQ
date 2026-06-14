@@ -230,7 +230,7 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
     trackingService = TrackingService();
 
     trackingService
-        .connect('https://nonembryonal-terese-unveritable.ngrok-free.dev');
+        .connect('https://api.digiqueue.co.za');
   }
 
   @override

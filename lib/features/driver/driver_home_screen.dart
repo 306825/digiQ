@@ -190,7 +190,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
 
   void _startTracking(String tripId) async {
     // trackingService.connect(
-    //   'https://nonembryonal-terese-unveritable.ngrok-free.dev',
+    //   'https://api.digiqueue.co.za',
     // );
     if (activeTripId == tripId) return;
 
@@ -204,7 +204,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     activeTripId = tripId;
 
     trackingService.connect(
-      'https://nonembryonal-terese-unveritable.ngrok-free.dev',
+      'https://api.digiqueue.co.za',
     );
 
     trackingService.joinTrip(tripId);
