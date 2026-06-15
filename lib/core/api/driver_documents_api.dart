@@ -38,10 +38,8 @@ class DriverDocumentsApi {
     final s3 = Dio();
 
     try {
-      print('before REQUEST HEADERS: ${s3.options.headers}');
-
-      final response = await s3.putUri(
-        Uri.parse(uploadUrl), // 🔥 CRITICAL FIX
+      await s3.putUri(
+        Uri.parse(uploadUrl),
         data: Uint8List.fromList(bytes),
         options: Options(
           headers: {
@@ -52,10 +50,7 @@ class DriverDocumentsApi {
           validateStatus: (status) => status != null && status < 500,
         ),
       );
-      print('After REQUEST HEADERS: ${s3.options.headers}');
-      print('✅ S3 upload status: ${response}');
     } catch (e) {
-      print('❌ S3 upload failed: $e');
       rethrow;
     }
   }

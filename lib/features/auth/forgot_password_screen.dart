@@ -45,8 +45,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     try {
       final api = ref.read(apiClientProvider);
 
-      final url = '/auth/forgot-password';
-      debugPrint('RESET REQUEST URL: ${api.dio.options.baseUrl}$url');
+      const url = '/auth/forgot-password';
 
       await api.dio.post(url, data: {
         'identifier': email,
@@ -73,9 +72,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ],
         ),
       );
-    } catch (e) {
-      debugPrint('❌ Password reset request failed: $e');
-
+    } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Could not send reset email. Try again.'),

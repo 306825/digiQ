@@ -18,8 +18,5 @@ final driverBalanceProvider = FutureProvider<DriverBalance>((ref) async {
   }
 
   final driverApi = ref.read(driverApiProvider);
-
-  print("🔥 CALLING DRIVER BALANCE API WITH TOKEN: ${auth.token}");
-
   return driverApi.getBalance();
 });

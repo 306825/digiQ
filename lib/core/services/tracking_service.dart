@@ -1,14 +1,14 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class TrackingService {
   IO.Socket? socket;
+  static const _storage = FlutterSecureStorage();
 
   Future<void> connect(String baseUrl) async {
     if (socket != null && socket!.connected) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token') ?? '';
+    final token = await _storage.read(key: 'auth_token') ?? '';
 
     socket = IO.io(
       baseUrl,

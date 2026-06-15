@@ -11,19 +11,11 @@ class DriverBookingsNotifier extends AsyncNotifier<List<DriverBooking>> {
   @override
   Future<List<DriverBooking>> build() async {
     try {
-      print('🚀 FETCHING BOOKINGS...');
-
       final api = ref.read(bookingApiProvider);
       final response = await api.getPendingBookings();
-
-      print('✅ RESPONSE RECEIVED');
-      print('📦 RAW: ${response.data}');
-
       final list = response.data as List<dynamic>;
       return list.map((e) => DriverBooking.fromJson(e)).toList();
-    } catch (e, stack) {
-      print('❌ BOOKINGS ERROR: $e');
-      print(stack);
+    } catch (e) {
 
       if (e is DioException && e.response?.statusCode == 403) {
         final body = e.response?.data;

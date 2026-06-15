@@ -2,9 +2,8 @@ import 'dart:convert';
 
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/user_model.dart';
 
@@ -48,6 +47,7 @@ class AuthState {
 class AuthNotifier extends Notifier<AuthState> {
   static const _tokenKey = 'auth_token';
   static const _userKey = 'auth_user';
+  static const _storage = FlutterSecureStorage();
 
   // @override
   // AuthState build() {
@@ -90,9 +90,8 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<AuthState> _resolveAuthState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(_tokenKey);
-    final cachedUserJson = prefs.getString(_userKey);
+    final token = await _storage.read(key: _tokenKey);
+    final cachedUserJson = await _storage.read(key: _userKey);
 
     if (token == null || cachedUserJson == null) {
       return const AuthState(status: AuthStatus.unauthenticated);
@@ -131,22 +130,13 @@ class AuthNotifier extends Notifier<AuthState> {
         const Duration(seconds: 10),
       );
 
-      debugPrint("🟢 RESPONSE RECEIVED: ${response.data}");
-
       final token = response.data['token'];
-
-      debugPrint("Token: $token");
-
       final user = UserModel.fromJson(response.data['user']);
-
-      debugPrint("USER: ${user.toJson()}");
 
       api.dio.options.headers['Authorization'] = 'Bearer $token';
 
-      final prefs = await SharedPreferences.getInstance();
-
-      await prefs.setString(_tokenKey, token);
-      await prefs.setString(_userKey, jsonEncode(user.toJson()));
+      await _storage.write(key: _tokenKey, value: token);
+      await _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
 
       state = AuthState(
         status: AuthStatus.authenticated,
@@ -157,9 +147,6 @@ class AuthNotifier extends Notifier<AuthState> {
       state = const AuthState(
         status: AuthStatus.unauthenticated,
       );
-
-      print("❌ LOGIN ERROR STATUS: ${e.response?.statusCode}");
-      print("❌ LOGIN ERROR DATA: ${e.response?.data}");
 
       final data = e.response?.data;
 
@@ -222,10 +209,6 @@ class AuthNotifier extends Notifier<AuthState> {
       state = const AuthState(status: AuthStatus.unauthenticated);
     } catch (e) {
       state = const AuthState(status: AuthStatus.unauthenticated);
-      // debugPrint("LOGIN FAILED: $e");
-      if (e is DioException) {
-        debugPrint("REGISTER ERROR: ${e.response?.data}");
-      }
       rethrow;
     }
   }
@@ -235,9 +218,8 @@ class AuthNotifier extends Notifier<AuthState> {
    * -------------------------------------------------------------------------- */
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_userKey);
+    await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _userKey);
 
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
@@ -255,7 +237,6 @@ class AuthNotifier extends Notifier<AuthState> {
 
     try {
       final response = await api.dio.get('/auth/me');
-      print("✅ API SUCCESS: $response");
       final user = UserModel.fromJson(response.data);
       // state = AuthState(
       //   status: AuthStatus.authenticated,
@@ -277,14 +258,7 @@ class AuthNotifier extends Notifier<AuthState> {
         token: token,
         user: user,
       );
-    } catch (e) {
-      if (e is DioException) {
-        print("❌ API ERROR STATUS: ${e.response?.statusCode}");
-        print("❌ API ERROR DATA: ${e.response?.data}");
-      } else {
-        print("❌ API ERROR: $e");
-      }
-    }
+    } catch (_) {}
   }
 
   Future<void> updateAvatar(String imageUrl) async {
