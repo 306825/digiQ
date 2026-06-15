@@ -109,11 +109,9 @@ class _DocumentUploadTileState extends ConsumerState<DocumentUploadTile> {
         ),
         title: Text(widget.title),
         subtitle: isUploaded
-            ? const Text(
-                "Uploaded",
-                style: TextStyle(color: Colors.green),
-              )
-            : const Text("Tap to upload"),
+            ? const Text('Uploaded · tap to replace',
+                style: TextStyle(color: Colors.green))
+            : const Text('Tap to upload'),
         trailing: uploading
             ? const SizedBox(
                 width: 20,
@@ -121,11 +119,9 @@ class _DocumentUploadTileState extends ConsumerState<DocumentUploadTile> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : isUploaded
-                ? const Icon(Icons.check, color: Colors.green)
+                ? const Icon(Icons.edit_outlined, size: 18, color: Colors.green)
                 : const Icon(Icons.chevron_right),
-        onTap: (uploading || isUploaded)
-            ? null // ✅ disable once uploaded
-            : _pickAndUpload,
+        onTap: uploading ? null : _pickAndUpload,
       ),
     );
   }
