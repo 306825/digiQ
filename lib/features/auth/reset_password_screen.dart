@@ -1,5 +1,6 @@
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/features/shared/widgets/back_button_safe.dart';
+import 'package:digiQ/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -48,9 +49,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       return;
     }
 
-    if (newPassword.length < 6) {
+    final passwordError = validatePassword(newPassword);
+    if (passwordError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters')),
+        SnackBar(content: Text(passwordError)),
       );
       return;
     }

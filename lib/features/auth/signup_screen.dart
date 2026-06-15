@@ -36,6 +36,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       _showSnack('Please enter a valid email');
       return;
     }
+    final passwordError = validatePassword(_passwordCtrl.text);
+    if (passwordError != null) {
+      _showSnack(passwordError);
+      return;
+    }
     if (!_acceptedTerms || !_acceptedPrivacy) {
       _showSnack('You must accept the Terms and Privacy Policy');
       return;
@@ -148,6 +153,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
                       labelText: 'Password',
+                      helperText: '8+ chars · uppercase · lowercase · number · symbol',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(_obscure
