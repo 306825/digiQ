@@ -25,17 +25,29 @@ class DocumentUploadTile extends ConsumerStatefulWidget {
 class _DocumentUploadTileState extends ConsumerState<DocumentUploadTile> {
   bool uploading = false;
 
+  String _resolveContentType(String? extension) {
+    switch (extension?.toLowerCase()) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'png':
+        return 'image/png';
+      default:
+        return 'image/jpeg';
+    }
+  }
+
   Future<void> _pickAndUpload() async {
     final result = await FilePicker.platform.pickFiles(
       withData: true,
-      type: FileType.image,
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
     );
 
     if (result == null || result.files.single.bytes == null) return;
 
     final file = result.files.single;
     final bytes = file.bytes!;
-    final contentType = file.extension == 'png' ? 'image/png' : 'image/jpeg';
+    final contentType = _resolveContentType(file.extension);
 
     setState(() => uploading = true);
 
@@ -46,7 +58,6 @@ class _DocumentUploadTileState extends ConsumerState<DocumentUploadTile> {
         type: widget.type,
         contentType: contentType,
       );
-      print('SIGNED RESPONSE: $signed');
       await api.uploadToS3(
         uploadUrl: signed['uploadUrl'],
         bytes: bytes,
