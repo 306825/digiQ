@@ -6,11 +6,9 @@ import 'package:digiQ/features/driver/driver_booking_list_screen.dart';
 import 'package:digiQ/features/driver/driver_verification_screen.dart';
 import 'package:digiQ/features/driver/my_trips_screen.dart';
 import 'package:digiQ/features/shared/widgets/animated_hourglass.dart';
-import 'package:digiQ/models/trip_model.dart';
 import 'package:digiQ/models/user_model.dart';
 import 'package:digiQ/providers/auth_provider.dart';
 import 'package:digiQ/providers/driver_balance_provider.dart';
-import 'package:digiQ/providers/driver_trips_provider.dart';
 import 'package:digiQ/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -86,7 +84,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider.select((a) => a.user));
     final vehicleAsync = ref.watch(driverVehicleProvider);
-    final tripsAsync = ref.watch(driverTripsProvider);
 
     if (user == null) {
       return const Scaffold(
@@ -111,47 +108,18 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         body: Center(child: Text('Error loading vehicle')),
       ),
       data: (vehicle) {
-        return tripsAsync.when(
-          loading: () => const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          ),
-          error: (_, __) => const Scaffold(
-            body: Center(child: Text('Error loading trips')),
-          ),
-          data: (trips) {
-            // ✅ NOW trips EXISTS
+        if (vehicle == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Add Vehicle')),
+            body: _NoVehicleView(
+              onAddVehicle: () {
+                context.push('/driver/vehicle');
+              },
+            ),
+          );
+        }
 
-            Trip? activeTrip;
-            try {
-              activeTrip = trips.firstWhere(
-                  (t) => t.status == 'active' || t.status == 'open');
-            } catch (_) {
-              activeTrip = null;
-            }
-
-            // if (activeTrip != null && activeTripId != activeTrip.id) {
-            //   _startTracking(activeTrip.id);
-            // }
-
-            // if (activeTrip == null && activeTripId != null) {
-            //   _stopTracking();
-            // }
-
-            // UI continues
-            if (vehicle == null) {
-              return Scaffold(
-                appBar: AppBar(title: const Text('Add Vehicle')),
-                body: _NoVehicleView(
-                  onAddVehicle: () {
-                    context.push('/driver/vehicle');
-                  },
-                ),
-              );
-            }
-
-            return _buildDashboard(context, user, vehicle);
-          },
-        );
+        return _buildDashboard(context, user, vehicle);
       },
     );
     ;
