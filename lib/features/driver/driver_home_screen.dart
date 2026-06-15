@@ -228,7 +228,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: ListView(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(driverVehicleProvider);
+            ref.invalidate(authProvider);
+          },
+          child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
           children: [
             // ── GREETING ──────────────────────────────────────────────
@@ -335,6 +340,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               ),
             ],
           ],
+        ),
         ),
       ),
     );
