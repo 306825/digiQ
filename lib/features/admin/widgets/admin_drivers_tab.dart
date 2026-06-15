@@ -1,3 +1,4 @@
+import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/features/admin/admin_driver_detail_screen.dart';
 import 'package:digiQ/features/shared/widgets/user_avatar.dart';
 import 'package:digiQ/models/user_model.dart';
@@ -6,12 +7,22 @@ import 'package:digiQ/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+final pendingVehiclesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  // Re-fetch whenever the drivers list changes (e.g. after approve/reject)
+  ref.watch(adminDriversProvider);
+  final api = ref.read(adminApiProvider);
+  final res = await api.getPendingVehicles();
+  final List list = res.data;
+  return list.cast<Map<String, dynamic>>();
+});
+
 class AdminDriversTab extends ConsumerWidget {
   const AdminDriversTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final driversAsync = ref.watch(adminDriversProvider);
+    final pendingVehiclesAsync = ref.watch(pendingVehiclesProvider);
 
     return driversAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -37,13 +48,51 @@ class AdminDriversTab extends ConsumerWidget {
                 d.verificationStatus == DriverVerificationStatus.rejected)
             .toList();
 
+        // Build driver lookup map for vehicle section
+        final driverById = {for (final d in drivers) d.id: d};
+
         return RefreshIndicator(
           onRefresh: () async {
+            ref.invalidate(pendingVehiclesProvider);
             await ref.read(adminDriversProvider.notifier).refresh();
           },
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // ── Pending Vehicles ──────────────────────────────────────
+              pendingVehiclesAsync.when(
+                loading: () => const SizedBox(),
+                error: (_, __) => const SizedBox(),
+                data: (vehicles) {
+                  if (vehicles.isEmpty) return const SizedBox();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Vehicles Pending Review',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...vehicles.map((v) {
+                        final driverId = v['driverId']?.toString() ?? '';
+                        final driver = driverById[driverId];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _PendingVehicleTile(
+                            vehicle: v,
+                            driver: driver,
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
+              ),
+
               _DriverSection(
                 title: 'Pending Verification',
                 drivers: pending,
@@ -62,6 +111,122 @@ class AdminDriversTab extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _PendingVehicleTile extends ConsumerWidget {
+  final Map<String, dynamic> vehicle;
+  final UserModel? driver;
+
+  const _PendingVehicleTile({required this.vehicle, this.driver});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final vehicleId = vehicle['_id']?.toString() ?? '';
+    final driverId = vehicle['driverId']?.toString() ?? '';
+    final reg = vehicle['registrationNumber'] ?? '-';
+    final make = vehicle['make'] ?? '';
+    final model = vehicle['model'] ?? '';
+    final driverName = driver?.fullName ?? 'Unknown driver';
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.warning.withOpacity(0.5)),
+        color: AppTheme.warning.withOpacity(0.05),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.directions_car, color: AppTheme.warning),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '$reg${make.isNotEmpty ? ' · $make $model' : ''}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.warning.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'Pending',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.warning,
+                      fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text('Driver: $driverName',
+              style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: const Text('Review'),
+                  onPressed: driver == null
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  AdminDriverDetailScreen(driver: driver!),
+                            ),
+                          ).then((_) {
+                            ref.invalidate(pendingVehiclesProvider);
+                            ref.read(adminDriversProvider.notifier).refresh();
+                          });
+                        },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.success),
+                  icon: const Icon(Icons.check, size: 16),
+                  label: const Text('Approve'),
+                  onPressed: () async {
+                    final api = ref.read(adminApiProvider);
+                    await api.approveVehicle(vehicleId);
+                    ref.invalidate(pendingVehiclesProvider);
+                    ref.read(adminDriversProvider.notifier).refresh();
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+                  icon: const Icon(Icons.close, size: 16),
+                  label: const Text('Reject'),
+                  onPressed: () async {
+                    final api = ref.read(adminApiProvider);
+                    await api.rejectVehicle(vehicleId);
+                    ref.invalidate(pendingVehiclesProvider);
+                    ref.read(adminDriversProvider.notifier).refresh();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

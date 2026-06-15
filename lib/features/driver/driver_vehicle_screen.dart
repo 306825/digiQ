@@ -98,6 +98,15 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
                       setState(() => loading = true);
 
                       try {
+                        if (regCtrl.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text('Please enter a registration number')),
+                          );
+                          return;
+                        }
+
                         await ref.read(driverApiProvider).submitVehicle(
                               registrationNumber: regCtrl.text.trim(),
                               make: makeCtrl.text.trim(),
@@ -113,12 +122,21 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
                         if (!context.mounted) return;
 
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Vehicle submitted')),
+                          const SnackBar(
+                              content: Text(
+                                  'Vehicle submitted and pending admin review')),
                         );
 
-                        ref.invalidate(
-                            driverVehicleProvider); // ✅ force refresh
+                        ref.invalidate(driverVehicleProvider);
                         Navigator.pop(context, true);
+                      } catch (e) {
+                        if (!context.mounted) return;
+                        final msg = e.toString().contains('message')
+                            ? e.toString()
+                            : 'Submission failed. Please try again.';
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(msg)),
+                        );
                       } finally {
                         setState(() => loading = false);
                       }
