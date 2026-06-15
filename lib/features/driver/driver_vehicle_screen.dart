@@ -30,9 +30,12 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Vehicle Details')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      resizeToAvoidBottomInset: true,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
               controller: regCtrl,
