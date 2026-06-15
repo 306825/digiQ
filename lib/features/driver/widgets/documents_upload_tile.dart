@@ -75,8 +75,6 @@ class _DocumentUploadTileState extends ConsumerState<DocumentUploadTile> {
         );
       }
     } catch (e) {
-      debugPrint('❌ Upload failed: $e');
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

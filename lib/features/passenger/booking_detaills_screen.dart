@@ -319,9 +319,7 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               trackingService.joinTrip(booking.tripId);
 
-              trackingService.listenToLocation((lat, lng) {
-                print('📡 Driver location: $lat, $lng');
-              });
+              trackingService.listenToLocation((lat, lng) {});
             });
           }
 
@@ -389,6 +387,8 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                               MaterialPageRoute(
                                 builder: (_) => LiveTrackingScreen(
                                   tripId: booking.tripId,
+                                  from: booking.pickup.toString(),
+                                  passengerStatus: booking.passengerStatus,
                                 ),
                               ),
                             );

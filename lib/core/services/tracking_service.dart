@@ -21,10 +21,10 @@ class TrackingService {
 
     socket!.connect();
 
-    socket!.onConnect((_) => print('🟢 Connected to tracking server'));
-    socket!.onDisconnect((_) => print('🔴 Disconnected from tracking server'));
-    socket!.onError((err) => print('❌ Socket error: $err'));
-    socket!.onConnectError((err) => print('❌ Connect error: $err'));
+    socket!.onConnect((_) {});
+    socket!.onDisconnect((_) {});
+    socket!.onError((_) {});
+    socket!.onConnectError((_) {});
   }
 
   void joinTrip(String tripId) {
