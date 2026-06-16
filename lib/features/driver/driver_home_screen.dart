@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/features/driver/create_trip_screen.dart';
 import 'package:digiQ/features/driver/driver_booking_list_screen.dart';
@@ -699,15 +700,24 @@ class _DriverBalanceCard extends ConsumerWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Payout request submitted — admin will process it shortly')),
+            content:
+                Text('Payout request submitted — admin will process it shortly')),
+      );
+    } on DioException catch (e) {
+      if (!context.mounted) return;
+      // Extract the backend's error message from the response body
+      final data = e.response?.data;
+      final msg = (data is Map && data['message'] != null)
+          ? data['message'].toString()
+          : 'Payout request failed. Please try again.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
       );
     } catch (e) {
       if (!context.mounted) return;
-      final msg = e.toString().contains('message')
-          ? e.toString()
-          : 'Payout request failed. Please try again.';
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(msg)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payout request failed. Please try again.')),
+      );
     }
   }
 }
