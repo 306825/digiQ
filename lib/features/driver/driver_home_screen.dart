@@ -619,7 +619,7 @@ class _DriverBalanceCard extends ConsumerWidget {
                 child: _CardButton(
                   label: 'Request Payout',
                   icon: Icons.payments_outlined,
-                  onTap: () => _showPayoutDialog(context, ref, balanceAsync.valueOrNull?.balance ?? 0),
+                  onTap: () => _showPayoutDialog(context, ref, balanceAsync.value?.balance ?? 0),
                 ),
               ),
               const SizedBox(width: 10),
