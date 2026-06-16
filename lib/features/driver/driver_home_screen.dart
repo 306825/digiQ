@@ -5,6 +5,7 @@ import 'package:digiQ/features/driver/create_trip_screen.dart';
 import 'package:digiQ/features/driver/driver_booking_list_screen.dart';
 import 'package:digiQ/features/driver/driver_verification_screen.dart';
 import 'package:digiQ/features/driver/my_trips_screen.dart';
+import 'package:digiQ/features/driver/payout_history_screen.dart';
 import 'package:digiQ/features/shared/widgets/animated_hourglass.dart';
 import 'package:digiQ/models/user_model.dart';
 import 'package:digiQ/providers/auth_provider.dart';
@@ -549,62 +550,205 @@ class _DriverBalanceCard extends ConsumerWidget {
         ),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.account_balance_wallet_outlined,
-              color: Colors.white,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: balanceAsync.when(
-              loading: () => const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
-              ),
-              error: (_, __) => Text(
-                'Balance unavailable',
-                style: GoogleFonts.dmSans(
-                  color: Colors.white70,
-                  fontSize: 13,
+          // ── Balance row ──────────────────────────────────────────────────
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: Colors.white,
+                  size: 22,
                 ),
               ),
-              data: (balance) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Available Balance',
-                    style: GoogleFonts.dmSans(
-                      color: Colors.white.withValues(alpha: 0.75),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: balanceAsync.when(
+                  loading: () => const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'R ${balance.balance.toStringAsFixed(2)}',
+                  error: (_, __) => Text(
+                    'Balance unavailable',
                     style: GoogleFonts.dmSans(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
+                        color: Colors.white70, fontSize: 13),
                   ),
-                ],
+                  data: (balance) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Available Balance',
+                        style: GoogleFonts.dmSans(
+                          color: Colors.white.withValues(alpha: 0.75),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'R ${balance.balance.toStringAsFixed(2)}',
+                        style: GoogleFonts.dmSans(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Action buttons ───────────────────────────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: _CardButton(
+                  label: 'Request Payout',
+                  icon: Icons.payments_outlined,
+                  onTap: () => _showPayoutDialog(context, ref, balanceAsync.valueOrNull?.balance ?? 0),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _CardButton(
+                  label: 'History',
+                  icon: Icons.history,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const PayoutHistoryScreen()),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showPayoutDialog(
+      BuildContext context, WidgetRef ref, double currentBalance) async {
+    final amountCtrl = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Request Payout'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Available: R ${currentBalance.toStringAsFixed(2)}',
+              style: const TextStyle(
+                  fontSize: 13, color: Color(0xFF56687A)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: amountCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Amount (ZAR)',
+                prefixText: 'R ',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final amount = double.tryParse(amountCtrl.text.trim());
+              if (amount == null || amount <= 0) return;
+              Navigator.pop(ctx);
+              await _submitPayout(context, ref, amount);
+            },
+            child: const Text('Submit'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitPayout(
+      BuildContext context, WidgetRef ref, double amount) async {
+    try {
+      final api = ref.read(driverApiProvider);
+      await api.requestWithdrawal(amount);
+      ref.invalidate(driverBalanceProvider);
+      ref.invalidate(payoutHistoryProvider);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Payout request submitted — admin will process it shortly')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      final msg = e.toString().contains('message')
+          ? e.toString()
+          : 'Payout request failed. Please try again.';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+}
+
+class _CardButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CardButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 16),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

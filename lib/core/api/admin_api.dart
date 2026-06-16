@@ -1,3 +1,4 @@
+import 'package:digiQ/models/driver_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_providers.dart';
@@ -20,7 +21,6 @@ class AdminApi {
   }
 
   Future<Response> getDrivers() {
-    print('👮 ADMIN → fetching ALL drivers');
     return dio.get('/admin/drivers');
   }
 
@@ -51,6 +51,25 @@ class AdminApi {
 
   Future<void> resolveSos(String id) async {
     await dio.patch('/admin/sos/$id/resolve');
+  }
+
+  /* --------------------------------------------------------------------------
+   * PAYOUTS
+   * -------------------------------------------------------------------------- */
+
+  Future<List<Map<String, dynamic>>> getPendingPayouts() async {
+    final res = await dio.get('/payouts/admin/pending');
+    return (res.data as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<void> settleWithdrawal(String id, {String? adminNote}) async {
+    await dio.patch('/payouts/admin/$id/settle',
+        data: {'adminNote': adminNote});
+  }
+
+  Future<void> rejectWithdrawal(String id, {String? adminNote}) async {
+    await dio.patch('/payouts/admin/$id/reject',
+        data: {'adminNote': adminNote});
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:digiQ/features/admin/admin_incidents_screen.dart';
+import 'package:digiQ/features/admin/widgets/admin_payouts_tab.dart';
 import 'package:digiQ/features/admin/widgets/admin_routes_tab.dart';
 import 'package:digiQ/features/admin/widgets/admin_drivers_tab.dart';
 import 'package:digiQ/providers/admin_drivers_provider.dart';
@@ -28,7 +29,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Admin Dashboard'),
@@ -36,13 +37,12 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
             labelColor: Theme.of(context).colorScheme.surface,
             unselectedLabelColor: Colors.grey.shade600,
             indicatorColor: Theme.of(context).colorScheme.surface,
-            labelStyle: const TextStyle(
-              fontWeight: FontWeight.w600,
-            ),
+            labelStyle: const TextStyle(fontWeight: FontWeight.w600),
             tabs: const [
               Tab(icon: Icon(Icons.people), text: 'Drivers'),
               Tab(icon: Icon(Icons.alt_route), text: 'Routes'),
               Tab(icon: Icon(Icons.report), text: 'Incidents'),
+              Tab(icon: Icon(Icons.payments_outlined), text: 'Payouts'),
             ],
           ),
           actions: [
@@ -62,6 +62,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
             AdminDriversTab(),
             AdminRoutesTab(),
             AdminIncidentsScreen(),
+            AdminPayoutsTab(),
           ],
         ),
       ),

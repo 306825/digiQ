@@ -79,6 +79,21 @@ class DriverApi {
   }
 
   /* --------------------------------------------------------------------------
+   * PAYOUTS / WITHDRAWALS
+   * -------------------------------------------------------------------------- */
+
+  Future<void> requestWithdrawal(double amount) async {
+    await dio.post('/payouts/withdrawal', data: {'amount': amount});
+  }
+
+  Future<List<WithdrawalRequest>> getPayoutHistory() async {
+    final res = await dio.get('/payouts/history');
+    return (res.data as List)
+        .map((j) => WithdrawalRequest.fromJson(j))
+        .toList();
+  }
+
+  /* --------------------------------------------------------------------------
    * DRIVER BOOKINGS
    * -------------------------------------------------------------------------- */
 
