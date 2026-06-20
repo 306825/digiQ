@@ -17,8 +17,14 @@ class TrackingService {
 
     final completer = Completer<void>();
 
+    // socket_io_client does not infer port 443 from https:// — use wss:// so
+    // the WebSocket URL is explicit and the port is correctly resolved.
+    final wsUrl = baseUrl
+        .replaceFirst('https://', 'wss://')
+        .replaceFirst('http://', 'ws://');
+
     socket = IO.io(
-      baseUrl,
+      wsUrl,
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
