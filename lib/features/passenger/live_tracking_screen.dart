@@ -66,14 +66,17 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
 
   Future<void> _connect() async {
     try {
+      debugPrint('[PASSENGER] Connecting socket for trip: ${widget.tripId}');
       await _tracking.connect('https://api.digiqueue.co.za');
+      debugPrint('[PASSENGER] Socket connected — joining room');
       _tracking.joinTrip(widget.tripId);
+      debugPrint('[PASSENGER] Joined room trip:${widget.tripId}');
       _tracking.listenToLocation((lat, lng) {
+        debugPrint('[PASSENGER] Location received: $lat, $lng');
         _onLocationUpdate(LatLng(lat, lng));
       });
-    } catch (_) {
-      // Connection failed — panel stays in "Locating driver" state;
-      // user can pop and re-open to retry.
+    } catch (e) {
+      debugPrint('[PASSENGER] Connection failed: $e');
     }
   }
 

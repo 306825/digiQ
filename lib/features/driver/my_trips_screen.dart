@@ -275,20 +275,46 @@ class _TripCard extends ConsumerWidget {
   Future<void> _startTracking(String tripId) async {
     if (activeTripId == tripId) return;
 
+    debugPrint('[TRACKING] Starting tracking for trip: $tripId');
+
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      debugPrint('[TRACKING] Location services DISABLED — cannot track');
+      return;
+    }
+
     var permission = await Geolocator.checkPermission();
+    debugPrint('[TRACKING] Permission status: $permission');
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+      debugPrint('[TRACKING] Permission after request: $permission');
     }
-    if (permission == LocationPermission.deniedForever) return;
+    if (permission == LocationPermission.deniedForever) {
+      debugPrint('[TRACKING] Permission denied forever');
+      return;
+    }
 
     try {
+      debugPrint('[TRACKING] Connecting socket...');
       await trackingService.connect('https://api.digiqueue.co.za');
-    } catch (_) {
-      return; // Can't reach server — abort silently, trip is already started
+      debugPrint('[TRACKING] Socket connected');
+    } catch (e) {
+      debugPrint('[TRACKING] Socket connection failed: $e');
+      return;
     }
 
     activeTripId = tripId;
     trackingService.joinTrip(tripId);
+    debugPrint('[TRACKING] Joined room trip:$tripId');
+
+    // Send an immediate first fix using the last known position so the
+    // passenger sees something instantly, then follow up with live fixes.
+    Geolocator.getLastKnownPosition().then((pos) {
+      if (pos != null) {
+        debugPrint('[TRACKING] Sending last known position: ${pos.latitude}, ${pos.longitude}');
+        trackingService.sendLocation(tripId, pos.latitude, pos.longitude);
+      }
+    });
 
     trackingTimer?.cancel();
     trackingTimer = Timer.periodic(
@@ -296,12 +322,11 @@ class _TripCard extends ConsumerWidget {
       (_) async {
         try {
           final position = await Geolocator.getCurrentPosition();
-          trackingService.sendLocation(
-            tripId,
-            position.latitude,
-            position.longitude,
-          );
-        } catch (_) {}
+          debugPrint('[TRACKING] Sending location: ${position.latitude}, ${position.longitude}');
+          trackingService.sendLocation(tripId, position.latitude, position.longitude);
+        } catch (e) {
+          debugPrint('[TRACKING] Failed to get location: $e');
+        }
       },
     );
   }
