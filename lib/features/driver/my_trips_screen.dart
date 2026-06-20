@@ -40,18 +40,13 @@ Future<void> startTracking(String tripId) async {
     return;
   }
 
-  try {
-    debugPrint('[TRACKING] Connecting socket...');
-    await trackingService.connect('https://api.digiqueue.co.za');
-    debugPrint('[TRACKING] Socket connected');
-  } catch (e) {
-    debugPrint('[TRACKING] Socket connection failed: $e');
-    return;
-  }
-
+  // connect() is non-blocking — returns once the socket object is ready.
+  // joinTrip is buffered by socket.io and delivered once the handshake completes.
+  debugPrint('[TRACKING] Initialising socket...');
+  await trackingService.connect('https://api.digiqueue.co.za');
   activeTripId = tripId;
   trackingService.joinTrip(tripId);
-  debugPrint('[TRACKING] Joined room trip:$tripId');
+  debugPrint('[TRACKING] join:trip emitted (buffered until connected)');
 
   // Immediate first fix from last known position so passenger isn't left waiting.
   Geolocator.getLastKnownPosition().then((pos) {

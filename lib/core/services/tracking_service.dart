@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
@@ -7,21 +8,15 @@ class TrackingService {
   IO.Socket? socket;
   static const _storage = FlutterSecureStorage();
 
-  /// Connects to the WebSocket server and waits until the connection is
-  /// actually established before returning. This ensures joinTrip() and
-  /// listenToLocation() are called on a live socket.
+  /// Initialises the socket and starts connecting. Returns once the socket
+  /// object is ready (token is read, options are set). The actual TCP/polling
+  /// handshake completes asynchronously — events emitted before it finishes
+  /// are buffered by socket.io and flushed automatically on connect.
   Future<void> connect(String baseUrl) async {
-    if (socket != null && socket!.connected) return;
+    if (socket != null) return; // already initialised (connecting or connected)
 
     final token = await _storage.read(key: 'auth_token') ?? '';
 
-    final completer = Completer<void>();
-
-    // HTTP long-polling only — no WebSocket upgrade attempted.
-    // The server already returns 200 on the polling handshake (confirmed),
-    // so polling works through the Nginx proxy without extra config.
-    // The WebSocket upgrade fails (Nginx doesn't forward Upgrade headers)
-    // so we skip it entirely rather than letting the upgrade error propagate.
     socket = IO.io(
       baseUrl,
       IO.OptionBuilder()
@@ -31,23 +26,16 @@ class TrackingService {
           .build(),
     );
 
-    socket!.onConnect((_) {
-      if (!completer.isCompleted) completer.complete();
-    });
-
+    socket!.onConnect((_) => debugPrint('[SOCKET] Connected'));
     socket!.onConnectError((err) {
-      if (!completer.isCompleted) {
-        completer.completeError(err ?? 'Connection failed');
-      }
+      debugPrint('[SOCKET] Connect error: $err');
+      // Reset so the next connect() call retries from scratch.
+      socket?.dispose();
+      socket = null;
     });
-
-    socket!.onDisconnect((_) {});
-    socket!.onError((_) {});
+    socket!.onDisconnect((_) => debugPrint('[SOCKET] Disconnected'));
 
     socket!.connect();
-
-    // Await actual connection — throws if connection fails
-    await completer.future;
   }
 
   void joinTrip(String tripId) {
@@ -72,7 +60,7 @@ class TrackingService {
   }
 
   void disconnect() {
-    socket?.disconnect();
+    socket?.dispose();
     socket = null;
   }
 }

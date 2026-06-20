@@ -65,19 +65,16 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
   }
 
   Future<void> _connect() async {
-    try {
-      debugPrint('[PASSENGER] Connecting socket for trip: ${widget.tripId}');
-      await _tracking.connect('https://api.digiqueue.co.za');
-      debugPrint('[PASSENGER] Socket connected — joining room');
-      _tracking.joinTrip(widget.tripId);
-      debugPrint('[PASSENGER] Joined room trip:${widget.tripId}');
-      _tracking.listenToLocation((lat, lng) {
-        debugPrint('[PASSENGER] Location received: $lat, $lng');
-        _onLocationUpdate(LatLng(lat, lng));
-      });
-    } catch (e) {
-      debugPrint('[PASSENGER] Connection failed: $e');
-    }
+    debugPrint('[PASSENGER] Initialising socket for trip: ${widget.tripId}');
+    await _tracking.connect('https://api.digiqueue.co.za');
+    // joinTrip and listenToLocation are set up immediately.
+    // join:trip is buffered by socket.io and sent once the handshake completes.
+    _tracking.joinTrip(widget.tripId);
+    debugPrint('[PASSENGER] join:trip emitted for room: ${widget.tripId}');
+    _tracking.listenToLocation((lat, lng) {
+      debugPrint('[PASSENGER] Location received: $lat, $lng');
+      _onLocationUpdate(LatLng(lat, lng));
+    });
   }
 
   void _onLocationUpdate(LatLng position) {
