@@ -6,10 +6,11 @@ import '../../models/trip_model.dart';
 import '../../providers/driver_trips_provider.dart';
 import 'dart:async';
 
-import 'package:digiQ/core/services/tracking_service.dart';
+import 'package:digiQ/core/api/trips_api.dart';
 import 'package:geolocator/geolocator.dart';
 
-final trackingService = TrackingService();
+// Dio instance used by the location-push timer (outside widget tree).
+TripsApi? _tripsApi;
 
 Timer? trackingTimer;
 String? activeTripId;
@@ -21,38 +22,33 @@ String? activeTripId;
 Future<void> startTracking(String tripId) async {
   if (activeTripId == tripId) return;
 
-  debugPrint('[TRACKING] Starting tracking for trip: $tripId');
+  debugPrint('[TRACKING] Starting HTTP tracking for trip: $tripId');
 
   final serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
-    debugPrint('[TRACKING] Location services DISABLED — cannot track');
+    debugPrint('[TRACKING] Location services DISABLED');
     return;
   }
 
   var permission = await Geolocator.checkPermission();
-  debugPrint('[TRACKING] Permission status: $permission');
+  debugPrint('[TRACKING] Permission: $permission');
   if (permission == LocationPermission.denied) {
     permission = await Geolocator.requestPermission();
-    debugPrint('[TRACKING] Permission after request: $permission');
   }
   if (permission == LocationPermission.deniedForever) {
     debugPrint('[TRACKING] Permission denied forever');
     return;
   }
 
-  // connect() is non-blocking — returns once the socket object is ready.
-  // joinTrip is buffered by socket.io and delivered once the handshake completes.
-  debugPrint('[TRACKING] Initialising socket...');
-  await trackingService.connect('https://api.digiqueue.co.za');
   activeTripId = tripId;
-  trackingService.joinTrip(tripId);
-  debugPrint('[TRACKING] join:trip emitted (buffered until connected)');
 
-  // Immediate first fix from last known position so passenger isn't left waiting.
-  Geolocator.getLastKnownPosition().then((pos) {
-    if (pos != null) {
-      debugPrint('[TRACKING] Sending last known position: ${pos.latitude}, ${pos.longitude}');
-      trackingService.sendLocation(tripId, pos.latitude, pos.longitude);
+  // Push an immediate fix from the last known position.
+  Geolocator.getLastKnownPosition().then((pos) async {
+    if (pos != null && _tripsApi != null) {
+      try {
+        await _tripsApi!.postLocation(tripId, pos.latitude, pos.longitude);
+        debugPrint('[TRACKING] Last known position posted: ${pos.latitude}, ${pos.longitude}');
+      } catch (_) {}
     }
   });
 
@@ -60,12 +56,13 @@ Future<void> startTracking(String tripId) async {
   trackingTimer = Timer.periodic(
     const Duration(seconds: 5),
     (_) async {
+      if (_tripsApi == null) return;
       try {
         final position = await Geolocator.getCurrentPosition();
-        debugPrint('[TRACKING] Sending location: ${position.latitude}, ${position.longitude}');
-        trackingService.sendLocation(tripId, position.latitude, position.longitude);
+        await _tripsApi!.postLocation(tripId, position.latitude, position.longitude);
+        debugPrint('[TRACKING] Location posted: ${position.latitude}, ${position.longitude}');
       } catch (e) {
-        debugPrint('[TRACKING] Failed to get location: $e');
+        debugPrint('[TRACKING] Failed: $e');
       }
     },
   );
@@ -74,7 +71,6 @@ Future<void> startTracking(String tripId) async {
 void stopTracking() {
   trackingTimer?.cancel();
   trackingTimer = null;
-  trackingService.disconnect();
   activeTripId = null;
 }
 
@@ -87,6 +83,9 @@ class MyTripsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Keep _tripsApi up to date so the module-level timer can use it.
+    _tripsApi = ref.read(tripsApiProvider);
+
     final tripsAsync = ref.watch(driverTripsProvider);
 
     return Scaffold(
@@ -311,6 +310,7 @@ class _TripCard extends ConsumerWidget {
                       child: ElevatedButton(
                         onPressed: () async {
                           final tripsApi = ref.read(tripsApiProvider);
+                          _tripsApi = tripsApi;
                           await tripsApi.startTrip(trip.id);
                           await startTracking(trip.id);
                           await ref

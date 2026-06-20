@@ -1,4 +1,7 @@
-import 'package:digiQ/core/services/tracking_service.dart';
+import 'dart:async';
+
+import 'package:digiQ/core/api/api_client.dart';
+import 'package:digiQ/core/api/trips_api.dart';
 import 'package:digiQ/models/booking_model.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -25,7 +28,8 @@ class LiveTrackingScreen extends StatefulWidget {
 
 class _LiveTrackingScreenState extends State<LiveTrackingScreen>
     with SingleTickerProviderStateMixin {
-  final TrackingService _tracking = TrackingService();
+  late final TripsApi _api;
+  Timer? _pollTimer;
   GoogleMapController? _mapController;
   LatLng? _driverPosition;
   Set<Marker> _markers = {};
@@ -61,20 +65,27 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
       parent: _pulseController,
       curve: Curves.easeInOut,
     );
-    _connect();
+    _api = TripsApi(ApiClient().dio);
+    _startPolling();
   }
 
-  Future<void> _connect() async {
-    debugPrint('[PASSENGER] Initialising socket for trip: ${widget.tripId}');
-    await _tracking.connect('https://api.digiqueue.co.za');
-    // joinTrip and listenToLocation are set up immediately.
-    // join:trip is buffered by socket.io and sent once the handshake completes.
-    _tracking.joinTrip(widget.tripId);
-    debugPrint('[PASSENGER] join:trip emitted for room: ${widget.tripId}');
-    _tracking.listenToLocation((lat, lng) {
-      debugPrint('[PASSENGER] Location received: $lat, $lng');
-      _onLocationUpdate(LatLng(lat, lng));
-    });
+  void _startPolling() {
+    _fetchLocation(); // immediate first fetch
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _fetchLocation());
+  }
+
+  Future<void> _fetchLocation() async {
+    try {
+      final data = await _api.getLocation(widget.tripId);
+      debugPrint('[PASSENGER] Poll result: $data');
+      final lat = data?['lat'];
+      final lng = data?['lng'];
+      if (lat != null && lng != null) {
+        _onLocationUpdate(LatLng((lat as num).toDouble(), (lng as num).toDouble()));
+      }
+    } catch (e) {
+      debugPrint('[PASSENGER] Poll error: $e');
+    }
   }
 
   void _onLocationUpdate(LatLng position) {
@@ -109,8 +120,8 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen>
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _pulseController.dispose();
-    _tracking.disconnect();
     _mapController?.dispose();
     super.dispose();
   }

@@ -88,7 +88,13 @@ class TripsApi {
         .toList();
   }
 
-  // Future<void> sendSos(String tripId) async {
-  //   await dio.post('/trips/$tripId/sos');
-  // }
+  Future<void> postLocation(String tripId, double lat, double lng) async {
+    await dio.patch('/trips/$tripId/location', data: {'lat': lat, 'lng': lng});
+  }
+
+  /// Returns {lat, lng, updatedAt, status} or null lat/lng if never set.
+  Future<Map<String, dynamic>?> getLocation(String tripId) async {
+    final response = await dio.get('/trips/$tripId/location');
+    return response.data as Map<String, dynamic>?;
+  }
 }
