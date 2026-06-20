@@ -17,16 +17,14 @@ class TrackingService {
 
     final completer = Completer<void>();
 
-    // socket_io_client does not infer port 443 from https:// — use wss:// so
-    // the WebSocket URL is explicit and the port is correctly resolved.
-    final wsUrl = baseUrl
-        .replaceFirst('https://', 'wss://')
-        .replaceFirst('http://', 'ws://');
-
+    // Use polling+websocket so the initial handshake goes via HTTP (which
+    // works through a standard Nginx reverse proxy without extra config).
+    // The client will upgrade to WebSocket automatically if the proxy
+    // supports it; if not, it stays on polling — either way tracking works.
     socket = IO.io(
-      wsUrl,
+      baseUrl,
       IO.OptionBuilder()
-          .setTransports(['websocket'])
+          .setTransports(['polling', 'websocket'])
           .disableAutoConnect()
           .setAuth({'token': token})
           .build(),
