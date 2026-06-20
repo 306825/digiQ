@@ -17,14 +17,15 @@ class TrackingService {
 
     final completer = Completer<void>();
 
-    // Use polling+websocket so the initial handshake goes via HTTP (which
-    // works through a standard Nginx reverse proxy without extra config).
-    // The client will upgrade to WebSocket automatically if the proxy
-    // supports it; if not, it stays on polling — either way tracking works.
+    // HTTP long-polling only — no WebSocket upgrade attempted.
+    // The server already returns 200 on the polling handshake (confirmed),
+    // so polling works through the Nginx proxy without extra config.
+    // The WebSocket upgrade fails (Nginx doesn't forward Upgrade headers)
+    // so we skip it entirely rather than letting the upgrade error propagate.
     socket = IO.io(
       baseUrl,
       IO.OptionBuilder()
-          .setTransports(['polling', 'websocket'])
+          .setTransports(['polling'])
           .disableAutoConnect()
           .setAuth({'token': token})
           .build(),
