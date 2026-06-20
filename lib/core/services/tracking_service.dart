@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
@@ -5,10 +7,15 @@ class TrackingService {
   IO.Socket? socket;
   static const _storage = FlutterSecureStorage();
 
+  /// Connects to the WebSocket server and waits until the connection is
+  /// actually established before returning. This ensures joinTrip() and
+  /// listenToLocation() are called on a live socket.
   Future<void> connect(String baseUrl) async {
     if (socket != null && socket!.connected) return;
 
     final token = await _storage.read(key: 'auth_token') ?? '';
+
+    final completer = Completer<void>();
 
     socket = IO.io(
       baseUrl,
@@ -19,12 +26,23 @@ class TrackingService {
           .build(),
     );
 
-    socket!.connect();
+    socket!.onConnect((_) {
+      if (!completer.isCompleted) completer.complete();
+    });
 
-    socket!.onConnect((_) {});
+    socket!.onConnectError((err) {
+      if (!completer.isCompleted) {
+        completer.completeError(err ?? 'Connection failed');
+      }
+    });
+
     socket!.onDisconnect((_) {});
     socket!.onError((_) {});
-    socket!.onConnectError((_) {});
+
+    socket!.connect();
+
+    // Await actual connection — throws if connection fails
+    await completer.future;
   }
 
   void joinTrip(String tripId) {

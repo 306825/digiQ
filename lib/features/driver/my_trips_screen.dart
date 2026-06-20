@@ -281,9 +281,11 @@ class _TripCard extends ConsumerWidget {
     }
     if (permission == LocationPermission.deniedForever) return;
 
-    await trackingService.connect(
-      'https://api.digiqueue.co.za',
-    );
+    try {
+      await trackingService.connect('https://api.digiqueue.co.za');
+    } catch (_) {
+      return; // Can't reach server — abort silently, trip is already started
+    }
 
     activeTripId = tripId;
     trackingService.joinTrip(tripId);
@@ -299,9 +301,7 @@ class _TripCard extends ConsumerWidget {
             position.latitude,
             position.longitude,
           );
-        } catch (e) {
-          print('❌ Tracking error: $e');
-        }
+        } catch (_) {}
       },
     );
   }
