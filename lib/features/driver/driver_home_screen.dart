@@ -700,25 +700,148 @@ class _DriverBalanceCard extends ConsumerWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content:
-                Text('Payout request submitted — admin will process it shortly')),
+            content: Text(
+                'Payout request submitted — admin will process it shortly')),
       );
     } on DioException catch (e) {
       if (!context.mounted) return;
-      // Extract the backend's error message from the response body
       final data = e.response?.data;
       final msg = (data is Map && data['message'] != null)
           ? data['message'].toString()
           : 'Payout request failed. Please try again.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+
+      // Bank details missing — prompt driver to add them then retry
+      if (msg.contains('Banking details not on file')) {
+        final saved = await _showBankDetailsDialog(context, ref);
+        if (saved == true && context.mounted) {
+          await _submitPayout(context, ref, amount);
+        }
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(msg)));
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Payout request failed. Please try again.')),
+        const SnackBar(
+            content: Text('Payout request failed. Please try again.')),
       );
     }
+  }
+
+  Future<bool?> _showBankDetailsDialog(
+      BuildContext context, WidgetRef ref) async {
+    final bankNameCtrl = TextEditingController();
+    final accountNameCtrl = TextEditingController();
+    final accountNumberCtrl = TextEditingController();
+    final branchCodeCtrl = TextEditingController();
+    String accountType = 'cheque';
+    final formKey = GlobalKey<FormState>();
+
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          title: const Text('Add Banking Details'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Your banking details are required before a payout can be processed.',
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: bankNameCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Bank name'),
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: accountNameCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Account holder name'),
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: accountNumberCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Account number'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: branchCodeCtrl,
+                    decoration: const InputDecoration(
+                        labelText: 'Branch code (optional)'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    key: ValueKey(accountType),
+                    initialValue: accountType,
+                    decoration:
+                        const InputDecoration(labelText: 'Account type'),
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'cheque', child: Text('Cheque')),
+                      DropdownMenuItem(
+                          value: 'savings', child: Text('Savings')),
+                    ],
+                    onChanged: (v) => setS(() => accountType = v!),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                try {
+                  final api = ref.read(driverApiProvider);
+                  await api.updateBankDetails(
+                    bankName: bankNameCtrl.text.trim(),
+                    accountName: accountNameCtrl.text.trim(),
+                    accountNumber: accountNumberCtrl.text.trim(),
+                    branchCode: branchCodeCtrl.text.trim().isEmpty
+                        ? null
+                        : branchCodeCtrl.text.trim(),
+                    accountType: accountType,
+                  );
+                  if (ctx.mounted) Navigator.pop(ctx, true);
+                } on DioException catch (e) {
+                  final data = e.response?.data;
+                  final msg = (data is Map && data['message'] != null)
+                      ? data['message'].toString()
+                      : 'Failed to save bank details.';
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx)
+                        .showSnackBar(SnackBar(content: Text(msg)));
+                  }
+                }
+              },
+              child: const Text('Save & Continue'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

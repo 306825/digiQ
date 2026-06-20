@@ -86,6 +86,22 @@ class DriverApi {
     await dio.post('/payouts/withdrawal', data: {'amount': amount});
   }
 
+  Future<void> updateBankDetails({
+    required String bankName,
+    required String accountName,
+    required String accountNumber,
+    String? branchCode,
+    required String accountType,
+  }) async {
+    await dio.patch('/drivers/me/bank-details', data: {
+      'bankName': bankName,
+      'accountName': accountName,
+      'accountNumber': accountNumber,
+      'branchCode': branchCode ?? '',
+      'accountType': accountType,
+    });
+  }
+
   Future<List<WithdrawalRequest>> getPayoutHistory() async {
     final res = await dio.get('/payouts/history');
     return (res.data as List)
