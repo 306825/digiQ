@@ -6,6 +6,10 @@
 	<string>Select a profile picture</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a profile picture</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>DigiQ uses your location to share your position with passengers during a trip</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>DigiQ uses your location in the background to keep passengers updated during active trips</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
