@@ -1,4 +1,4 @@
-package com.example.digi_q
+package co.za.digiqueue.app
 
 import io.flutter.embedding.android.FlutterActivity
 
