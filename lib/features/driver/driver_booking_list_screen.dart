@@ -107,6 +107,22 @@ class _BookingCard extends ConsumerWidget {
 
           const SizedBox(height: 12),
 
+          // Phone number
+          if (booking.passengerPhone != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.phone_outlined, size: 18, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Text(
+                    booking.passengerPhone!,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+
           // Pickup
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

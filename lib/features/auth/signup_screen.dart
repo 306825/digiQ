@@ -16,6 +16,8 @@ class SignupScreen extends ConsumerStatefulWidget {
 }
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
+  final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscure = true;
@@ -25,12 +27,24 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   void dispose() {
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      _showSnack('Please enter your full name');
+      return;
+    }
+    final phone = _phoneCtrl.text.trim();
+    if (phone.isEmpty) {
+      _showSnack('Please enter your phone number');
+      return;
+    }
     final email = _emailCtrl.text.trim();
     if (!isValidEmail(email)) {
       _showSnack('Please enter a valid email');
@@ -47,6 +61,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     }
     try {
       await ref.read(authProvider.notifier).register(
+            fullName: name,
+            phoneNumber: phone,
             identifier: email,
             password: _passwordCtrl.text.trim(),
             role: _role,
@@ -132,6 +148,34 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // Full name
+                  TextField(
+                    controller: _nameCtrl,
+                    keyboardType: TextInputType.name,
+                    textInputAction: TextInputAction.next,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Full name',
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Phone number
+                  TextField(
+                    controller: _phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone number',
+                      prefixIcon: Icon(Icons.phone_outlined),
+                      hintText: 'e.g. 0821234567',
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
 
                   // Email
                   TextField(

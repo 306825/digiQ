@@ -181,7 +181,8 @@ class AuthNotifier extends Notifier<AuthState> {
    * -------------------------------------------------------------------------- */
 
   Future<void> register({
-    //required String fullName,
+    required String fullName,
+    required String phoneNumber,
     required String identifier,
     required String password,
     required UserRole role,
@@ -196,7 +197,8 @@ class AuthNotifier extends Notifier<AuthState> {
       await api.dio.post(
         '/auth/register',
         data: {
-          // 'fullName': fullName,
+          'fullName': fullName,
+          'phoneNumber': phoneNumber,
           'identifier': identifier,
           'password': password,
           'role': role.name,
