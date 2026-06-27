@@ -234,7 +234,7 @@ class _TripCard extends StatelessWidget {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green, // ✅ solid green
+                        color: Colors.green,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -242,10 +242,41 @@ class _TripCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white, // ✅ white text
+                          color: Colors.white,
                         ),
                       ),
                     ),
+                    if (trip.minPassengers > 1) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.orange.shade300),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.info_outline,
+                                size: 12,
+                                color: Colors.orange.shade800),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Min ${trip.minPassengers} pax',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.orange.shade800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

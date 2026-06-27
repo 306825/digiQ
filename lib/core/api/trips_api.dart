@@ -12,6 +12,7 @@ class TripsApi {
     required DateTime date,
     required int seatsTotal,
     required double price,
+    int minPassengers = 1,
   }) async {
     await dio.post(
       '/trips',
@@ -21,6 +22,7 @@ class TripsApi {
         'date': date.toIso8601String(),
         'seatsTotal': seatsTotal,
         'price': price,
+        'minPassengers': minPassengers,
       },
     );
   }
@@ -31,6 +33,11 @@ class TripsApi {
 
   Future<void> completeTrip(String tripId) async {
     await dio.patch('/trips/$tripId/complete');
+  }
+
+  Future<Map<String, dynamic>> cancelTrip(String tripId) async {
+    final response = await dio.patch('/trips/$tripId/cancel');
+    return response.data as Map<String, dynamic>;
   }
 
   Future<void> sendSos(String bookingId) async {

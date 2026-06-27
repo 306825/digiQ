@@ -12,6 +12,7 @@ class Trip {
   final int seatsTotal;
   final int seatsAvailable;
   final double price;
+  final int minPassengers;
 
   final String status;
   final String? driverProfileImageUrl;
@@ -28,6 +29,7 @@ class Trip {
     required this.seatsAvailable,
     required this.price,
     required this.status,
+    this.minPassengers = 1,
     this.driverProfileImageUrl,
   });
 
@@ -48,6 +50,7 @@ class Trip {
       seatsTotal: (json['seatsTotal'] as num).toInt(),
       seatsAvailable: (json['seatsAvailable'] as num?)?.toInt() ?? 0,
       price: (json['price'] as num).toDouble(),
+      minPassengers: (json['minPassengers'] as num?)?.toInt() ?? 1,
       status: json['status'] ?? 'closed',
     );
   }
@@ -73,6 +76,7 @@ class Trip {
       seatsTotal: json['seatsTotal'] as int,
       seatsAvailable: json['seatsAvailable'] as int,
       price: (json['price'] as num).toDouble(),
+      minPassengers: (json['minPassengers'] as num?)?.toInt() ?? 1,
 
       // 🔹 Search results are always open
       status: 'open',

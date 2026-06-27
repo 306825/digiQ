@@ -23,6 +23,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
   DateTime? date;
   bool submitting = false;
   DepartureWindow? selectedWindow;
+  int minPassengers = 1;
 
   Future<void> submit() async {
     if (selectedRoute == null || selectedWindow == null || date == null) return;
@@ -64,6 +65,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
             date: date!,
             seatsTotal: seats,
             price: price,
+            minPassengers: minPassengers,
           );
 
       ref.invalidate(driverTripsProvider);
@@ -248,6 +250,11 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                         decimal: true,
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    _MinPassengersStepper(
+                      value: minPassengers,
+                      onChanged: (v) => setState(() => minPassengers = v),
+                    ),
                   ],
                 ),
               ),
@@ -344,6 +351,69 @@ class _DatePickerTile extends StatelessWidget {
             const Icon(Icons.chevron_right),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MinPassengersStepper extends StatelessWidget {
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  const _MinPassengersStepper({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.group, color: Colors.grey, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Minimum passengers',
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                Text(
+                  'Need at least $value passenger${value == 1 ? '' : 's'} to proceed',
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            onPressed: value > 1 ? () => onChanged(value - 1) : null,
+            color: Colors.grey,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              '$value',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: () => onChanged(value + 1),
+            color: Theme.of(context).colorScheme.primary,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
       ),
     );
   }

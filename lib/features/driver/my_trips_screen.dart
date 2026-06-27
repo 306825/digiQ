@@ -219,7 +219,12 @@ class _TripCard extends ConsumerWidget {
     final isScheduled = status == 'scheduled';
     final isActive = status == 'active';
     final isCompleted = status == 'completed';
-    final statusColor = isActive ? Colors.green : Colors.grey;
+    final isCancelled = status == 'cancelled';
+    final statusColor = isActive
+        ? Colors.green
+        : isCancelled
+            ? Colors.red
+            : Colors.grey;
 
     return Card(
       elevation: 0.6,
@@ -294,15 +299,25 @@ class _TripCard extends ConsumerWidget {
                       ? Icons.play_arrow
                       : isCompleted
                           ? Icons.check
-                          : Icons.schedule,
+                          : isCancelled
+                              ? Icons.cancel
+                              : Icons.schedule,
                   label: status.toUpperCase(),
                   color: isActive
                       ? Colors.green
                       : isCompleted
                           ? Colors.grey
-                          : Colors.orange,
+                          : isCancelled
+                              ? Colors.red
+                              : Colors.orange,
                 ),
-                if (isScheduled)
+                if (trip.minPassengers > 1)
+                  _Pill(
+                    icon: Icons.group,
+                    label: 'Min ${trip.minPassengers}',
+                    color: Colors.blueGrey,
+                  ),
+                if (isScheduled) ...[
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: SizedBox(
@@ -321,6 +336,21 @@ class _TripCard extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red.shade700,
+                          side: BorderSide(color: Colors.red.shade300),
+                        ),
+                        onPressed: () => _confirmCancel(context, ref),
+                        child: const Text('Cancel Trip'),
+                      ),
+                    ),
+                  ),
+                ],
 
                 if (isActive)
                   Padding(
@@ -350,6 +380,54 @@ class _TripCard extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmCancel(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel trip?'),
+        content: const Text(
+          'This will cancel the trip and refund all passengers who have already paid. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep trip'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Yes, cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final result = await ref.read(tripsApiProvider).cancelTrip(trip.id);
+      final refunded = result['refundedBookings'] as int? ?? 0;
+      await ref.read(driverTripsProvider.notifier).refresh();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              refunded > 0
+                  ? 'Trip cancelled. $refunded passenger${refunded == 1 ? '' : 's'} will be refunded.'
+                  : 'Trip cancelled.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to cancel trip')),
+        );
+      }
+    }
   }
 
   static String _formatDate(DateTime date) {
