@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api/booking_api.dart';
 import '../models/booking_model.dart';
@@ -22,10 +24,13 @@ class PassengerBookingsNotifier extends AsyncNotifier<List<Booking>> {
     try {
       await ref.read(bookingApiProvider).cancelBooking(bookingId);
 
-      // Remove after success
       state = AsyncData(
         state.value!.where((b) => b.id != bookingId).toList(),
       );
+    } on DioException catch (e) {
+      debugPrint('[CANCEL] status=${e.response?.statusCode}');
+      debugPrint('[CANCEL] body=${e.response?.data}');
+      rethrow;
     } finally {
       _processing.remove(bookingId);
     }
