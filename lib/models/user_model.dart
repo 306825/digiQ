@@ -135,9 +135,11 @@ class UserModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'identifier': email,
       'fullName': fullName,
       'role': role.name,
       'verificationStatus': verificationStatus.name,
+      'vehicleStatus': vehicleStatus.name,
       'isActive': isActive,
       'profileImageUrl': profileImageUrl,
     };
