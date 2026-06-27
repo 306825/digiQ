@@ -1,11 +1,102 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/core/api/booking_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/trip_model.dart';
-import '../shared/widgets/app_text_field.dart';
 import '../shared/widgets/primary_button.dart';
-import 'payfast_webview_screen.dart'; // <-- IMPORTANT
+import 'payfast_webview_screen.dart';
+
+const _kApiKey = 'AIzaSyBUPxGXp0U0plvCgHl_icV8e2kXuI8CX1A';
+
+// ---------------------------------------------------------------------------
+// Lightweight Places autocomplete via direct REST calls (no extra package).
+// ---------------------------------------------------------------------------
+
+class _PlaceSuggestion {
+  final String placeId;
+  final String mainText;
+  final String secondaryText;
+
+  const _PlaceSuggestion({
+    required this.placeId,
+    required this.mainText,
+    required this.secondaryText,
+  });
+}
+
+Future<List<_PlaceSuggestion>> _autocomplete(String input) async {
+  if (input.length < 2) return [];
+  try {
+    final resp = await Dio().get(
+      'https://maps.googleapis.com/maps/api/place/autocomplete/json',
+      queryParameters: {
+        'input': input,
+        'key': _kApiKey,
+        'components': 'country:za',
+        'language': 'en',
+      },
+    );
+    final predictions = resp.data['predictions'] as List? ?? [];
+    return predictions.map((p) {
+      final terms = p['structured_formatting'] as Map;
+      return _PlaceSuggestion(
+        placeId: p['place_id'] as String,
+        mainText: terms['main_text'] as String? ?? '',
+        secondaryText: terms['secondary_text'] as String? ?? '',
+      );
+    }).toList();
+  } catch (_) {
+    return [];
+  }
+}
+
+/// Returns {addressLine, area, lat, lng} for a given placeId.
+Future<Map<String, dynamic>?> _fetchPlaceDetails(String placeId) async {
+  try {
+    final resp = await Dio().get(
+      'https://maps.googleapis.com/maps/api/place/details/json',
+      queryParameters: {
+        'place_id': placeId,
+        'key': _kApiKey,
+        'fields': 'formatted_address,geometry,address_components',
+      },
+    );
+    final result = resp.data['result'] as Map?;
+    if (result == null) return null;
+
+    final address = result['formatted_address'] as String? ?? '';
+    final loc = result['geometry']?['location'];
+    final lat = (loc?['lat'] as num?)?.toDouble();
+    final lng = (loc?['lng'] as num?)?.toDouble();
+
+    // Extract suburb/city from address_components
+    final components = result['address_components'] as List? ?? [];
+    String area = '';
+    for (final c in components) {
+      final types = (c['types'] as List).cast<String>();
+      if (types.contains('sublocality') || types.contains('locality')) {
+        area = c['long_name'] as String;
+        break;
+      }
+    }
+
+    return {
+      'addressLine': address,
+      'area': area,
+      'lat': lat,
+      'lng': lng,
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
 class PickupAddressScreen extends ConsumerStatefulWidget {
   final Trip trip;
@@ -18,29 +109,80 @@ class PickupAddressScreen extends ConsumerStatefulWidget {
 }
 
 class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
-  final _addressController = TextEditingController();
-  final _areaController = TextEditingController();
+  final _searchController = TextEditingController();
   final _notesController = TextEditingController();
+
+  List<_PlaceSuggestion> _suggestions = [];
+  Timer? _debounce;
+  bool _isSearching = false;
+
+  // Confirmed selection
+  String? _selectedAddress;
+  String? _selectedArea;
+  double? _selectedLat;
+  double? _selectedLng;
 
   bool _isSubmitting = false;
 
   @override
   void dispose() {
-    _addressController.dispose();
-    _areaController.dispose();
+    _debounce?.cancel();
+    _searchController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    if (value.trim().isEmpty) {
+      setState(() {
+        _suggestions = [];
+        _selectedAddress = null;
+      });
+      return;
+    }
+    // Clear confirmed selection when user types again
+    if (_selectedAddress != null) {
+      setState(() => _selectedAddress = null);
+    }
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      setState(() => _isSearching = true);
+      final results = await _autocomplete(value.trim());
+      if (mounted) setState(() {
+        _suggestions = results;
+        _isSearching = false;
+      });
+    });
+  }
+
+  Future<void> _selectSuggestion(_PlaceSuggestion s) async {
+    _debounce?.cancel();
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _suggestions = [];
+      _isSearching = true;
+      _searchController.text = '${s.mainText}, ${s.secondaryText}';
+    });
+
+    final details = await _fetchPlaceDetails(s.placeId);
+    if (!mounted) return;
+    setState(() {
+      _isSearching = false;
+      if (details != null) {
+        _selectedAddress = details['addressLine'] as String?;
+        _selectedArea = details['area'] as String? ?? s.secondaryText;
+        _selectedLat = details['lat'] as double?;
+        _selectedLng = details['lng'] as double?;
+        _searchController.text = _selectedAddress ?? _searchController.text;
+      }
+    });
   }
 
   Future<void> _submitBooking() async {
     if (_isSubmitting) return;
 
-    final address = _addressController.text.trim();
-    final area = _areaController.text.trim();
-    final notes = _notesController.text.trim();
-
-    if (address.isEmpty || area.isEmpty) {
-      _showSnack('Please enter pickup address and area');
+    if (_selectedAddress == null) {
+      _showSnack('Please select an address from the suggestions');
       return;
     }
 
@@ -50,23 +192,19 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
     final paymentsApi = ref.read(paymentsApiProvider);
 
     try {
-      debugPrint('🔥 SUBMIT BOOKING PRESSED');
-
-      // 1️⃣ Create booking first
       final bookingRes = await bookingApi.createBooking(
         tripId: widget.trip.id,
         pickup: {
-          'addressLine': address,
-          'area': area,
-          if (notes.isNotEmpty) 'notes': notes,
+          'addressLine': _selectedAddress!,
+          'area': _selectedArea ?? '',
+          if (_selectedLat != null) 'lat': _selectedLat,
+          if (_selectedLng != null) 'lng': _selectedLng,
+          if (_notesController.text.trim().isNotEmpty)
+            'notes': _notesController.text.trim(),
         },
       );
 
       final bookingId = bookingRes.data['bookingId'] as String;
-      debugPrint('✅ BOOKING CREATED: $bookingId');
-
-      // 2️⃣ Ask backend to prepare PayFast payment
-      debugPrint('🔥 ABOUT TO CALL PAYFAST INITIATE');
 
       final paymentInit = await paymentsApi.initiatePayfast(
         bookingId: bookingId,
@@ -75,9 +213,6 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
       final processUrl = paymentInit['processUrl'] as String;
       final payload = Map<String, String>.from(paymentInit['payload'] as Map);
 
-      debugPrint('✅ PAYFAST INIT OK: $processUrl');
-
-      // 3️⃣ OPEN IN OUR OWN WEBVIEW (FIXES YOUR 404)
       final paid = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
@@ -88,7 +223,6 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
         ),
       );
 
-      // 4️⃣ Handle result (UI only — backend is authoritative)
       if (!mounted) return;
 
       if (paid == true) {
@@ -99,7 +233,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
 
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
-      debugPrint('❌ PAYMENT INIT ERROR: $e');
+      debugPrint('❌ BOOKING ERROR: $e');
       if (!mounted) return;
       _showSnack('Failed to initiate payment');
     } finally {
@@ -123,12 +257,11 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // Route header
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
-              ),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -144,44 +277,101 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                 ],
               ),
             ),
+
+            // Search field + suggestions
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Card(
-                      elevation: 1.5,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            AppTextField(
-                              labelText: 'Street address',
-                              controller: _addressController,
-                            ),
-                            const SizedBox(height: 12),
-                            AppTextField(
-                              labelText: 'Area / Suburb',
-                              controller: _areaController,
-                            ),
-                            const SizedBox(height: 12),
-                            AppTextField(
-                              labelText: 'Notes (optional)',
-                              controller: _notesController,
-                              multiline: true,
-                            ),
-                          ],
+                    // Address search
+                    TextField(
+                      controller: _searchController,
+                      onChanged: _onSearchChanged,
+                      decoration: InputDecoration(
+                        labelText: 'Search pickup address',
+                        hintText: 'Start typing your street or suburb…',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _isSearching
+                            ? const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              )
+                            : _selectedAddress != null
+                                ? const Icon(Icons.check_circle,
+                                    color: Colors.green)
+                                : null,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                    ),
+
+                    // Suggestions list
+                    if (_suggestions.isNotEmpty)
+                      Card(
+                        margin: const EdgeInsets.only(top: 4),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _suggestions.length,
+                          separatorBuilder: (_, __) =>
+                              const Divider(height: 1),
+                          itemBuilder: (_, i) {
+                            final s = _suggestions[i];
+                            return ListTile(
+                              leading: const Icon(Icons.location_on_outlined,
+                                  color: Colors.grey),
+                              title: Text(
+                                s.mainText,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w500),
+                              ),
+                              subtitle: Text(
+                                s.secondaryText,
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey),
+                              ),
+                              onTap: () => _selectSuggestion(s),
+                            );
+                          },
+                        ),
+                      ),
+
+                    const SizedBox(height: 20),
+
+                    // Notes
+                    TextField(
+                      controller: _notesController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Notes for driver (optional)',
+                        hintText: 'Gate code, landmark, special instructions…',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            Container(
+
+            // Confirm button
+            Padding(
               padding: const EdgeInsets.all(20),
               child: SizedBox(
                 width: double.infinity,
