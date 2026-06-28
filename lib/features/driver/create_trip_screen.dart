@@ -26,7 +26,24 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
   int minPassengers = 1;
 
   Future<void> submit() async {
-    if (selectedRoute == null || selectedWindow == null || date == null) return;
+    if (selectedRoute == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a route')),
+      );
+      return;
+    }
+    if (date == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a trip date')),
+      );
+      return;
+    }
+    if (selectedWindow == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a departure window')),
+      );
+      return;
+    }
 
     if (selectedVehicle == null) {
       ScaffoldMessenger.of(context).showSnackBar(
