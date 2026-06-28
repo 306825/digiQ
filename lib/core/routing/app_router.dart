@@ -21,34 +21,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// ✅ Notifier that tells GoRouter to refresh when auth changes
-class RouterRefreshNotifier extends ChangeNotifier {
-  RouterRefreshNotifier(Ref ref) {
-    ref.listen<AuthState>(authProvider, (previous, next) {
-      final prev = previous?.status;
-      final curr = next.status;
-
-      final shouldRefresh = prev != curr &&
-          (curr == AuthStatus.authenticated ||
-              curr == AuthStatus.unauthenticated);
-
-      if (shouldRefresh) {
-        notifyListeners();
-      }
-    });
-  }
-}
-
-final routerRefreshNotifierProvider = Provider<RouterRefreshNotifier>((ref) {
-  return RouterRefreshNotifier(ref);
-});
-
+// appRouterProvider is kept alive because MyApp watches it via ref.watch.
+// The ref.listen inside this provider therefore persists for the app lifetime,
+// making auth → router refresh reliable without a separate notifier provider.
 final appRouterProvider = Provider<GoRouter>((ref) {
-  //final refreshNotifier = RouterRefreshNotifier(ref);
-  final refreshNotifier = ref.read(routerRefreshNotifierProvider);
+  final notifier = ValueNotifier<int>(0);
+  ref.onDispose(notifier.dispose);
+
+  // When auth status settles (initializing → authenticated/unauthenticated),
+  // increment the notifier so GoRouter re-runs the redirect function.
+  ref.listen<AuthState>(authProvider, (previous, next) {
+    final prev = previous?.status;
+    final curr = next.status;
+    if (prev != curr &&
+        (curr == AuthStatus.authenticated ||
+            curr == AuthStatus.unauthenticated)) {
+      notifier.value++;
+    }
+  });
 
   return GoRouter(
-    refreshListenable: refreshNotifier,
+    refreshListenable: notifier,
     initialLocation: '/splash',
     redirect: (context, state) {
       final authState = ref.read(authProvider);
@@ -63,12 +56,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isTerms = location == '/terms';
       final isPrivacy = location == '/privacy';
 
-      // 0️⃣ Bootstrapping — hold on /splash until auth resolves
+      // Hold on /splash until auth resolves
       if (status == AuthStatus.initializing) {
         return location == '/splash' ? null : '/splash';
       }
 
-      // 1️⃣ Not authenticated
       if (status == AuthStatus.unauthenticated) {
         if (isLogin ||
             isSignup ||
@@ -81,11 +73,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
-      // 2️⃣ Auth settling
-      // if (status == AuthStatus.authenticating || user == null) {
-      //   return null;
-      // }
-
       if (status == AuthStatus.authenticating) {
         return location == '/login' ? null : '/login';
       }
@@ -96,13 +83,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       final role = user.role;
 
-      // 🛡️ ADMIN
       if (role == UserRole.admin) {
         if (isLogin || isSignup) return '/admin';
         return null;
       }
 
-      // 🚗 DRIVER
       if (role == UserRole.driver) {
         final needsVerification =
             user.verificationStatus != DriverVerificationStatus.approved;
@@ -118,7 +103,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      // 🧍 PASSENGER
       if (role == UserRole.passenger) {
         if (isLogin) return '/passenger';
         return null;
@@ -140,9 +124,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           builder: (_, __) => DriverVerificationScreen()),
       GoRoute(
           path: '/admin/routes', builder: (_, __) => const AdminRoutesTab()),
-      // GoRoute(
-      //     path: '/admin/drivers',
-      //     builder: (_, __) => const AdminDriversScreen()),
       GoRoute(
           path: '/deactivated',
           builder: (_, __) => const AccountDeactivatedScreen()),
@@ -158,14 +139,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return ResetPasswordScreen(resetToken: token);
         },
       ),
-      GoRoute(
-        path: '/terms',
-        builder: (_, __) => const TermsScreen(),
-      ),
-      GoRoute(
-        path: '/privacy',
-        builder: (_, __) => const PrivacyScreen(),
-      ),
+      GoRoute(path: '/terms', builder: (_, __) => const TermsScreen()),
+      GoRoute(path: '/privacy', builder: (_, __) => const PrivacyScreen()),
       GoRoute(
         path: '/booking/:id',
         builder: (context, state) {
@@ -177,7 +152,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/admin/incidents',
         builder: (_, __) => const AdminIncidentsScreen(),
       ),
-
       GoRoute(
         path: '/driver/vehicle',
         builder: (_, __) => const DriverVehicleScreen(),
