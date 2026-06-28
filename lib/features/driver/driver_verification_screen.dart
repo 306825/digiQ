@@ -1,5 +1,6 @@
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/features/driver/widgets/documents_upload_tile.dart';
+import 'package:digiQ/features/shared/widgets/address_autocomplete_field.dart';
 import 'package:digiQ/models/user_model.dart';
 import 'package:digiQ/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,24 @@ class _DriverVerificationScreenState
   bool submitting = false;
 
   bool get allDocsUploaded => uploadedDocs.length == 6;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-populate from the name collected at registration
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final fullName = ref.read(authProvider).user?.fullName ?? '';
+      if (fullName.isNotEmpty && firstNameCtrl.text.isEmpty) {
+        final spaceIdx = fullName.indexOf(' ');
+        if (spaceIdx != -1) {
+          firstNameCtrl.text = fullName.substring(0, spaceIdx);
+          lastNameCtrl.text = fullName.substring(spaceIdx + 1);
+        } else {
+          firstNameCtrl.text = fullName;
+        }
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -232,12 +251,9 @@ class _DriverVerificationScreenState
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextField(
+                      AddressAutocompleteField(
                         controller: addressCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Residential Address',
-                        ),
-                        maxLines: 2,
+                        labelText: 'Residential Address',
                       ),
                     ],
                   ),
