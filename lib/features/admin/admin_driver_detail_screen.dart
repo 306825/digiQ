@@ -5,18 +5,14 @@ import '../../../models/user_model.dart';
 import '../../../providers/admin_drivers_provider.dart';
 import '../../../theme/app.theme.dart';
 
-/// 🔥 VEHICLE PROVIDER (SAFE PARSING)
+/// Returns all vehicles for a driver (list from backend)
 final adminVehicleProvider =
-    FutureProvider.family<Map<String, dynamic>?, String>((ref, driverId) async {
+    FutureProvider.family<List<Map<String, dynamic>>, String>((ref, driverId) async {
   final api = ref.read(adminApiProvider);
   final res = await api.dio.get('/drivers/$driverId/vehicle');
-
   final data = res.data;
-
-  if (data == null || data == '') return null;
-  if (data is Map<String, dynamic>) return data;
-
-  return null;
+  if (data == null || data is! List) return [];
+  return (data as List).whereType<Map<String, dynamic>>().toList();
 });
 
 class AdminDriverDetailScreen extends ConsumerWidget {
@@ -82,38 +78,39 @@ class AdminDriverDetailScreen extends ConsumerWidget {
               child: CircularProgressIndicator(),
             ),
             error: (e, _) => Text('Failed to load vehicle: $e'),
-            data: (vehicle) {
-              print("🚨 DRIVER ID USED: ${driver.id}");
-              print("🚗 VEHICLE DATA: $vehicle");
-              if (vehicle == null) {
+            data: (vehicles) {
+              if (vehicles.isEmpty) {
                 return const Text('No vehicle submitted');
               }
-
               return Column(
-                //crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _InfoTile(
-                      'Registration', vehicle['registrationNumber'] ?? '-'),
-                  _InfoTile('Make', vehicle['make'] ?? '-'),
-                  _InfoTile('Model', vehicle['model'] ?? '-'),
-                  _InfoTile('Status', vehicle['status'] ?? '-'),
-                  _DocumentTile('Roadworthy', vehicle['roadworthyDocUrl']),
-                  _DocumentTile(
-                      'Operating License', vehicle['operatingLicenseDocUrl']),
-                  const SizedBox(height: 16),
-                  // if (vehicle['status'] == 'pending')
-
-                  //   _VehicleActions(
-                  //     vehicleId: vehicle['_id'],
-                  //     driverId: driver.id,
-                  //   ),
-                  if (vehicle['status'] == 'pending') ...[
-                    _VehicleActions(
-                      vehicleId: vehicle['_id'],
-                      driverId: driver.id,
-                    ),
-                  ]
-                ],
+                children: vehicles.map((vehicle) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (vehicles.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, bottom: 4),
+                        child: Text(
+                          vehicle['registrationNumber'] ?? 'Vehicle',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    _InfoTile('Registration', vehicle['registrationNumber'] ?? '-'),
+                    _InfoTile('Make', vehicle['make'] ?? '-'),
+                    _InfoTile('Model', vehicle['model'] ?? '-'),
+                    _InfoTile('Seats', vehicle['seats']?.toString() ?? '-'),
+                    _InfoTile('Status', vehicle['status'] ?? '-'),
+                    _DocumentTile('Roadworthy', vehicle['roadworthyDocUrl']),
+                    _DocumentTile('Operating License', vehicle['operatingLicenseDocUrl']),
+                    if (vehicle['status'] == 'pending') ...[
+                      const SizedBox(height: 12),
+                      _VehicleActions(
+                        vehicleId: vehicle['_id'],
+                        driverId: driver.id,
+                      ),
+                    ],
+                    const Divider(height: 24),
+                  ],
+                )).toList(),
               );
             },
           ),

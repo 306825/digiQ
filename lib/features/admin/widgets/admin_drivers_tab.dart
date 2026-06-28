@@ -171,29 +171,28 @@ class _PendingVehicleTile extends ConsumerWidget {
           Text('Driver: $driverName',
               style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
           const SizedBox(height: 12),
+          if (driver != null)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('Review Full Profile'),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AdminDriverDetailScreen(driver: driver!),
+                    ),
+                  ).then((_) {
+                    ref.invalidate(pendingVehiclesProvider);
+                    ref.read(adminDriversProvider.notifier).refresh();
+                  });
+                },
+              ),
+            ),
+          const SizedBox(height: 8),
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.open_in_new, size: 16),
-                  label: const Text('Review'),
-                  onPressed: driver == null
-                      ? null
-                      : () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  AdminDriverDetailScreen(driver: driver!),
-                            ),
-                          ).then((_) {
-                            ref.invalidate(pendingVehiclesProvider);
-                            ref.read(adminDriversProvider.notifier).refresh();
-                          });
-                        },
-                ),
-              ),
-              const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
@@ -211,8 +210,8 @@ class _PendingVehicleTile extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.danger),
                   icon: const Icon(Icons.close, size: 16),
                   label: const Text('Reject'),
                   onPressed: () async {
