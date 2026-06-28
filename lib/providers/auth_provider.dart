@@ -58,21 +58,23 @@ class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
     // Kick off auth restoration; the router shows /splash until this resolves.
-    Future.microtask(() => _bootstrapAuth());
+    Future.microtask(() async {
+      try {
+        await _bootstrapAuth();
+      } catch (e) {
+        // Any unhandled error during bootstrap must not leave the app stuck on
+        // the splash screen. Fall back to unauthenticated so the user reaches
+        // the login screen.
+        print('[AUTH] Bootstrap error: $e');
+        state = const AuthState(status: AuthStatus.unauthenticated);
+      }
+    });
     return const AuthState(status: AuthStatus.initializing);
   }
 
   Future<void> initialize() async {
     await _bootstrapAuth();
   }
-
-  // bool _bootstrapped = false;
-
-  // Future<void> _bootstrapAuthOnce() async {
-  //   if (_bootstrapped) return;
-  //   _bootstrapped = true;
-  //   await _bootstrapAuth();
-  // }
 
   /* --------------------------------------------------------------------------
    * Restore persisted auth
@@ -90,14 +92,21 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<AuthState> _resolveAuthState() async {
-    final token = await _storage.read(key: _tokenKey);
-    final cachedUserJson = await _storage.read(key: _userKey);
-
-    if (token == null || cachedUserJson == null) {
-      return const AuthState(status: AuthStatus.unauthenticated);
-    }
-
     try {
+      // flutter_secure_storage can throw on iOS if Keychain is temporarily
+      // unavailable (e.g. first boot before first unlock). Timeout after 5 s
+      // so a Keychain hang doesn't leave the splash screen stuck forever.
+      final token = await _storage
+          .read(key: _tokenKey)
+          .timeout(const Duration(seconds: 5), onTimeout: () => null);
+      final cachedUserJson = await _storage
+          .read(key: _userKey)
+          .timeout(const Duration(seconds: 5), onTimeout: () => null);
+
+      if (token == null || cachedUserJson == null) {
+        return const AuthState(status: AuthStatus.unauthenticated);
+      }
+
       final user = UserModel.fromJson(jsonDecode(cachedUserJson));
       final api = ref.read(apiClientProvider);
       api.dio.options.headers['Authorization'] = 'Bearer $token';
