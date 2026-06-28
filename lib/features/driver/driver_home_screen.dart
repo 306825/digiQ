@@ -18,6 +18,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:digiQ/core/services/tracking_service.dart';
+import 'package:digiQ/models/vehicle_model.dart';
+import 'package:digiQ/providers/driver_vehicle_provider.dart';
 
 class DriverHomeScreen extends ConsumerStatefulWidget {
   const DriverHomeScreen({super.key});
@@ -109,19 +111,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
       error: (e, _) => const Scaffold(
         body: Center(child: Text('Error loading vehicle')),
       ),
-      data: (vehicle) {
-        if (vehicle == null) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Add Vehicle')),
-            body: _NoVehicleView(
-              onAddVehicle: () {
-                context.push('/driver/vehicle');
-              },
-            ),
-          );
-        }
-
-        return _buildDashboard(context, user, vehicle);
+      data: (vehicles) {
+        return _buildDashboard(context, user, vehicles);
       },
     );
     ;
@@ -210,8 +201,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   }
 
   Widget _buildDashboard(
-      BuildContext context, UserModel user, dynamic vehicle) {
-    final isVehicleApproved = vehicle?['status'] == 'approved';
+      BuildContext context, UserModel user, List<VehicleModel> vehicles) {
+    final isVehicleApproved = vehicles.any((v) => v.isApproved);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -269,7 +260,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
             // ── STATUS CARDS ──────────────────────────────────────────
             _DriverStatusCard(status: user.verificationStatus),
             const SizedBox(height: 10),
-            _VehicleStatusCard(vehicle: vehicle),
+            _VehicleStatusCard(vehicles: vehicles),
 
             // ── ACTIONS ───────────────────────────────────────────────
             if (user.isDriverVerified && isVehicleApproved) ...[
@@ -350,13 +341,13 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
 }
 
 class _VehicleStatusCard extends StatelessWidget {
-  final dynamic vehicle;
+  final List<VehicleModel> vehicles;
 
-  const _VehicleStatusCard({required this.vehicle});
+  const _VehicleStatusCard({required this.vehicles});
 
   @override
   Widget build(BuildContext context) {
-    if (vehicle == null) {
+    if (vehicles.isEmpty) {
       return _StatusBanner(
         text: 'No vehicle added',
         subtext: 'Add a vehicle to start accepting trips',
@@ -364,43 +355,32 @@ class _VehicleStatusCard extends StatelessWidget {
         icon: Icons.directions_car_outlined,
       );
     }
-    switch (vehicle['status']) {
-      case 'approved':
-        return _StatusBanner(
-          text: 'Vehicle approved',
-          subtext: 'Your vehicle is ready for trips',
-          color: AppTheme.success,
-          icon: Icons.check_circle_outline,
-        );
-      case 'pending':
-        return _StatusBanner(
-          text: 'Vehicle under review',
-          subtext: 'Usually takes a few hours',
-          color: AppTheme.warning,
-          icon: Icons.hourglass_top_outlined,
-        );
-      case 'rejected':
-        return _StatusBanner(
-          text: 'Vehicle rejected',
-          subtext: 'Please resubmit your documents',
-          color: AppTheme.danger,
-          icon: Icons.cancel_outlined,
-        );
-      default:
-        return _StatusBanner(
-          text: 'Vehicle status unknown',
-          subtext: 'Please contact support',
-          color: Colors.grey,
-          icon: Icons.info_outline,
-        );
+    if (vehicles.any((v) => v.isApproved)) {
+      final count = vehicles.where((v) => v.isApproved).length;
+      return _StatusBanner(
+        text: count == 1 ? 'Vehicle approved' : '$count vehicles approved',
+        subtext: 'Your vehicle${count == 1 ? ' is' : 's are'} ready for trips',
+        color: AppTheme.success,
+        icon: Icons.check_circle_outline,
+      );
     }
+    if (vehicles.any((v) => v.isPending)) {
+      return _StatusBanner(
+        text: 'Vehicle under review',
+        subtext: 'Usually takes a few hours',
+        color: AppTheme.warning,
+        icon: Icons.hourglass_top_outlined,
+      );
+    }
+    return _StatusBanner(
+      text: 'Vehicle rejected',
+      subtext: 'Please resubmit your documents',
+      color: AppTheme.danger,
+      icon: Icons.cancel_outlined,
+    );
   }
 }
 
-final driverVehicleProvider = FutureProvider((ref) async {
-  final api = ref.read(driverApiProvider);
-  return api.getMyVehicle();
-});
 
 /* --------------------------------------------------------------------------
  * Action Tile

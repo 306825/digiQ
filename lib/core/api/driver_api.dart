@@ -1,6 +1,7 @@
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/models/driver_model.dart';
 import 'package:digiQ/models/driver_booking_model.dart';
+import 'package:digiQ/models/vehicle_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -127,6 +128,7 @@ class DriverApi {
     String? make,
     String? model,
     int? year,
+    required int seats,
     required String roadworthyDocUrl,
     required String operatingLicenseDocUrl,
     required String roadworthyExpiry,
@@ -139,6 +141,7 @@ class DriverApi {
         'make': make,
         'model': model,
         'year': year,
+        'seats': seats,
         'roadworthyDocUrl': roadworthyDocUrl,
         'operatingLicenseDocUrl': operatingLicenseDocUrl,
         'roadworthyExpiry': roadworthyExpiry,
@@ -147,30 +150,13 @@ class DriverApi {
     );
   }
 
-  // Future<Map<String, dynamic>?> getMyVehicle() async {
-  //   final res = await dio.get('/drivers/me/vehicle');
-  //   return res.data;
-  // }
-
-  Future<Map<String, dynamic>?> getMyVehicle() async {
-    final res = await dio.get('/drivers/me/vehicle');
-
+  Future<List<VehicleModel>> getMyVehicles() async {
+    final res = await dio.get('/drivers/me/vehicles');
     final data = res.data;
-
-    // ✅ Handle null / empty response
-    if (data == null || data == '') {
-      return null;
-    }
-
-    // ✅ Ensure correct type
-    if (data is Map<String, dynamic>) {
-      return data;
-    }
-
-    // ❌ Unexpected type (log it)
-    print("⚠️ Unexpected vehicle response: $data");
-
-    return null;
+    if (data == null || data is! List) return [];
+    return (data as List)
+        .map((j) => VehicleModel.fromJson(j as Map<String, dynamic>))
+        .toList();
   }
 
   /// Approve or reject a booking

@@ -10,7 +10,7 @@ class TripsApi {
     required String routeId,
     required String departureWindow,
     required DateTime date,
-    required int seatsTotal,
+    required String vehicleId,
     required double price,
     int minPassengers = 1,
   }) async {
@@ -20,7 +20,7 @@ class TripsApi {
         'routeId': routeId,
         'departureWindow': departureWindow,
         'date': date.toIso8601String(),
-        'seatsTotal': seatsTotal,
+        'vehicleId': vehicleId,
         'price': price,
         'minPassengers': minPassengers,
       },

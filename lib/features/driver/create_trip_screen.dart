@@ -1,12 +1,12 @@
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/models/departure_window.dart';
 import 'package:digiQ/models/route_model.dart';
-import 'package:digiQ/providers/auth_provider.dart';
+import 'package:digiQ/models/vehicle_model.dart';
 import 'package:digiQ/providers/driver_trips_provider.dart';
+import 'package:digiQ/providers/driver_vehicle_provider.dart';
 import 'package:digiQ/providers/routes_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class CreateTripScreen extends ConsumerStatefulWidget {
@@ -18,7 +18,7 @@ class CreateTripScreen extends ConsumerStatefulWidget {
 
 class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
   RouteModel? selectedRoute;
-  final seatsCtrl = TextEditingController();
+  VehicleModel? selectedVehicle;
   final priceCtrl = TextEditingController();
   DateTime? date;
   bool submitting = false;
@@ -27,6 +27,13 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
 
   Future<void> submit() async {
     if (selectedRoute == null || selectedWindow == null || date == null) return;
+
+    if (selectedVehicle == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a vehicle')),
+      );
+      return;
+    }
 
     // Guard: reject if the selected window has already passed for today
     if (selectedWindow!.isExpiredForDate(date!)) {
@@ -41,12 +48,10 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
       return;
     }
 
-    final seats = int.tryParse(seatsCtrl.text);
     final price = double.tryParse(priceCtrl.text);
-
-    if (seats == null || seats <= 0 || price == null || price <= 0) {
+    if (price == null || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter valid seats and price')),
+        const SnackBar(content: Text('Please enter a valid price')),
       );
       return;
     }
@@ -54,16 +59,11 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
     setState(() => submitting = true);
 
     try {
-      print('🚀 Creating trip...');
-      print('routeId=${selectedRoute!.id}');
-      print('window=${selectedWindow!.apiValue}');
-      print('date=$date seats=$seats price=$price');
-
       await ref.read(tripsApiProvider).createTrip(
             routeId: selectedRoute!.id,
             departureWindow: selectedWindow!.apiValue,
             date: date!,
-            seatsTotal: seats,
+            vehicleId: selectedVehicle!.id,
             price: price,
             minPassengers: minPassengers,
           );
@@ -119,6 +119,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
   @override
   Widget build(BuildContext context) {
     final routesAsync = ref.watch(routesProvider);
+    final vehiclesAsync = ref.watch(driverVehicleProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -228,15 +229,72 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                     }),
 
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: seatsCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Available seats',
-                        prefixIcon: Icon(Icons.event_seat),
-                        hintText: 'e.g. 3',
+                    vehiclesAsync.when(
+                      loading: () => const LinearProgressIndicator(),
+                      error: (_, __) => const Text(
+                        'Failed to load vehicles',
+                        style: TextStyle(color: Colors.red),
                       ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      data: (vehicles) {
+                        final approved = vehicles
+                            .where((v) => v.isApproved)
+                            .toList();
+                        if (approved.isEmpty) {
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.orange.shade200),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.warning_amber_outlined,
+                                    color: Colors.orange),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'No approved vehicles yet. Add and submit a vehicle for review first.',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            DropdownButtonFormField<VehicleModel>(
+                              value: selectedVehicle,
+                              hint: const Text('Select vehicle'),
+                              decoration: const InputDecoration(
+                                labelText: 'Vehicle',
+                                prefixIcon: Icon(Icons.directions_car_outlined),
+                              ),
+                              items: approved
+                                  .map((v) => DropdownMenuItem(
+                                        value: v,
+                                        child: Text(v.displayName),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) =>
+                                  setState(() => selectedVehicle = v),
+                            ),
+                            if (selectedVehicle != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6, left: 4),
+                                child: Text(
+                                  '${selectedVehicle!.seats} seat${selectedVehicle!.seats == 1 ? '' : 's'} available',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
                     TextField(
