@@ -49,6 +49,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final user = authState.user;
       final location = state.matchedLocation;
 
+      final isSplash = location == '/splash';
       final isLogin = location == '/login';
       final isSignup = location == '/signup';
       final isForgotPassword = location == '/forgot-password';
@@ -58,7 +59,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // Hold on /splash until auth resolves
       if (status == AuthStatus.initializing) {
-        return location == '/splash' ? null : '/splash';
+        return isSplash ? null : '/splash';
       }
 
       if (status == AuthStatus.unauthenticated) {
@@ -74,7 +75,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (status == AuthStatus.authenticating) {
-        return location == '/login' ? null : '/login';
+        return isLogin ? null : '/login';
       }
 
       if (user == null) {
@@ -84,7 +85,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final role = user.role;
 
       if (role == UserRole.admin) {
-        if (isLogin || isSignup) return '/admin';
+        if (isLogin || isSignup || isSplash) return '/admin';
         return null;
       }
 
@@ -96,7 +97,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return location == '/driver/verify' ? null : '/driver/verify';
         }
 
-        if (location == '/login') {
+        if (isLogin || isSplash) {
           return '/driver/home';
         }
 
@@ -104,7 +105,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (role == UserRole.passenger) {
-        if (isLogin) return '/passenger';
+        if (isLogin || isSplash) return '/passenger';
         return null;
       }
 
