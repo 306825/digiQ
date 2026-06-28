@@ -1,11 +1,68 @@
 import 'dart:async';
-import 'package:digiQ/core/config/app_keys.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
-/// Tappable address field that opens a Google Places Autocomplete bottom sheet.
-/// Restricted to South African addresses.
-class AddressAutocompleteField extends StatelessWidget {
+// Same key used by the passenger pickup address screen
+const _kPlacesApiKey = 'AIzaSyBUPxGXp0U0plvCgHl_icV8e2kXuI8CX1A';
+
+class _PlaceSuggestion {
+  final String placeId;
+  final String mainText;
+  final String secondaryText;
+
+  const _PlaceSuggestion({
+    required this.placeId,
+    required this.mainText,
+    required this.secondaryText,
+  });
+}
+
+Future<List<_PlaceSuggestion>> _autocomplete(String input) async {
+  if (input.length < 2) return [];
+  try {
+    final resp = await Dio().get(
+      'https://maps.googleapis.com/maps/api/place/autocomplete/json',
+      queryParameters: {
+        'input': input,
+        'key': _kPlacesApiKey,
+        'components': 'country:za',
+        'language': 'en',
+      },
+    );
+    final predictions = resp.data['predictions'] as List? ?? [];
+    return predictions.map((p) {
+      final terms = p['structured_formatting'] as Map;
+      return _PlaceSuggestion(
+        placeId: p['place_id'] as String,
+        mainText: terms['main_text'] as String? ?? '',
+        secondaryText: terms['secondary_text'] as String? ?? '',
+      );
+    }).toList();
+  } catch (_) {
+    return [];
+  }
+}
+
+Future<String?> _fetchFormattedAddress(String placeId) async {
+  try {
+    final resp = await Dio().get(
+      'https://maps.googleapis.com/maps/api/place/details/json',
+      queryParameters: {
+        'place_id': placeId,
+        'key': _kPlacesApiKey,
+        'fields': 'formatted_address',
+      },
+    );
+    return resp.data['result']?['formatted_address'] as String?;
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Inline address autocomplete field — same behaviour as the passenger pickup
+/// address screen: suggestions appear in a card below the field, selecting one
+/// fetches the full formatted address and shows a green tick.
+class AddressAutocompleteField extends StatefulWidget {
   final TextEditingController controller;
   final String? labelText;
 
@@ -16,166 +73,117 @@ class AddressAutocompleteField extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        builder: (_) => _AddressSearchSheet(controller: controller),
-      ),
-      child: AbsorbPointer(
-        child: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: labelText ?? 'Residential Address',
-            prefixIcon: const Icon(Icons.home_outlined),
-            suffixIcon: const Icon(Icons.search, size: 18, color: Colors.grey),
-          ),
-          maxLines: 2,
-        ),
-      ),
-    );
-  }
+  State<AddressAutocompleteField> createState() =>
+      _AddressAutocompleteFieldState();
 }
 
-class _AddressSearchSheet extends StatefulWidget {
-  final TextEditingController controller;
-
-  const _AddressSearchSheet({required this.controller});
-
-  @override
-  State<_AddressSearchSheet> createState() => _AddressSearchSheetState();
-}
-
-class _AddressSearchSheetState extends State<_AddressSearchSheet> {
-  final _searchCtrl = TextEditingController();
-  final _dio = Dio();
+class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
+  List<_PlaceSuggestion> _suggestions = [];
   Timer? _debounce;
-  List<String> _suggestions = [];
-  bool _loading = false;
+  bool _isSearching = false;
+  bool _isConfirmed = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _searchCtrl.text = widget.controller.text;
-  }
-
-  Future<void> _search(String query) async {
-    if (query.length < 3) {
+  void _onChanged(String value) {
+    if (_isConfirmed) setState(() => _isConfirmed = false);
+    _debounce?.cancel();
+    if (value.trim().isEmpty) {
       setState(() => _suggestions = []);
       return;
     }
-
-    setState(() => _loading = true);
-
-    try {
-      final response = await _dio.get(
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json',
-        queryParameters: {
-          'input': query,
-          'key': kGooglePlacesApiKey,
-          'components': 'country:za',
-          'language': 'en',
-          'types': 'address',
-        },
-      );
-
-      final predictions = (response.data['predictions'] as List? ?? []);
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      setState(() => _isSearching = true);
+      final results = await _autocomplete(value.trim());
       if (mounted) {
         setState(() {
-          _suggestions =
-              predictions.map((p) => p['description'] as String).toList();
-          _loading = false;
+          _suggestions = results;
+          _isSearching = false;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
-    }
+    });
+  }
+
+  Future<void> _selectSuggestion(_PlaceSuggestion s) async {
+    _debounce?.cancel();
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _suggestions = [];
+      _isSearching = true;
+      widget.controller.text = '${s.mainText}, ${s.secondaryText}';
+    });
+
+    final formatted = await _fetchFormattedAddress(s.placeId);
+    if (!mounted) return;
+    setState(() {
+      _isSearching = false;
+      _isConfirmed = true;
+      if (formatted != null) widget.controller.text = formatted;
+    });
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
-    _searchCtrl.dispose();
-    _dio.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 4),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: TextField(
-              controller: _searchCtrl,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: 'Search address…',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _loading
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: widget.controller,
+          onChanged: _onChanged,
+          decoration: InputDecoration(
+            labelText: widget.labelText ?? 'Residential Address',
+            hintText: 'Start typing your street or suburb…',
+            prefixIcon: const Icon(Icons.home_outlined),
+            suffixIcon: _isSearching
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : _isConfirmed
+                    ? const Icon(Icons.check_circle, color: Colors.green)
                     : null,
-              ),
-              onChanged: (v) {
-                _debounce?.cancel();
-                _debounce = Timer(
-                  const Duration(milliseconds: 400),
-                  () => _search(v),
+          ),
+        ),
+        if (_suggestions.isNotEmpty)
+          Card(
+            margin: const EdgeInsets.only(top: 4),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _suggestions.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (_, i) {
+                final s = _suggestions[i];
+                return ListTile(
+                  leading: const Icon(Icons.location_on_outlined,
+                      color: Colors.grey),
+                  title: Text(
+                    s.mainText,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: Text(
+                    s.secondaryText,
+                    style:
+                        const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  onTap: () => _selectSuggestion(s),
                 );
               },
             ),
           ),
-          if (_suggestions.isNotEmpty)
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.4,
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: _suggestions.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (_, i) => ListTile(
-                  leading: const Icon(Icons.location_on_outlined),
-                  title: Text(
-                    _suggestions[i],
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  onTap: () {
-                    widget.controller.text = _suggestions[i];
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-            ),
-          const SizedBox(height: 16),
-        ],
-      ),
+      ],
     );
   }
 }
