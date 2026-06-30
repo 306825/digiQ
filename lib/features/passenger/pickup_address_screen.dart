@@ -272,7 +272,8 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                   const SizedBox(height: 6),
                   Text(
                     '${widget.trip.from} → ${widget.trip.to}',
-                    style: const TextStyle(color: Colors.black54),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                   ),
                 ],
               ),
@@ -310,7 +311,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       ),
                     ),
 
@@ -362,7 +363,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       ),
                     ),
                   ],

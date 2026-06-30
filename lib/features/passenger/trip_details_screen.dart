@@ -186,7 +186,7 @@ class TripDetailsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.06),
