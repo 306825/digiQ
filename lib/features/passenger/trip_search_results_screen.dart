@@ -190,19 +190,15 @@ class _TripCard extends StatelessWidget {
                     const SizedBox(height: 10),
 
                     // 🪑 SEATS REMAINING
-                    // 🪑 SEATS ROW (aligned)
-                    Row(
-                      children: [
-                        Text(
-                          '${trip.seatsAvailable} seats remaining',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color:
-                                isFull ? Colors.red : theme.colorScheme.primary,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      '${trip.seatsAvailable} seats remaining',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isFull ? Colors.red : theme.colorScheme.primary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
