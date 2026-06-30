@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/trip_model.dart';
 import '../../providers/driver_trips_provider.dart';
+import 'driver_trip_detail_screen.dart';
 import 'dart:async';
 
 import 'package:digiQ/core/api/trips_api.dart';
@@ -229,10 +230,18 @@ class _TripCard extends ConsumerWidget {
     return Card(
       elevation: 0.6,
       shadowColor: Colors.black12,
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Padding(
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DriverTripDetailScreen(trip: trip),
+          ),
+        ),
+        child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,6 +386,7 @@ class _TripCard extends ConsumerWidget {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

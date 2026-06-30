@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../models/trip_model.dart';
+import '../../models/trip_passenger_model.dart';
 
 class TripsApi {
   final Dio dio;
@@ -92,6 +93,13 @@ class TripsApi {
 
     return list
         .map((e) => Trip.fromSearchJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<TripPassenger>> getTripPassengers(String tripId) async {
+    final res = await dio.get('/trips/$tripId/passengers');
+    return (res.data as List)
+        .map((j) => TripPassenger.fromJson(j as Map<String, dynamic>))
         .toList();
   }
 
