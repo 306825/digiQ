@@ -553,11 +553,13 @@ class _DriverBalanceCard extends ConsumerWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: balanceAsync.when(
-                  loading: () => const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                  loading: () => const Center(
+                    child: SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    ),
                   ),
                   error: (_, __) => Text(
                     'Balance unavailable',
