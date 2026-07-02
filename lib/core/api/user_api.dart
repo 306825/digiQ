@@ -23,6 +23,14 @@ class UserApi {
     );
     return res.data['profileImageUrl'];
   }
+
+  Future<void> registerFcmToken(String token) async {
+    await dio.post('/users/fcm-token', data: {'token': token});
+  }
+
+  Future<void> removeFcmToken(String token) async {
+    await dio.delete('/users/fcm-token', data: {'token': token});
+  }
 }
 
 final userApiProvider = Provider<UserApi>((ref) {

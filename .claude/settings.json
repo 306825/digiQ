@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "Bash(which ld *)",
+      "Read(//snap/flutter/149/usr/lib/**)",
+      "Bash(ls /snap/flutter/149/usr/lib/llvm-10/bin/)",
+      "Read(//snap/flutter/149/usr/lib/llvm-10/bin/**)",
+      "Bash(dpkg -l)",
+      "Bash(awk '{print $2, $3}')",
+      "Bash(ls /usr/lib/llvm-14/bin/ | grep -E \"^ld|^lld\")",
+      "Read(//usr/lib/llvm-14/bin/**)",
+      "Read(//home/mdu/Projects/itfm_project/**)",
+      "Bash(grep -rn \"driverName\" /home/mdu/Projects/itfm_project/digiq-backend/src --include=*.ts)",
+      "Read(//home/mdu/Projects/itfm_project/digiq-backend/**)",
+      "Bash(find /home/mdu/Projects/itfm_project/digiq-backend -maxdepth 3 -type d)",
+      "Bash(grep -rn \"driverName\" /home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src --include=*.ts)",
+      "Read(//home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src/**)",
+      "Read(//home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src/trips/**)",
+      "Bash(grep -n \"fullName\\\\|firstName\\\\|lastName\\\\|name\" /home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src/users/user.schema.ts | head -20)",
+      "Read(//home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src/users/**)",
+      "Bash(cd /home/mdu/Projects/itfm_project/digiq-backend/digiq-backend && grep -n \"MONGO_URI\\\\|MONGODB_URI\\\\|mongoose.connect\" src/main.ts src/app.module.ts .env 2>/dev/null | head -10)",
+      "Read(//home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/**)",
+      "Bash(npx tsc *)",
+      "Bash(grep -n \"lat\\\\|lng\\\\|pickup\" /home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src/bookings/booking.schema.ts 2>/dev/null | head -30)",
+      "Read(//home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src/bookings/**)",
+      "Bash(dart analyze *)",
+      "Bash(flutter build *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(stdbuf -o0 flutter build apk --release)",
+      "Bash(cat /home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/package.json | grep -E \"firebase|fcm|notification\")",
+      "Bash(npm install *)",
+      "Bash(grep -n \"pending\\\\|payment\\\\|webhook\\\\|confirm\" /home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src/payments/payfast/payfast.service.ts 2>/dev/null | head -20)",
+      "Read(//home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src/payments/payfast/**)",
+      "Bash(node -e \"require\\('firebase-admin'\\)\")",
+      "Bash(npm --version)",
+      "Read(//home/mdu/.nvm/versions/node/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(mkdir -p /home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src/notifications)",
+      "Bash(tee /tmp/pubget.log)",
+      "Bash(tee /tmp/analyze.log)",
+      "Read(//tmp/**)",
+      "Bash(tee /tmp/analyze2.log)"
+    ],
+    "additionalDirectories": [
+      "/home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src/trips",
+      "/home/mdu/Projects/itfm_project/digiq-backend/digiq-backend/src"
+    ]
+  }
+}

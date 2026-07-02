@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:digiQ/core/api/api_providers.dart';
+import 'package:digiQ/core/api/user_api.dart';
+import 'package:digiQ/services/fcm_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -110,10 +112,23 @@ class AuthNotifier extends Notifier<AuthState> {
       final user = UserModel.fromJson(jsonDecode(cachedUserJson));
       final api = ref.read(apiClientProvider);
       api.dio.options.headers['Authorization'] = 'Bearer $token';
+      _registerFcmToken();
       return AuthState(status: AuthStatus.authenticated, token: token, user: user);
     } catch (_) {
       return const AuthState(status: AuthStatus.unauthenticated);
     }
+  }
+
+  void _registerFcmToken() {
+    final userApi = ref.read(userApiProvider);
+    final fcm = FcmService();
+    fcm.init(
+      onTokenReceived: (token) async {
+        try {
+          await userApi.registerFcmToken(token);
+        } catch (_) {}
+      },
+    ).catchError((_) {});
   }
 
   /* --------------------------------------------------------------------------
@@ -152,6 +167,8 @@ class AuthNotifier extends Notifier<AuthState> {
         token: token,
         user: user,
       );
+
+      _registerFcmToken();
     } on DioException catch (e) {
       state = const AuthState(
         status: AuthStatus.unauthenticated,
@@ -229,6 +246,16 @@ class AuthNotifier extends Notifier<AuthState> {
    * -------------------------------------------------------------------------- */
 
   Future<void> logout() async {
+    // Unregister FCM token before clearing credentials
+    try {
+      final fcm = FcmService();
+      final token = await fcm.getToken();
+      if (token != null) {
+        await ref.read(userApiProvider).removeFcmToken(token);
+      }
+      await fcm.deleteToken();
+    } catch (_) {}
+
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _userKey);
 
