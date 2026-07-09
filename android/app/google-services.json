@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "424472790285",
+    "project_id": "digiq-23607",
+    "storage_bucket": "digiq-23607.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:424472790285:android:76c86333bc2c8148339c44",
+        "android_client_info": {
+          "package_name": "co.za.digiqueue.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdnxLTLTD4peEdJkJ_iSEx_qOJl8HLwLg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
