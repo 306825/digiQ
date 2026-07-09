@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:digiQ/core/api/api_providers.dart';
+import 'package:digiQ/core/api/driver_documents_api.dart';
+import 'package:digiQ/core/api/user_api.dart';
 import 'package:digiQ/features/driver/widgets/documents_upload_tile.dart';
 import 'package:digiQ/features/shared/widgets/address_autocomplete_field.dart';
 import 'package:digiQ/models/user_model.dart';
@@ -6,6 +10,7 @@ import 'package:digiQ/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 class DriverVerificationScreen extends ConsumerStatefulWidget {
   const DriverVerificationScreen({super.key});
@@ -34,8 +39,68 @@ class _DriverVerificationScreenState
 
   final Map<String, String> uploadedDocs = {};
   bool submitting = false;
+  bool uploadingPhoto = false;
+  String? profilePhotoUrl;
 
   bool get allDocsUploaded => uploadedDocs.length == 6;
+
+  Future<void> _pickAndUploadProfilePhoto() async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take a photo'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 800,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    final bytes = Uint8List.fromList(await picked.readAsBytes());
+    setState(() => uploadingPhoto = true);
+
+    try {
+      final userApi = ref.read(userApiProvider);
+      final docsApi = ref.read(driverDocumentsApiProvider);
+
+      final signed = await userApi.getAvatarUploadUrl(contentType: 'image/jpeg');
+      await docsApi.uploadToS3(
+        uploadUrl: signed['uploadUrl'],
+        bytes: bytes,
+        contentType: 'image/jpeg',
+      );
+      final savedUrl = await userApi.saveAvatar(signed['publicUrl'] as String);
+      setState(() => profilePhotoUrl = savedUrl);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Photo upload failed. Please try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => uploadingPhoto = false);
+    }
+  }
 
   @override
   void initState() {
@@ -77,6 +142,13 @@ class _DriverVerificationScreenState
       accountNameError = null;
       accountNumberError = null;
     });
+
+    if (profilePhotoUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload a profile photo')),
+      );
+      valid = false;
+    }
 
     if (driversLicenseExpiry == null || prdpExpiry == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -237,6 +309,50 @@ class _DriverVerificationScreenState
                   title: '👤 Personal Details',
                   child: Column(
                     children: [
+                      // Profile photo
+                      Center(
+                        child: GestureDetector(
+                          onTap: uploadingPhoto ? null : _pickAndUploadProfilePhoto,
+                          child: Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              CircleAvatar(
+                                radius: 52,
+                                backgroundColor: Colors.grey.shade200,
+                                backgroundImage: profilePhotoUrl != null
+                                    ? NetworkImage(profilePhotoUrl!)
+                                    : null,
+                                child: uploadingPhoto
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : profilePhotoUrl == null
+                                        ? const Icon(Icons.person, size: 48, color: Colors.grey)
+                                        : null,
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        profilePhotoUrl == null ? 'Tap to add profile photo *' : 'Tap to change photo',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: profilePhotoUrl == null ? Colors.red.shade400 : Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       TextField(
                         controller: firstNameCtrl,
                         decoration: const InputDecoration(
