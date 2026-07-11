@@ -513,7 +513,7 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
   }
 }
 
-class ConfirmPickupButton extends StatelessWidget {
+class ConfirmPickupButton extends StatefulWidget {
   const ConfirmPickupButton({
     super.key,
     required this.ref,
@@ -524,36 +524,47 @@ class ConfirmPickupButton extends StatelessWidget {
   final Booking booking;
 
   @override
+  State<ConfirmPickupButton> createState() => _ConfirmPickupButtonState();
+}
+
+class _ConfirmPickupButtonState extends State<ConfirmPickupButton> {
+  bool _loading = false;
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () async {
-            try {
-              final bookingApi = ref.read(bookingApiProvider);
-
-              await bookingApi.confirmPickup(booking.id);
-
-              ref.invalidate(passengerBookingsProvider);
-
-              if (!context.mounted) return;
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('✅ Pickup confirmed'),
-                ),
-              );
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Failed to confirm pickup'),
-                ),
-              );
-            }
-          },
-          child: const Text('Confirm Pickup'),
+          onPressed: _loading
+              ? null
+              : () async {
+                  setState(() => _loading = true);
+                  try {
+                    final bookingApi = widget.ref.read(bookingApiProvider);
+                    await bookingApi.confirmPickup(widget.booking.id);
+                    widget.ref.invalidate(passengerBookingsProvider);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('✅ Pickup confirmed')),
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Failed to confirm pickup')),
+                    );
+                  } finally {
+                    if (mounted) setState(() => _loading = false);
+                  }
+                },
+          child: _loading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Confirm Pickup'),
         ),
       ),
     );

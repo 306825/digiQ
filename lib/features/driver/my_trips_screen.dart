@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/trip_model.dart';
 import '../../providers/driver_trips_provider.dart';
 import 'driver_trip_detail_screen.dart';
+import 'driver_pickup_route_screen.dart';
 import 'dart:async';
 
 import 'package:digiQ/core/api/trips_api.dart';
@@ -361,9 +362,28 @@ class _TripCard extends ConsumerWidget {
                   ),
                 ],
 
-                if (isActive)
+                if (isActive) ...[
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.route),
+                        label: const Text('Pickup Passengers'),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  DriverPickupRouteScreen(tripId: trip.id),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
                     child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -383,6 +403,7 @@ class _TripCard extends ConsumerWidget {
                       ),
                     ),
                   ),
+                ],
               ],
             ),
           ],

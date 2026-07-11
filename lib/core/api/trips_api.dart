@@ -112,4 +112,16 @@ class TripsApi {
     final response = await dio.get('/trips/$tripId/location');
     return response.data as Map<String, dynamic>?;
   }
+
+  Future<Map<String, dynamic>> calculatePickupRoute(
+    String tripId, {
+    required double driverLat,
+    required double driverLng,
+  }) async {
+    final response = await dio.post(
+      '/trips/$tripId/pickup-route',
+      data: {'driverLat': driverLat, 'driverLng': driverLng},
+    );
+    return response.data as Map<String, dynamic>;
+  }
 }
