@@ -34,8 +34,8 @@ class VehicleModel {
 
   factory VehicleModel.fromJson(Map<String, dynamic> json) {
     return VehicleModel(
-      id: json['_id'] ?? json['id'] as String,
-      registrationNumber: json['registrationNumber'] as String,
+      id: (json['_id'] ?? json['id'])?.toString() ?? '',
+      registrationNumber: json['registrationNumber'] as String? ?? '',
       make: json['make'] as String?,
       model: json['model'] as String?,
       year: (json['year'] as num?)?.toInt(),
