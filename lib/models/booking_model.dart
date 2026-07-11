@@ -11,19 +11,19 @@ enum PaymentStatus {
   pending,
   paid,
   refunded,
+  forfeited,
 }
 
 PaymentStatus _parsePaymentStatus(dynamic value) {
   switch (value.toString()) {
     case 'pending':
       return PaymentStatus.pending;
-
     case 'paid':
       return PaymentStatus.paid;
-
     case 'refunded':
       return PaymentStatus.refunded;
-
+    case 'forfeited':
+      return PaymentStatus.forfeited;
     default:
       throw Exception('Unknown payment status: $value');
   }
@@ -114,6 +114,8 @@ class Booking {
   final DateTime createdAt;
   final PassengerStatus passengerStatus;
   final PaymentStatus paymentStatus;
+  final DateTime? tripDate;
+  final String? departureWindow;
 
   const Booking({
     required this.id,
@@ -125,7 +127,23 @@ class Booking {
     required this.updatedAt,
     required this.passengerStatus,
     required this.paymentStatus,
+    this.tripDate,
+    this.departureWindow,
   });
+
+  /// Returns true when the trip departs in less than 24 hours (local time).
+  bool get isWithin24HoursOfDeparture {
+    if (tripDate == null) return false;
+    final window = departureWindow ?? '08-10';
+    final startHour = window.startsWith('08') ? 8 : window.startsWith('11') ? 11 : 14;
+    final departure = DateTime(
+      tripDate!.toLocal().year,
+      tripDate!.toLocal().month,
+      tripDate!.toLocal().day,
+      startHour,
+    );
+    return departure.difference(DateTime.now()).inHours < 24;
+  }
 
   Booking copyWith({BookingStatus? status}) {
     return Booking(
@@ -138,6 +156,8 @@ class Booking {
       updatedAt: updatedAt,
       passengerStatus: passengerStatus,
       paymentStatus: paymentStatus,
+      tripDate: tripDate,
+      departureWindow: departureWindow,
     );
   }
 
@@ -149,20 +169,15 @@ class Booking {
       pickup: PickupAddress.fromJson(
         json['pickup'] as Map<String, dynamic>,
       ),
-      // status: BookingStatus.values.firstWhere(
-      //   (e) => e.name == json['status'],
-      // ),
       status: _parseBookingStatus(json['status']),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
-      //passengerStatus: PassengerStatus.values.firstWhere(
-      //  (e) => e.name == json['passengerStatus'].toString().replaceAll('_', ''),
-      //),
-      //passengerStatus: _parsePassengerStatus([json['passengerStatus']]),
       passengerStatus: json['passengerStatus'] != null
           ? _parsePassengerStatus(json['passengerStatus'])
           : PassengerStatus.awaitingPickup,
       paymentStatus: _parsePaymentStatus(json['paymentStatus']),
+      tripDate: json['tripDate'] != null ? DateTime.parse(json['tripDate']) : null,
+      departureWindow: json['departureWindow'] as String?,
     );
   }
 

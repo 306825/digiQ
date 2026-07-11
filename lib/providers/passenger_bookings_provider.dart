@@ -17,16 +17,19 @@ class PassengerBookingsNotifier extends AsyncNotifier<List<Booking>> {
 
   bool isProcessing(String bookingId) => _processing.contains(bookingId);
 
-  Future<void> cancel(String bookingId) async {
+  Future<bool> cancel(String bookingId) async {
     _processing.add(bookingId);
     state = AsyncData([...state.value ?? []]);
 
     try {
-      await ref.read(bookingApiProvider).cancelBooking(bookingId);
+      final response = await ref.read(bookingApiProvider).cancelBooking(bookingId);
+      final data = response.data;
+      final refunded = data is Map ? (data['refunded'] as bool? ?? false) : false;
 
       state = AsyncData(
         state.value!.where((b) => b.id != bookingId).toList(),
       );
+      return refunded;
     } on DioException catch (e) {
       debugPrint('[CANCEL] status=${e.response?.statusCode}');
       debugPrint('[CANCEL] body=${e.response?.data}');

@@ -260,11 +260,12 @@ class _BookingCard extends ConsumerWidget {
                         ],
                       ),
 
-                      // Cancel button — only for pending
-                      if (status == BookingStatus.pending) ...[
+                      // Cancel button — pending or approved
+                      if (status == BookingStatus.pending ||
+                          status == BookingStatus.approved) ...[
                         const SizedBox(height: 12),
                         _CancelButton(
-                          bookingId: booking.id,
+                          booking: booking,
                           isDark: isDark,
                         ),
                       ],
@@ -351,6 +352,7 @@ class _PaymentBadge extends StatelessWidget {
     final (label, color) = switch (paymentStatus) {
       PaymentStatus.paid => ('Paid', AppTheme.success),
       PaymentStatus.refunded => ('Refunded', AppTheme.warning),
+      PaymentStatus.forfeited => ('Forfeited', AppTheme.danger),
       PaymentStatus.pending => ('', Colors.transparent),
     };
 
@@ -379,15 +381,15 @@ class _PaymentBadge extends StatelessWidget {
  * -------------------------------------------------------------------------- */
 
 class _CancelButton extends ConsumerWidget {
-  final String bookingId;
+  final Booking booking;
   final bool isDark;
 
-  const _CancelButton({required this.bookingId, required this.isDark});
+  const _CancelButton({required this.booking, required this.isDark});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(passengerBookingsProvider.notifier);
-    final isProcessing = notifier.isProcessing(bookingId);
+    final isProcessing = notifier.isProcessing(booking.id);
 
     if (isProcessing) {
       return const SizedBox(
@@ -397,22 +399,17 @@ class _CancelButton extends ConsumerWidget {
       );
     }
 
+    final withinCutoff = booking.isWithin24HoursOfDeparture;
+
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppTheme.danger,
-          side: BorderSide(
-            color: AppTheme.danger.withValues(alpha: 0.45),
-          ),
+          side: BorderSide(color: AppTheme.danger.withValues(alpha: 0.45)),
           padding: const EdgeInsets.symmetric(vertical: 10),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          textStyle: GoogleFonts.dmSans(
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          textStyle: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 13),
         ),
         icon: const Icon(Icons.close, size: 15),
         label: const Text('Cancel Booking'),
@@ -420,16 +417,57 @@ class _CancelButton extends ConsumerWidget {
           final confirmed = await showDialog<bool>(
             context: context,
             builder: (_) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              title: Text(
-                'Cancel booking?',
-                style: GoogleFonts.dmSans(fontWeight: FontWeight.w700),
-              ),
-              content: Text(
-                'This booking has not been accepted yet. Are you sure you want to cancel it?',
-                style: GoogleFonts.dmSans(fontSize: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text('Cancel booking?',
+                  style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    withinCutoff
+                        ? 'This trip departs in less than 24 hours.'
+                        : 'Are you sure you want to cancel this booking?',
+                    style: GoogleFonts.dmSans(fontSize: 14),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: withinCutoff
+                          ? AppTheme.danger.withValues(alpha: 0.08)
+                          : Colors.green.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: withinCutoff
+                            ? AppTheme.danger.withValues(alpha: 0.3)
+                            : Colors.green.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          withinCutoff ? Icons.money_off : Icons.check_circle_outline,
+                          size: 18,
+                          color: withinCutoff ? AppTheme.danger : Colors.green,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            withinCutoff
+                                ? 'Your payment will be forfeited — cancellations within 24 hours of departure are non-refundable.'
+                                : 'Your payment will be fully refunded.',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 13,
+                              color: withinCutoff ? AppTheme.danger : Colors.green,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               actions: [
                 TextButton(
@@ -439,9 +477,7 @@ class _CancelButton extends ConsumerWidget {
                 FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.danger,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () => Navigator.pop(context, true),
                   child: const Text('Yes, cancel'),
@@ -451,19 +487,19 @@ class _CancelButton extends ConsumerWidget {
           );
 
           if (confirmed != true) return;
-          await notifier.cancel(bookingId);
+          final refunded = await notifier.cancel(booking.id);
 
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  'Booking cancelled',
+                  refunded
+                      ? 'Booking cancelled — your payment will be refunded.'
+                      : 'Booking cancelled — payment forfeited (within 24h of departure).',
                   style: GoogleFonts.dmSans(),
                 ),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             );
           }
