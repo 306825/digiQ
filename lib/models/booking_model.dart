@@ -116,6 +116,12 @@ class Booking {
   final PaymentStatus paymentStatus;
   final DateTime? tripDate;
   final String? departureWindow;
+  final String? routeFrom;
+  final String? routeTo;
+  final String? driverName;
+  final String? driverPhone;
+  final String? vehicleDescription;
+  final double? price;
 
   const Booking({
     required this.id,
@@ -129,6 +135,12 @@ class Booking {
     required this.paymentStatus,
     this.tripDate,
     this.departureWindow,
+    this.routeFrom,
+    this.routeTo,
+    this.driverName,
+    this.driverPhone,
+    this.vehicleDescription,
+    this.price,
   });
 
   /// Returns true when the trip departs in less than 24 hours (local time).
@@ -158,6 +170,12 @@ class Booking {
       paymentStatus: paymentStatus,
       tripDate: tripDate,
       departureWindow: departureWindow,
+      routeFrom: routeFrom,
+      routeTo: routeTo,
+      driverName: driverName,
+      driverPhone: driverPhone,
+      vehicleDescription: vehicleDescription,
+      price: price,
     );
   }
 
@@ -178,6 +196,12 @@ class Booking {
       paymentStatus: _parsePaymentStatus(json['paymentStatus']),
       tripDate: json['tripDate'] != null ? DateTime.parse(json['tripDate']) : null,
       departureWindow: json['departureWindow'] as String?,
+      routeFrom: json['routeFrom'] as String?,
+      routeTo: json['routeTo'] as String?,
+      driverName: json['driverName'] as String?,
+      driverPhone: json['driverPhone'] as String?,
+      vehicleDescription: json['vehicleDescription'] as String?,
+      price: (json['price'] as num?)?.toDouble(),
     );
   }
 
