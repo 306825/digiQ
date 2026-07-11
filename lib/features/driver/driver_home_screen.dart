@@ -20,6 +20,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:digiQ/core/services/tracking_service.dart';
 import 'package:digiQ/models/vehicle_model.dart';
 import 'package:digiQ/providers/driver_vehicle_provider.dart';
+import 'package:digiQ/providers/fleet_provider.dart';
+import 'package:digiQ/models/fleet_invitation_model.dart';
 
 class DriverHomeScreen extends ConsumerStatefulWidget {
   const DriverHomeScreen({super.key});
@@ -229,6 +231,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
           child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
           children: [
+            // ── FLEET INVITATIONS ─────────────────────────────────────
+            _FleetInvitationBanner(ref: ref),
             // ── GREETING ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.only(bottom: 20, left: 4),
@@ -1114,6 +1118,128 @@ class _NoVehicleView extends StatelessWidget {
             child: const Text('Add Vehicle'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Fleet invitation banner ──────────────────────────────────────────────────
+
+class _FleetInvitationBanner extends ConsumerWidget {
+  final WidgetRef ref;
+  const _FleetInvitationBanner({required this.ref});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final invitationsAsync = ref.watch(fleetInvitationsProvider);
+
+    return invitationsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (invitations) {
+        if (invitations.isEmpty) return const SizedBox.shrink();
+        return Column(
+          children: [
+            ...invitations.map(
+              (inv) => _InvitationCard(invitation: inv),
+            ),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _InvitationCard extends ConsumerWidget {
+  final FleetInvitation invitation;
+  const _InvitationCard({required this.invitation});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      color: cs.primaryContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.directions_car, color: cs.primary, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Fleet Invitation',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: cs.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${invitation.fleetOwnerName} has invited you to join their fleet.',
+              style: TextStyle(
+                  fontSize: 13, color: cs.onPrimaryContainer),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: cs.onPrimaryContainer,
+                      side: BorderSide(
+                          color: cs.onPrimaryContainer.withValues(alpha: 0.4)),
+                    ),
+                    onPressed: () async {
+                      try {
+                        await ref
+                            .read(fleetInvitationsProvider.notifier)
+                            .decline(invitation.invitationId);
+                      } catch (_) {}
+                    },
+                    child: const Text('Decline'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () async {
+                      try {
+                        await ref
+                            .read(fleetInvitationsProvider.notifier)
+                            .accept(invitation.invitationId);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  'You joined ${invitation.fleetOwnerName}\'s fleet!'),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed: $e')),
+                          );
+                        }
+                      }
+                    },
+                    child: const Text('Accept'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

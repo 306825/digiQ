@@ -227,6 +227,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         value: UserRole.driver,
                         child: Text('Driver'),
                       ),
+                      DropdownMenuItem(
+                        value: UserRole.fleetOwner,
+                        child: Text('Fleet Owner'),
+                      ),
                     ],
                     onChanged: (v) {
                       if (v != null) _role = v;

@@ -242,7 +242,7 @@ class AuthNotifier extends Notifier<AuthState> {
           'phoneNumber': phoneNumber,
           'identifier': identifier,
           'password': password,
-          'role': role.name,
+          'role': role == UserRole.fleetOwner ? 'fleet_owner' : role.name,
           'acceptedTerms': acceptedTerms,
           'acceptedPrivacy': acceptedPrivacy,
         },

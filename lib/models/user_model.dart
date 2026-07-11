@@ -1,7 +1,7 @@
 import 'package:digiQ/models/driver_profile_model.dart';
 import 'package:flutter/material.dart';
 
-enum UserRole { passenger, driver, admin }
+enum UserRole { passenger, driver, admin, fleetOwner }
 
 enum DriverVerificationStatus { none, pending, approved, rejected }
 
@@ -106,6 +106,8 @@ class UserModel {
         return UserRole.admin;
       case 'passenger':
         return UserRole.passenger;
+      case 'fleet_owner':
+        return UserRole.fleetOwner;
       default:
         debugPrint('⚠️ Unknown user role: $value');
         return UserRole.passenger;

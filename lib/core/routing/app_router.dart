@@ -10,6 +10,7 @@ import 'package:digiQ/features/auth/signup_screen.dart';
 import 'package:digiQ/features/auth/terms_screen.dart';
 import 'package:digiQ/features/auth/verify_email.dart';
 import 'package:digiQ/features/driver/driver_home_screen.dart';
+import 'package:digiQ/features/fleet/fleet_home_screen.dart';
 import 'package:digiQ/features/driver/driver_vehicle_screen.dart';
 import 'package:digiQ/features/driver/driver_verification_screen.dart';
 import 'package:digiQ/features/passenger/booking_detaills_screen.dart';
@@ -109,6 +110,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
+      if (role == UserRole.fleetOwner) {
+        if (isLogin || isSplash) return '/fleet/home';
+        return null;
+      }
+
       return null;
     },
     routes: [
@@ -140,6 +146,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return ResetPasswordScreen(resetToken: token);
         },
       ),
+      GoRoute(path: '/fleet/home', builder: (_, __) => const FleetHomeScreen()),
       GoRoute(path: '/terms', builder: (_, __) => const TermsScreen()),
       GoRoute(path: '/privacy', builder: (_, __) => const PrivacyScreen()),
       GoRoute(
