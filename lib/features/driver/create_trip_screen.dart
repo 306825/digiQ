@@ -19,7 +19,6 @@ class CreateTripScreen extends ConsumerStatefulWidget {
 class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
   RouteModel? selectedRoute;
   VehicleModel? selectedVehicle;
-  final priceCtrl = TextEditingController();
   DateTime? date;
   bool submitting = false;
   DepartureWindow? selectedWindow;
@@ -65,14 +64,6 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
       return;
     }
 
-    final price = double.tryParse(priceCtrl.text);
-    if (price == null || price <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid price')),
-      );
-      return;
-    }
-
     setState(() => submitting = true);
 
     try {
@@ -81,7 +72,6 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
             departureWindow: selectedWindow!.apiValue,
             date: date!,
             vehicleId: selectedVehicle!.id,
-            price: price,
             minPassengers: minPassengers,
           );
 
@@ -313,18 +303,32 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                         );
                       },
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: priceCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Price per seat',
-                        prefixIcon: Icon(Icons.payments),
-                        hintText: 'e.g. 350',
+                    if (selectedRoute?.price != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.payments,
+                                color: Colors.green.shade700, size: 20),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Price per seat: R${selectedRoute!.price!.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                color: Colors.green.shade800,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                    ),
+                    ],
                     const SizedBox(height: 12),
                     _MinPassengersStepper(
                       value: minPassengers,

@@ -13,12 +13,14 @@ class AdminRoutesApi {
   Future<Response> createRoute({
     required String from,
     required String to,
+    required double price,
   }) {
     return dio.post(
       '/admin/routes',
       data: {
         'from': from,
         'to': to,
+        'price': price,
       },
     );
   }

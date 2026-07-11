@@ -50,7 +50,11 @@ class AdminRoutesTab extends ConsumerWidget {
                 return ListTile(
                   leading: const Icon(Icons.route),
                   title: Text('${route.fromLabel} → ${route.toLabel}'),
-                  subtitle: const Text('Immutable'),
+                  subtitle: Text(
+                    route.price != null
+                        ? 'R${route.price!.toStringAsFixed(2)}'
+                        : 'No price set',
+                  ),
                 );
               },
             ),
@@ -63,6 +67,7 @@ class AdminRoutesTab extends ConsumerWidget {
   void _showCreateRouteDialog(BuildContext context, WidgetRef ref) {
     final fromCtrl = TextEditingController();
     final toCtrl = TextEditingController();
+    final priceCtrl = TextEditingController();
 
     showDialog(
       context: context,
@@ -74,14 +79,26 @@ class AdminRoutesTab extends ConsumerWidget {
             TextField(
               controller: fromCtrl,
               decoration: const InputDecoration(labelText: 'From'),
+              textCapitalization: TextCapitalization.words,
             ),
+            const SizedBox(height: 8),
             TextField(
               controller: toCtrl,
               decoration: const InputDecoration(labelText: 'To'),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: priceCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Price per seat (R)',
+                prefixText: 'R ',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
             const SizedBox(height: 12),
             const Text(
-              'Reverse route will be created automatically.',
+              'Reverse route will be created automatically at the same price.',
               style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
             ),
           ],
@@ -93,11 +110,13 @@ class AdminRoutesTab extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () async {
+              final price = double.tryParse(priceCtrl.text);
               if (fromCtrl.text.isEmpty || toCtrl.text.isEmpty) return;
+              if (price == null || price <= 0) return;
 
               await ref
                   .read(adminRoutesProvider.notifier)
-                  .createRoute(fromCtrl.text, toCtrl.text);
+                  .createRoute(fromCtrl.text, toCtrl.text, price);
 
               if (context.mounted) Navigator.pop(context);
             },
