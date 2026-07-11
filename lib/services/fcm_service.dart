@@ -13,9 +13,17 @@ const _channelDesc = 'Trip and booking updates from digiQ';
 class FcmService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
+  // Listeners are registered once for the lifetime of the app.
+  static bool _listenersRegistered = false;
+  // Updated each login so the latest Riverpod ref gets the refresh calls.
+  static void Function(RemoteMessage)? _onNotification;
+
   Future<void> init({
     required Future<void> Function(String token) onTokenReceived,
+    void Function(RemoteMessage message)? onNotification,
   }) async {
+    _onNotification = onNotification;
+
     await _initLocalNotifications();
 
     final settings = await _messaging.requestPermission(
@@ -47,24 +55,35 @@ class FcmService {
       await onTokenReceived(newToken);
     });
 
-    FirebaseMessaging.onMessage.listen((message) {
-      final notification = message.notification;
-      if (notification == null) return;
+    if (!_listenersRegistered) {
+      _listenersRegistered = true;
 
-      _localNotifications.show(
-        id: notification.hashCode,
-        title: notification.title,
-        body: notification.body,
-        notificationDetails: NotificationDetails(
-          android: AndroidNotificationDetails(
-            _channelId,
-            _channelName,
-            channelDescription: _channelDesc,
-            icon: '@mipmap/ic_launcher',
-          ),
-        ),
-      );
-    });
+      // App in foreground — show a local notification banner and refresh data.
+      FirebaseMessaging.onMessage.listen((message) {
+        final notification = message.notification;
+        if (notification != null) {
+          _localNotifications.show(
+            id: notification.hashCode,
+            title: notification.title,
+            body: notification.body,
+            notificationDetails: NotificationDetails(
+              android: AndroidNotificationDetails(
+                _channelId,
+                _channelName,
+                channelDescription: _channelDesc,
+                icon: '@mipmap/ic_launcher',
+              ),
+            ),
+          );
+        }
+        _onNotification?.call(message);
+      });
+
+      // User tapped a notification while app was in background/terminated.
+      FirebaseMessaging.onMessageOpenedApp.listen((message) {
+        _onNotification?.call(message);
+      });
+    }
   }
 
   Future<String?> getToken() => _messaging.getToken();

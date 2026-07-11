@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/core/api/user_api.dart';
+import 'package:digiQ/providers/passenger_bookings_provider.dart';
 import 'package:digiQ/services/fcm_service.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -127,6 +129,19 @@ class AuthNotifier extends Notifier<AuthState> {
         try {
           await userApi.registerFcmToken(token);
         } catch (_) {}
+      },
+      onNotification: (RemoteMessage message) {
+        // Refresh passenger bookings on any booking-related notification
+        // so the UI updates without requiring a manual pull-to-refresh.
+        final type = message.data['type'] as String? ?? '';
+        if (type == 'booking_approved' ||
+            type == 'booking_rejected' ||
+            type == 'pickup_next' ||
+            type == 'trip_started' ||
+            type == 'trip_completed' ||
+            type == 'trip_cancelled') {
+          ref.invalidate(passengerBookingsProvider);
+        }
       },
     ).catchError((_) {});
   }
@@ -258,6 +273,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _userKey);
+
+    // Clear cached data so the next login always fetches fresh state.
+    ref.invalidate(passengerBookingsProvider);
 
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
