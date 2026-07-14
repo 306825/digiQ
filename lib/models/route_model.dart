@@ -13,9 +13,9 @@ class RouteModel {
 
   factory RouteModel.fromJson(Map<String, dynamic> json) {
     return RouteModel(
-      id: json['_id'],
-      fromLabel: json['fromLabel'],
-      toLabel: json['toLabel'],
+      id: (json['_id'] ?? json['id'])?.toString() ?? '',
+      fromLabel: json['fromLabel']?.toString() ?? '',
+      toLabel: json['toLabel']?.toString() ?? '',
       price: (json['price'] as num?)?.toDouble(),
     );
   }

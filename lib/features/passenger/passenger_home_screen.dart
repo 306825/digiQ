@@ -250,8 +250,31 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
             child: routesAsync.when(
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
-              error: (_, __) =>
-                  const Center(child: Text('Failed to load routes')),
+              error: (e, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          size: 40, color: Colors.red),
+                      const SizedBox(height: 8),
+                      const Text('Failed to load routes',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
+                      Text(e.toString(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey)),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () => ref.invalidate(routesProvider),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               data: (routes) => SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
                 child: Column(
