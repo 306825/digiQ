@@ -28,6 +28,9 @@ class ApiClient {
   final Dio dio;
   static const _storage = FlutterSecureStorage();
 
+  // Registered by AuthNotifier to handle forced logout on 401
+  static void Function()? onUnauthorized;
+
   ApiClient()
       : dio = Dio(
           BaseOptions(
@@ -43,12 +46,19 @@ class ApiClient {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           final token = await _storage.read(key: 'auth_token');
-
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-
           return handler.next(options);
+        },
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401) {
+            // Token is invalid/expired — clear credentials and force re-login
+            await _storage.delete(key: 'auth_token');
+            await _storage.delete(key: 'auth_user');
+            ApiClient.onUnauthorized?.call();
+          }
+          return handler.next(error);
         },
       ),
     );

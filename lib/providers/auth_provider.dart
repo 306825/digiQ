@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:digiQ/core/api/api_client.dart';
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/core/api/user_api.dart';
 import 'package:digiQ/providers/passenger_bookings_provider.dart';
@@ -61,15 +62,17 @@ class AuthNotifier extends Notifier<AuthState> {
 
   @override
   AuthState build() {
+    // Force logout when the API receives a 401 (expired/invalid token).
+    ApiClient.onUnauthorized = () {
+      ref.invalidate(passengerBookingsProvider);
+      state = const AuthState(status: AuthStatus.unauthenticated);
+    };
+
     // Kick off auth restoration; the router shows /splash until this resolves.
     Future.microtask(() async {
       try {
         await _bootstrapAuth();
       } catch (e) {
-        // Any unhandled error during bootstrap must not leave the app stuck on
-        // the splash screen. Fall back to unauthenticated so the user reaches
-        // the login screen.
-        print('[AUTH] Bootstrap error: $e');
         state = const AuthState(status: AuthStatus.unauthenticated);
       }
     });
