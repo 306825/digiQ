@@ -130,6 +130,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                   onPressed: () => ref.invalidate(driverVehicleProvider),
                   child: const Text('Retry'),
                 ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () =>
+                      ref.read(authProvider.notifier).logout(),
+                  child: const Text('Log Out'),
+                ),
               ],
             ),
           ),
