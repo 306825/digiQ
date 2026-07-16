@@ -45,14 +45,15 @@ class _InfoCard extends StatelessWidget {
   // }
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -124,14 +125,10 @@ class _InfoRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: Colors.blue,
-              size: 22,
-            ),
+            child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -141,7 +138,7 @@ class _InfoRow extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -149,9 +146,10 @@ class _InfoRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -580,8 +578,9 @@ class _ConfirmPickupButtonState extends State<ConfirmPickupButton> {
 
 class _ShareTripCard extends StatelessWidget {
   final Booking booking;
+  final _shareKey = GlobalKey();
 
-  const _ShareTripCard({required this.booking});
+  _ShareTripCard({required this.booking});
 
   String _buildShareText() {
     final parts = <String>['🚌 DigiQ Trip Details'];
@@ -615,15 +614,29 @@ class _ShareTripCard extends StatelessWidget {
     return parts.join('\n');
   }
 
+  void _share() {
+    final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+    final origin = box != null
+        ? box.localToGlobal(Offset.zero) & box.size
+        : Rect.fromLTWH(0, 0, 1, 1);
+    Share.share(_buildShareText(), sharePositionOrigin: origin);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? Colors.green.withValues(alpha: 0.15) : const Color(0xFFE8F5E9);
+    final border = isDark ? Colors.green.withValues(alpha: 0.3) : const Color(0xFFA5D6A7);
+    final titleColor = isDark ? Colors.green.shade300 : const Color(0xFF1B5E20);
+    final subtitleColor = isDark ? Colors.green.shade400 : const Color(0xFF388E3C);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFE8F5E9),
+          color: bg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFA5D6A7)),
+          border: Border.all(color: border),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
@@ -638,7 +651,7 @@ class _ShareTripCard extends StatelessWidget {
               child: const Icon(Icons.share, color: Colors.green, size: 22),
             ),
             const SizedBox(width: 14),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -647,18 +660,19 @@ class _ShareTripCard extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
-                      color: Color(0xFF1B5E20),
+                      color: titleColor,
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
                     'Let someone know your trip info',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF388E3C)),
+                    style: TextStyle(fontSize: 12, color: subtitleColor),
                   ),
                 ],
               ),
             ),
             FilledButton(
+              key: _shareKey,
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.green,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -670,7 +684,7 @@ class _ShareTripCard extends StatelessWidget {
                   fontSize: 13,
                 ),
               ),
-              onPressed: () => Share.share(_buildShareText()),
+              onPressed: _share,
               child: const Text('Share'),
             ),
           ],
