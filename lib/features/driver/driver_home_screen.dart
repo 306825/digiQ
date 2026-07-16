@@ -20,6 +20,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:digiQ/core/services/tracking_service.dart';
 import 'package:digiQ/models/vehicle_model.dart';
 import 'package:digiQ/providers/driver_vehicle_provider.dart';
+import 'package:digiQ/providers/driver_bookings_provider.dart';
 import 'package:digiQ/providers/fleet_provider.dart';
 import 'package:digiQ/models/fleet_invitation_model.dart';
 
@@ -234,6 +235,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
       BuildContext context, UserModel user, List<VehicleModel> vehicles) {
     final isVehicleApproved = vehicles.any((v) => v.isApproved);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final pendingBookings =
+        ref.watch(driverBookingsProvider).value?.length ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -321,6 +324,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                 label: 'Booking Requests',
                 subtitle: 'Review and manage bookings',
                 icon: Icons.assignment_outlined,
+                badge: pendingBookings,
                 onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -425,6 +429,7 @@ class _ActionTile extends StatelessWidget {
   final VoidCallback onTap;
   final bool outlined;
   final bool disabled;
+  final int badge;
 
   const _ActionTile({
     required this.label,
@@ -433,6 +438,7 @@ class _ActionTile extends StatelessWidget {
     required this.onTap,
     this.outlined = false,
     this.disabled = false,
+    this.badge = 0,
   });
 
   @override
@@ -442,7 +448,7 @@ class _ActionTile extends StatelessWidget {
     final primary =
         isDark ? AppTheme.darkPrimary : AppTheme.primary;
 
-    return Material(
+    final tile = Material(
       color: outlined
           ? Colors.transparent
           : (disabled
@@ -535,6 +541,35 @@ class _ActionTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    if (badge <= 0) return tile;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        tile,
+        Positioned(
+          top: -6,
+          right: -6,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white, width: 1.5),
+            ),
+            child: Text(
+              badge > 99 ? '99+' : '$badge',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
