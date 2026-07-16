@@ -71,7 +71,9 @@ class FleetRecentTrip {
     final route = json['route'] as Map<String, dynamic>? ?? {};
     return FleetRecentTrip(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      date: DateTime.parse(json['date'] as String),
+      date: json['date'] != null
+          ? DateTime.tryParse(json['date'].toString()) ?? DateTime.now()
+          : DateTime.now(),
       status: json['status'] as String? ?? '',
       fromLabel: route['fromLabel'] as String? ?? '',
       toLabel: route['toLabel'] as String? ?? '',

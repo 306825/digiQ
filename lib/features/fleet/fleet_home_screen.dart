@@ -6,11 +6,29 @@ import '../../providers/auth_provider.dart';
 import '../../providers/fleet_provider.dart';
 import 'fleet_driver_detail_screen.dart';
 
-class FleetHomeScreen extends ConsumerWidget {
+class FleetHomeScreen extends ConsumerStatefulWidget {
   const FleetHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FleetHomeScreen> createState() => _FleetHomeScreenState();
+}
+
+class _FleetHomeScreenState extends ConsumerState<FleetHomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh on every visit so newly-accepted invitations appear immediately.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // ignore: unused_result
+      ref.refresh(fleetMembersProvider);
+    });
+  }
+
+  Future<void> _refresh() =>
+      ref.read(fleetMembersProvider.notifier).refresh();
+
+  @override
+  Widget build(BuildContext context) {
     final membersAsync = ref.watch(fleetMembersProvider);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
@@ -31,28 +49,31 @@ class FleetHomeScreen extends ConsumerWidget {
         label: const Text('Invite Driver'),
         onPressed: () => _showInviteDialog(context, ref),
       ),
-      body: membersAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: cs.error),
-              const SizedBox(height: 12),
-              Text('Failed to load fleet', style: theme.textTheme.bodyLarge),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: () => ref.refresh(fleetMembersProvider),
-                child: const Text('Retry'),
-              ),
-            ],
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: membersAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error_outline, size: 48, color: cs.error),
+                const SizedBox(height: 12),
+                Text('Failed to load fleet', style: theme.textTheme.bodyLarge),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () => ref.refresh(fleetMembersProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
           ),
-        ),
-        data: (members) => members.isEmpty
-            ? _EmptyFleet(onInvite: () => _showInviteDialog(context, ref))
-            : RefreshIndicator(
-                onRefresh: () => ref.read(fleetMembersProvider.notifier).refresh(),
-                child: ListView.builder(
+          data: (members) => members.isEmpty
+              ? _EmptyFleet(
+                  onInvite: () => _showInviteDialog(context, ref),
+                  onRefresh: _refresh,
+                )
+              : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                   itemCount: members.length,
                   itemBuilder: (_, i) => _MemberCard(
@@ -66,7 +87,7 @@ class FleetHomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-              ),
+        ),
       ),
     );
   }
@@ -150,36 +171,46 @@ class FleetHomeScreen extends ConsumerWidget {
 
 class _EmptyFleet extends StatelessWidget {
   final VoidCallback onInvite;
-  const _EmptyFleet({required this.onInvite});
+  final Future<void> Function() onRefresh;
+  const _EmptyFleet({required this.onInvite, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.directions_car_outlined, size: 64, color: cs.onSurfaceVariant),
-            const SizedBox(height: 16),
-            Text(
-              'No drivers yet',
-              style: Theme.of(context).textTheme.titleMedium,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
+          height: constraints.maxHeight,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.directions_car_outlined,
+                      size: 64, color: cs.onSurfaceVariant),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No drivers yet',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pull down to refresh, or invite a driver to start building your fleet.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: cs.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.person_add),
+                    label: const Text('Invite Driver'),
+                    onPressed: onInvite,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Invite a driver to start building your fleet.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: cs.onSurfaceVariant),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              icon: const Icon(Icons.person_add),
-              label: const Text('Invite Driver'),
-              onPressed: onInvite,
-            ),
-          ],
+          ),
         ),
       ),
     );
