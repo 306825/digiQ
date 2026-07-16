@@ -51,6 +51,19 @@ BookingStatus _parseBookingStatus(dynamic value) {
   }
 }
 
+double? _parseDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  if (value is Map) {
+    final inner = value['\$numberDecimal'] ??
+        value['\$numberDouble'] ??
+        value['\$numberInt'] ??
+        value['\$numberLong'];
+    if (inner != null) return double.tryParse(inner.toString());
+  }
+  return double.tryParse(value.toString());
+}
+
 PassengerStatus _parsePassengerStatus(dynamic value) {
   switch (value.toString()) {
     case 'awaiting_pickup':
@@ -201,7 +214,7 @@ class Booking {
       driverName: json['driverName'] as String?,
       driverPhone: json['driverPhone'] as String?,
       vehicleDescription: json['vehicleDescription'] as String?,
-      price: (json['price'] as num?)?.toDouble(),
+      price: _parseDouble(json['price']),
     );
   }
 
