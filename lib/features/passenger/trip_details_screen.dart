@@ -5,6 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/trip_model.dart';
 import 'pickup_address_screen.dart';
 
+String _windowLabel(String w) {
+  const map = {'08-10': '08:00 – 10:00', '11-13': '11:00 – 13:00', '14-16': '14:00 – 16:00'};
+  return map[w] ?? w;
+}
+
 class TripDetailsScreen extends ConsumerWidget {
   final Trip trip;
 
@@ -41,6 +46,20 @@ class TripDetailsScreen extends ConsumerWidget {
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[600],
                     ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.schedule,
+                          size: 14, color: Colors.grey[500]),
+                      const SizedBox(width: 5),
+                      Text(
+                        _windowLabel(trip.departureWindow),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -206,7 +225,7 @@ class TripDetailsScreen extends ConsumerWidget {
                 color: theme.colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 12,
                     offset: const Offset(0, -3),
                   ),

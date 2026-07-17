@@ -111,6 +111,11 @@ class _TripSearchResultsScreenState
 /* --------------------------------------------------------------------------
  * Trip Card
  * -------------------------------------------------------------------------- */
+String _windowLabel(String w) {
+  const map = {'08-10': '08:00 – 10:00', '11-13': '11:00 – 13:00', '14-16': '14:00 – 16:00'};
+  return map[w] ?? w;
+}
+
 class _TripCard extends StatelessWidget {
   final Trip trip;
 
@@ -182,6 +187,27 @@ class _TripCard extends StatelessWidget {
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    // 🕐 DEPARTURE WINDOW
+                    Row(
+                      children: [
+                        Icon(Icons.schedule,
+                            size: 13,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.5)),
+                        const SizedBox(width: 4),
+                        Text(
+                          _windowLabel(trip.departureWindow),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.65),
                           ),
                         ),
                       ],
