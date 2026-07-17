@@ -56,19 +56,13 @@ class DriverVehicleScreen extends ConsumerWidget {
             children: [
               ...vehicles.map((v) => _VehicleCard(vehicle: v)),
               const SizedBox(height: 16),
-              if (vehicles.length < 5)
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Another Vehicle'),
-                  onPressed: () => _openAddVehicle(context, ref),
-                )
-              else
-                const Center(
-                  child: Text(
-                    'Maximum of 5 vehicles reached',
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
+              const Center(
+                child: Text(
+                  'Only one vehicle can be registered per driver account.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
                 ),
+              ),
             ],
           );
         },
@@ -219,9 +213,19 @@ class _AddVehicleScreenState extends ConsumerState<_AddVehicleScreen> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      _snack('Submission failed. Please try again.');
+      final msg = _extractError(e) ?? 'Submission failed. Please try again.';
+      _snack(msg);
     } finally {
       if (mounted) setState(() => loading = false);
+    }
+  }
+
+  String? _extractError(Object e) {
+    try {
+      final dynamic err = e;
+      return err?.response?.data?['message'] as String?;
+    } catch (_) {
+      return null;
     }
   }
 

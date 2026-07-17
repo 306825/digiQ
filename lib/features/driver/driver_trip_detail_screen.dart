@@ -6,110 +6,140 @@ import '../../models/trip_model.dart';
 import '../../models/trip_passenger_model.dart';
 import '../../providers/trip_passengers_provider.dart';
 
-class DriverTripDetailScreen extends ConsumerWidget {
+class DriverTripDetailScreen extends ConsumerStatefulWidget {
   final Trip trip;
 
   const DriverTripDetailScreen({super.key, required this.trip});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DriverTripDetailScreen> createState() =>
+      _DriverTripDetailScreenState();
+}
+
+class _DriverTripDetailScreenState
+    extends ConsumerState<DriverTripDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(tripPassengersProvider(widget.trip.id));
+    });
+  }
+
+  Future<void> _refresh() async {
+    ref.invalidate(tripPassengersProvider(widget.trip.id));
+    // Wait for the new future to settle
+    await ref.read(tripPassengersProvider(widget.trip.id).future);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final passengersAsync = ref.watch(tripPassengersProvider(trip.id));
+    final passengersAsync = ref.watch(tripPassengersProvider(widget.trip.id));
+    final trip = widget.trip;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Trip Passengers'),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          // ── TRIP SUMMARY ─────────────────────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            color: theme.colorScheme.primary.withValues(alpha: 0.08),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${trip.from} → ${trip.to}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: Column(
+          children: [
+            // ── TRIP SUMMARY ─────────────────────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              color: theme.colorScheme.primary.withValues(alpha: 0.08),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${trip.from} → ${trip.to}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today,
-                        size: 13,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-                    const SizedBox(width: 5),
-                    Text(
-                      _formatDate(trip.date),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6)),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(Icons.schedule,
-                        size: 13,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-                    const SizedBox(width: 5),
-                    Text(
-                      trip.departureWindow,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(height: 1),
-
-          // ── PASSENGER LIST ───────────────────────────────────────────────
-          Expanded(
-            child: passengersAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: Colors.red),
-                    const SizedBox(height: 12),
-                    const Text('Failed to load passengers'),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () =>
-                          ref.invalidate(tripPassengersProvider(trip.id)),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today,
+                          size: 13,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                      const SizedBox(width: 5),
+                      Text(
+                        _formatDate(trip.date),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6)),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(Icons.schedule,
+                          size: 13,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                      const SizedBox(width: 5),
+                      Text(
+                        trip.departureWindow,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6)),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              data: (passengers) {
-                if (passengers.isEmpty) {
-                  return const _EmptyPassengers();
-                }
-                return RefreshIndicator(
-                  onRefresh: () async =>
-                      ref.invalidate(tripPassengersProvider(trip.id)),
-                  child: ListView.separated(
+            ),
+
+            const Divider(height: 1),
+
+            // ── PASSENGER LIST ───────────────────────────────────────────────
+            Expanded(
+              child: passengersAsync.when(
+                loading: () =>
+                    const Center(child: CircularProgressIndicator()),
+                error: (e, _) => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    const SizedBox(height: 120),
+                    Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline,
+                              size: 48, color: Colors.red),
+                          const SizedBox(height: 12),
+                          const Text('Failed to load passengers'),
+                          const SizedBox(height: 4),
+                          Text(e.toString(),
+                              style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: _refresh,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                data: (passengers) {
+                  if (passengers.isEmpty) {
+                    return const _EmptyPassengers();
+                  }
+                  return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                     itemCount: passengers.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (_, i) =>
                         _PassengerCard(passenger: passengers[i]),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

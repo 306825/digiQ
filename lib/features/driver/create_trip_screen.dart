@@ -285,8 +285,10 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                                         child: Text(v.displayName),
                                       ))
                                   .toList(),
-                              onChanged: (v) =>
-                                  setState(() => selectedVehicle = v),
+                              onChanged: (v) => setState(() {
+                                selectedVehicle = v;
+                                if (v != null) minPassengers = v.seats;
+                              }),
                             ),
                             if (selectedVehicle != null)
                               Padding(
@@ -332,6 +334,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                     const SizedBox(height: 12),
                     _MinPassengersStepper(
                       value: minPassengers,
+                      max: selectedVehicle?.seats,
                       onChanged: (v) => setState(() => minPassengers = v),
                     ),
                   ],
@@ -437,10 +440,12 @@ class _DatePickerTile extends StatelessWidget {
 
 class _MinPassengersStepper extends StatelessWidget {
   final int value;
+  final int? max;
   final ValueChanged<int> onChanged;
 
   const _MinPassengersStepper({
     required this.value,
+    this.max,
     required this.onChanged,
   });
 
@@ -487,7 +492,7 @@ class _MinPassengersStepper extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
-            onPressed: () => onChanged(value + 1),
+            onPressed: (max != null && value >= max!) ? null : () => onChanged(value + 1),
             color: Theme.of(context).colorScheme.primary,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
