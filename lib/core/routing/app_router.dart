@@ -1,3 +1,4 @@
+import 'package:digiQ/core/navigation/app_navigator.dart';
 import 'package:digiQ/features/admin/admin_home_screen.dart';
 import 'package:digiQ/features/admin/admin_incidents_screen.dart';
 import 'package:digiQ/features/admin/widgets/admin_routes_tab.dart';
@@ -9,6 +10,7 @@ import 'package:digiQ/features/auth/reset_password_screen.dart';
 import 'package:digiQ/features/auth/signup_screen.dart';
 import 'package:digiQ/features/auth/terms_screen.dart';
 import 'package:digiQ/features/auth/verify_email.dart';
+import 'package:digiQ/features/driver/driver_booking_list_screen.dart';
 import 'package:digiQ/features/driver/driver_home_screen.dart';
 import 'package:digiQ/features/fleet/fleet_home_screen.dart';
 import 'package:digiQ/features/driver/driver_vehicle_screen.dart';
@@ -41,7 +43,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     }
   });
 
-  return GoRouter(
+  final router = GoRouter(
     refreshListenable: notifier,
     initialLocation: '/splash',
     redirect: (context, state) {
@@ -164,6 +166,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/driver/vehicle',
         builder: (_, __) => const DriverVehicleScreen(),
       ),
+      GoRoute(
+        path: '/driver/booking-requests',
+        builder: (_, __) => const DriverBookingListScreen(),
+      ),
     ],
   );
+
+  AppNavigator.init(router);
+  return router;
 });

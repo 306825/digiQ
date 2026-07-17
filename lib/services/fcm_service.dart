@@ -17,12 +17,16 @@ class FcmService {
   static bool _listenersRegistered = false;
   // Updated each login so the latest Riverpod ref gets the refresh calls.
   static void Function(RemoteMessage)? _onNotification;
+  // Called only when the user taps a notification (background or terminated).
+  static void Function(RemoteMessage)? _onTap;
 
   Future<void> init({
     required Future<void> Function(String token) onTokenReceived,
     void Function(RemoteMessage message)? onNotification,
+    void Function(RemoteMessage message)? onTap,
   }) async {
     _onNotification = onNotification;
+    _onTap = onTap;
 
     await _initLocalNotifications();
 
@@ -79,11 +83,23 @@ class FcmService {
         _onNotification?.call(message);
       });
 
-      // User tapped a notification while app was in background/terminated.
+      // User tapped a notification while app was in background → navigate.
       FirebaseMessaging.onMessageOpenedApp.listen((message) {
         _onNotification?.call(message);
+        _onTap?.call(message);
       });
     }
+
+    // App was fully terminated and opened via a notification tap.
+    // Delay so the router has time to settle after auth restoration.
+    _messaging.getInitialMessage().then((message) {
+      if (message != null) {
+        Future.delayed(const Duration(seconds: 2), () {
+          _onNotification?.call(message);
+          _onTap?.call(message);
+        });
+      }
+    });
   }
 
   Future<String?> getToken() => _messaging.getToken();

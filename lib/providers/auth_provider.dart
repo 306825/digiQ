@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:digiQ/core/api/api_client.dart';
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/core/api/user_api.dart';
+import 'package:digiQ/core/navigation/app_navigator.dart';
+import 'package:digiQ/providers/driver_bookings_provider.dart';
 import 'package:digiQ/providers/passenger_bookings_provider.dart';
 import 'package:digiQ/services/fcm_service.dart';
 import 'package:dio/dio.dart';
@@ -134,9 +136,12 @@ class AuthNotifier extends Notifier<AuthState> {
         } catch (_) {}
       },
       onNotification: (RemoteMessage message) {
-        // Refresh passenger bookings on any booking-related notification
-        // so the UI updates without requiring a manual pull-to-refresh.
         final type = message.data['type'] as String? ?? '';
+        // Driver: new booking arrived — refresh the pending-bookings badge.
+        if (type == 'new_booking') {
+          ref.invalidate(driverBookingsProvider);
+        }
+        // Passenger: booking status changed — refresh their booking list.
         if (type == 'booking_approved' ||
             type == 'booking_rejected' ||
             type == 'pickup_next' ||
@@ -144,6 +149,21 @@ class AuthNotifier extends Notifier<AuthState> {
             type == 'trip_completed' ||
             type == 'trip_cancelled') {
           ref.invalidate(passengerBookingsProvider);
+        }
+      },
+      onTap: (RemoteMessage message) {
+        final type = message.data['type'] as String? ?? '';
+        final bookingId = message.data['bookingId'] as String?;
+
+        if (type == 'new_booking') {
+          // Driver tapped a "new booking" notification → go to booking requests.
+          AppNavigator.push('/driver/booking-requests');
+        } else if ((type == 'booking_approved' ||
+                type == 'booking_rejected' ||
+                type == 'pickup_next') &&
+            bookingId != null) {
+          // Passenger tapped a booking status notification → go to that booking.
+          AppNavigator.push('/booking/$bookingId');
         }
       },
     ).catchError((_) {});
