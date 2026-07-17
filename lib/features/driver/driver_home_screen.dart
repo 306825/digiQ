@@ -91,6 +91,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider.select((a) => a.user));
     final vehicleAsync = ref.watch(driverVehicleProvider);
+    // Watch at top-level so Riverpod always re-registers the listener,
+    // even when vehicleAsync is not in the data state.
+    final pendingBookings = ref.watch(driverBookingsProvider).value?.length ?? 0;
 
     if (user == null) {
       return const Scaffold(
@@ -143,7 +146,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         ),
       ),
       data: (vehicles) {
-        return _buildDashboard(context, user, vehicles);
+        return _buildDashboard(context, user, vehicles, pendingBookings);
       },
     );
     ;
@@ -232,11 +235,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   }
 
   Widget _buildDashboard(
-      BuildContext context, UserModel user, List<VehicleModel> vehicles) {
+      BuildContext context, UserModel user, List<VehicleModel> vehicles, int pendingBookings) {
     final isVehicleApproved = vehicles.any((v) => v.isApproved);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final pendingBookings =
-        ref.watch(driverBookingsProvider).value?.length ?? 0;
 
     return Scaffold(
       appBar: AppBar(
