@@ -75,13 +75,30 @@ class TripDetailsScreen extends ConsumerWidget {
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              Text(
-                                '⭐ 1.0 rating',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
+                              trip.driverRatingCount == 0
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.withValues(alpha: 0.12), // ignore: deprecated_member_use
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'New driver',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.blue,
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      '⭐ ${trip.driverRating!.toStringAsFixed(1)}  (${trip.driverRatingCount})',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
                             ],
                           ),
                         ],

@@ -62,6 +62,18 @@ class BookingApi {
   Future<Response> cancelBooking(String bookingId) {
     return dio.patch('/bookings/$bookingId/cancel');
   }
+
+  Future<void> rateDriver({
+    required String bookingId,
+    required int stars,
+    String? comment,
+  }) async {
+    await dio.post('/ratings', data: {
+      'bookingId': bookingId,
+      'stars': stars,
+      if (comment != null && comment.isNotEmpty) 'comment': comment,
+    });
+  }
 }
 
 final bookingApiProvider = Provider<BookingApi>((ref) {

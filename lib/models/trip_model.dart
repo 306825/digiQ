@@ -16,6 +16,8 @@ class Trip {
 
   final String status;
   final String? driverProfileImageUrl;
+  final double? driverRating;
+  final int driverRatingCount;
 
   const Trip({
     required this.id,
@@ -31,6 +33,8 @@ class Trip {
     required this.status,
     this.minPassengers = 1,
     this.driverProfileImageUrl,
+    this.driverRating,
+    this.driverRatingCount = 0,
   });
 
   /* --------------------------------------------------------------------------
@@ -81,8 +85,9 @@ class Trip {
       // 🔹 Search results are always open
       status: 'open',
 
-      // 🖼️ THIS WAS MISSING
       driverProfileImageUrl: json['driverProfileImageUrl'] as String?,
+      driverRating: (json['driverRating'] as num?)?.toDouble(),
+      driverRatingCount: (json['driverRatingCount'] as num?)?.toInt() ?? 0,
     );
   }
 

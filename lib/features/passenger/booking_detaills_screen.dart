@@ -222,6 +222,7 @@ class BookingDetailsScreen extends ConsumerStatefulWidget {
 class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
   late TrackingService trackingService;
   bool _joined = false;
+  bool _hasRated = false;
 
   @override
   void initState() {
@@ -402,6 +403,14 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                 if (booking.status == BookingStatus.approved &&
                     booking.driverName != null)
                   _ShareTripCard(booking: booking),
+
+                // Rate driver — visible for approved bookings, hidden after rating
+                if (booking.status == BookingStatus.approved && !_hasRated)
+                  _RateDriverCard(
+                    bookingId: booking.id,
+                    driverName: booking.driverName ?? 'your driver',
+                    onRated: () => setState(() => _hasRated = true),
+                  ),
 
                 const SizedBox(height: 16),
                 _InfoCard(
@@ -686,6 +695,136 @@ class _ShareTripCard extends StatelessWidget {
               ),
               onPressed: _share,
               child: const Text('Share'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RateDriverCard extends ConsumerStatefulWidget {
+  final String bookingId;
+  final String driverName;
+  final VoidCallback onRated;
+
+  const _RateDriverCard({
+    required this.bookingId,
+    required this.driverName,
+    required this.onRated,
+  });
+
+  @override
+  ConsumerState<_RateDriverCard> createState() => _RateDriverCardState();
+}
+
+class _RateDriverCardState extends ConsumerState<_RateDriverCard> {
+  int _stars = 0;
+  bool _submitting = false;
+
+  Future<void> _submit() async {
+    if (_stars == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a star rating')),
+      );
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await ref.read(bookingApiProvider).rateDriver(
+            bookingId: widget.bookingId,
+            stars: _stars,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thanks for rating your driver!')),
+      );
+      widget.onRated();
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e.toString().contains('already rated')
+          ? 'You have already rated this trip'
+          : 'Failed to submit rating';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      if (msg.contains('already rated')) widget.onRated();
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark
+        ? Colors.amber.withValues(alpha: 0.10)
+        : const Color(0xFFFFFDE7);
+    final border = isDark
+        ? Colors.amber.withValues(alpha: 0.3)
+        : const Color(0xFFFFE082);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: border),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.star_rounded, color: Colors.amber, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  'Rate ${widget.driverName}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'How was your trip?',
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (i) {
+                final filled = i < _stars;
+                return GestureDetector(
+                  onTap: () => setState(() => _stars = i + 1),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Icon(
+                      filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                      color: Colors.amber,
+                      size: 40,
+                    ),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _submitting || _stars == 0 ? null : _submit,
+                child: _submitting
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Submit Rating'),
+              ),
             ),
           ],
         ),
