@@ -13,12 +13,14 @@ class BookingApi {
   Future<Response> createBooking({
     required String tripId,
     required Map<String, dynamic> pickup,
+    int seatsBooked = 1,
   }) {
     return dio.post(
       '/bookings',
       data: {
         'tripId': tripId,
         'pickup': pickup,
+        'seatsBooked': seatsBooked,
       },
     );
   }

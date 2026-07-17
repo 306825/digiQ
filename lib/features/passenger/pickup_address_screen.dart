@@ -122,6 +122,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
   double? _selectedLat;
   double? _selectedLng;
 
+  int _seatsBooked = 1;
   bool _isSubmitting = false;
 
   @override
@@ -194,6 +195,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
     try {
       final bookingRes = await bookingApi.createBooking(
         tripId: widget.trip.id,
+        seatsBooked: _seatsBooked,
         pickup: {
           'addressLine': _selectedAddress!,
           'area': _selectedArea ?? '',
@@ -352,6 +354,16 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
 
                     const SizedBox(height: 20),
 
+                    // Seat count picker
+                    const SizedBox(height: 20),
+                    _SeatPicker(
+                      seats: _seatsBooked,
+                      maxSeats: widget.trip.seatsAvailable,
+                      onChanged: (v) => setState(() => _seatsBooked = v),
+                    ),
+
+                    const SizedBox(height: 20),
+
                     // Notes
                     TextField(
                       controller: _notesController,
@@ -386,6 +398,68 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Seat count picker widget
+// ---------------------------------------------------------------------------
+
+class _SeatPicker extends StatelessWidget {
+  final int seats;
+  final int maxSeats;
+  final ValueChanged<int> onChanged;
+
+  const _SeatPicker({
+    required this.seats,
+    required this.maxSeats,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.event_seat_outlined, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Number of seats',
+                    style: TextStyle(fontWeight: FontWeight.w500)),
+                Text(
+                  '$maxSeats seat${maxSeats == 1 ? '' : 's'} available',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            onPressed: seats > 1 ? () => onChanged(seats - 1) : null,
+            color: cs.primary,
+          ),
+          Text(
+            '$seats',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: seats < maxSeats ? () => onChanged(seats + 1) : null,
+            color: cs.primary,
+          ),
+        ],
       ),
     );
   }
