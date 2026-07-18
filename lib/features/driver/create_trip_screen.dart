@@ -83,41 +83,37 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
           const SnackBar(content: Text('Trip created successfully')),
         );
       }
-    } catch (e, stack) {
-      print('❌ CREATE TRIP FAILED');
-      print(e);
-      print(stack);
+    } catch (e) {
+      if (!mounted) return;
 
-      //if (e is DioException && e.response?.statusCode == 403) {
+      String message = 'Failed to create trip';
+
       if (e is DioException) {
-        print('--------------------------------------------------------------');
-        print('🔴 STATUS: ${e.response?.statusCode}');
-        print('🔴 DATA: ${e.response?.data}');
-        print('🔴 MESSAGE: ${e.message}');
-        //await ref.read(authProvider.notifier).refreshMe();
-        //return; // 🚨 stop further UI handling
-      }
-      print(
-          '-------------------------check mount-------------------------------------');
+        final data = e.response?.data;
+        if (data is Map) {
+          final code = data['code'];
+          final serverMsg = data['message'];
+          final msgStr = serverMsg is List
+              ? serverMsg.first?.toString()
+              : serverMsg?.toString();
 
-      if (e is DioException && e.response?.data != null) {
-        final data = e.response!.data;
-
-        if (data['code'] == 'LICENSE_EXPIRED') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content:
-                  Text('Your driver license has expired. Please update it.'),
-            ),
-          );
-          return;
+          if (code == 'LICENSE_EXPIRED') {
+            message = 'Your driver licence has expired. Please update it.';
+          } else if (code == 'PRDP_EXPIRED') {
+            message = 'Your PrDP has expired. Please update it.';
+          } else if (code == 'DRIVER_NOT_APPROVED') {
+            message = 'Your driver account has not been approved yet.';
+          } else if (code == 'VEHICLE_NOT_APPROVED') {
+            message = 'No approved vehicle found. Please add a vehicle and wait for approval.';
+          } else if (msgStr != null && msgStr.isNotEmpty) {
+            message = msgStr;
+          }
         }
       }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to create trip')),
-        );
-      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     } finally {
       if (mounted) setState(() => submitting = false);
     }
