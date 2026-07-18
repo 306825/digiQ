@@ -25,6 +25,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _inputCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
   final List<ChatMessage> _messages = [];
+  final Set<String> _seenIds = {};
 
   bool _loading = true;
   String? _currentUserId;
@@ -40,24 +41,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _init() async {
     _currentUserId = ref.read(authProvider).user?.id;
 
-    await _chat.connect(_baseUrl);
-    _chat.joinChat(widget.bookingId);
-
-    // Real-time messages arrive via socket — the server echoes back to sender too
-    _chat.onMessage((data) {
-      final msg = ChatMessage.fromJson(data);
-      if (mounted) {
-        setState(() => _messages.add(msg));
-        _scrollToBottom();
-      }
-    });
-
-    // Load history from REST
+    // 1️⃣ Load history first so it appears in chronological order
     try {
       final history = await ref.read(chatApiProvider).getHistory(widget.bookingId);
       if (mounted) {
         setState(() {
-          _messages.addAll(history);
+          for (final msg in history) {
+            if (_seenIds.add(msg.id)) _messages.add(msg);
+          }
           _loading = false;
         });
         _scrollToBottom();
@@ -65,6 +56,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
+
+    // 2️⃣ Connect socket after history is in place
+    await _chat.connect(_baseUrl);
+    _chat.joinChat(widget.bookingId);
+
+    // 3️⃣ Real-time messages — skip any already in history by ID
+    _chat.onMessage((data) {
+      final msg = ChatMessage.fromJson(data);
+      if (mounted && _seenIds.add(msg.id)) {
+        setState(() => _messages.add(msg));
+        _scrollToBottom();
+      }
+    });
   }
 
   void _scrollToBottom() {
