@@ -385,7 +385,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                       ),
                     ),
 
-                    // Suggestions list
+                    // Pickup suggestions list
                     if (_suggestions.isNotEmpty)
                       Card(
                         margin: const EdgeInsets.only(top: 4),
@@ -422,53 +422,13 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Seat count picker
-                    const SizedBox(height: 20),
-                    _SeatPicker(
-                      seats: _seatsBooked,
-                      maxSeats: widget.trip.seatsAvailable,
-                      onChanged: (v) => setState(() => _seatsBooked = v),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Notes
-                    TextField(
-                      controller: _notesController,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        labelText: 'Notes for driver (optional)',
-                        hintText: 'Gate code, landmark, special instructions…',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
                     // ── Drop-off address ─────────────────────────────────
-                    const Text(
-                      'Drop-off address',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Where should the driver drop you off? (optional)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
                     TextField(
                       controller: _dropoffSearchController,
                       onChanged: _onDropoffSearchChanged,
                       decoration: InputDecoration(
-                        labelText: 'Search drop-off address',
-                        hintText: 'Start typing your destination…',
+                        labelText: 'Drop-off address (optional)',
+                        hintText: 'Where should the driver drop you off?',
                         prefixIcon: const Icon(Icons.flag_outlined),
                         suffixIcon: _isDropoffSearching
                             ? const Padding(
@@ -523,6 +483,32 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                           },
                         ),
                       ),
+
+                    const SizedBox(height: 20),
+
+                    // Seat count picker
+                    _SeatPicker(
+                      seats: _seatsBooked,
+                      maxSeats: widget.trip.seatsAvailable,
+                      onChanged: (v) => setState(() => _seatsBooked = v),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Notes
+                    TextField(
+                      controller: _notesController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Notes for driver (optional)',
+                        hintText: 'Gate code, landmark, special instructions…',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      ),
+                    ),
                   ],
                 ),
               ),
