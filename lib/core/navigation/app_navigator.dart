@@ -13,5 +13,5 @@ class AppNavigator {
   static void go(String path) => _router?.go(path);
 
   /// Push [path] on top of the current stack.
-  static void push(String path) => _router?.push(path);
+  static void push(String path, {Object? extra}) => _router?.push(path, extra: extra);
 }

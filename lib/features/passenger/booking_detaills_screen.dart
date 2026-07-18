@@ -3,6 +3,7 @@ import 'package:digiQ/theme/app.theme.dart';
 import 'package:digiQ/core/api/booking_api.dart';
 import 'package:digiQ/core/api/incident_api.dart';
 import 'package:digiQ/core/services/tracking_service.dart';
+import 'package:digiQ/features/chat/chat_screen.dart';
 import 'package:digiQ/features/passenger/live_tracking_screen.dart';
 import 'package:digiQ/models/booking_model.dart';
 import 'package:digiQ/providers/passenger_bookings_provider.dart';
@@ -399,6 +400,13 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                     ],
                   ),
 
+                // Chat with driver — only for approved bookings
+                if (booking.status == BookingStatus.approved)
+                  _ChatCard(
+                    bookingId: booking.id,
+                    driverName: booking.driverName ?? 'Driver',
+                  ),
+
                 // Share trip details — visible for approved bookings
                 if (booking.status == BookingStatus.approved &&
                     booking.driverName != null)
@@ -579,6 +587,88 @@ class _ConfirmPickupButtonState extends State<ConfirmPickupButton> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Text('Confirm Pickup'),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatCard extends StatelessWidget {
+  final String bookingId;
+  final String driverName;
+
+  const _ChatCard({required this.bookingId, required this.driverName});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? Colors.blue.withValues(alpha: 0.12) : const Color(0xFFE3F2FD);
+    final border = isDark ? Colors.blue.withValues(alpha: 0.3) : const Color(0xFF90CAF9);
+    final titleColor = isDark ? Colors.blue.shade200 : const Color(0xFF0D47A1);
+    final subtitleColor = isDark ? Colors.blue.shade300 : const Color(0xFF1565C0);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: border),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.chat_outlined, color: Colors.blue, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Message Driver',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: titleColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Chat directly with $driverName',
+                    style: TextStyle(fontSize: 12, color: subtitleColor),
+                  ),
+                ],
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatScreen(
+                    bookingId: bookingId,
+                    otherPersonName: driverName,
+                  ),
+                ),
+              ),
+              child: const Text('Chat'),
+            ),
+          ],
         ),
       ),
     );

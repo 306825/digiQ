@@ -1,5 +1,6 @@
 import 'package:digiQ/core/navigation/app_navigator.dart';
 import 'package:digiQ/features/admin/admin_home_screen.dart';
+import 'package:digiQ/features/chat/chat_screen.dart';
 import 'package:digiQ/features/admin/admin_incidents_screen.dart';
 import 'package:digiQ/features/admin/widgets/admin_routes_tab.dart';
 import 'package:digiQ/features/auth/account_deactivated_screen.dart';
@@ -169,6 +170,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/driver/booking-requests',
         builder: (_, __) => const DriverBookingListScreen(),
+      ),
+      GoRoute(
+        path: '/chat/:bookingId',
+        builder: (context, state) {
+          final bookingId = state.pathParameters['bookingId']!;
+          final extra = state.extra as Map<String, dynamic>?;
+          final otherPersonName =
+              extra?['otherPersonName'] as String? ?? 'Chat';
+          return ChatScreen(
+            bookingId: bookingId,
+            otherPersonName: otherPersonName,
+          );
+        },
       ),
     ],
   );

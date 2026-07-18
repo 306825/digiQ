@@ -156,14 +156,19 @@ class AuthNotifier extends Notifier<AuthState> {
         final bookingId = message.data['bookingId'] as String?;
 
         if (type == 'new_booking') {
-          // Driver tapped a "new booking" notification → go to booking requests.
           AppNavigator.push('/driver/booking-requests');
         } else if ((type == 'booking_approved' ||
                 type == 'booking_rejected' ||
                 type == 'pickup_next') &&
             bookingId != null) {
-          // Passenger tapped a booking status notification → go to that booking.
           AppNavigator.push('/booking/$bookingId');
+        } else if (type == 'new_message' && bookingId != null) {
+          final otherPersonName =
+              message.data['otherPersonName'] as String? ?? 'Chat';
+          AppNavigator.push(
+            '/chat/$bookingId',
+            extra: {'otherPersonName': otherPersonName},
+          );
         }
       },
     ).catchError((_) {});

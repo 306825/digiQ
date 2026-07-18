@@ -1,3 +1,4 @@
+import 'package:digiQ/features/chat/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -317,6 +318,27 @@ class _PassengerCard extends StatelessWidget {
                 onPressed: () => _openNavigation(context),
               ),
             ),
+
+            // ── Chat button — only for approved bookings ─────────────────
+            if (passenger.status == 'approved') ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.chat_outlined, size: 18),
+                  label: const Text('Chat with passenger'),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatScreen(
+                        bookingId: passenger.id,
+                        otherPersonName: passenger.passengerName,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
