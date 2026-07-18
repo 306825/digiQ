@@ -263,6 +263,15 @@ class _PassengerCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        'Pickup',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.55),
+                        ),
+                      ),
+                      Text(
                         passenger.addressLine,
                         style: const TextStyle(
                             fontSize: 13.5, fontWeight: FontWeight.w500),

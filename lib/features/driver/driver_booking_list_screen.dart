@@ -127,16 +127,62 @@ class _BookingCard extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.location_on_outlined, size: 20),
+              const Icon(Icons.location_on_outlined,
+                  size: 20, color: Colors.redAccent),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  '${booking.address}, ${booking.area}',
-                  style: const TextStyle(color: Colors.grey),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Pickup',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey),
+                    ),
+                    Text(
+                      '${booking.address}, ${booking.area}',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+
+          if (booking.dropoffAddress != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.flag_outlined,
+                    size: 20, color: Colors.teal),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Drop-off',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey),
+                      ),
+                      Text(
+                        booking.dropoffArea != null &&
+                                booking.dropoffArea!.isNotEmpty
+                            ? '${booking.dropoffAddress}, ${booking.dropoffArea}'
+                            : booking.dropoffAddress!,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
 
           const SizedBox(height: 16),
 
