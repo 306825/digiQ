@@ -3,11 +3,13 @@ import 'package:digiQ/features/passenger/my_bookings_screen.dart';
 import 'package:digiQ/features/shared/widgets/app_logo.dart';
 import 'package:digiQ/models/booking_model.dart';
 import 'package:digiQ/models/route_model.dart';
+import 'package:digiQ/providers/auth_provider.dart';
 import 'package:digiQ/providers/passenger_bookings_provider.dart';
 import 'package:digiQ/providers/routes_provider.dart';
 import 'package:digiQ/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'trip_search_results_screen.dart';
 
@@ -197,27 +199,44 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top row: logo + bookings link
+                    // Top row: logo + bookings link + logout
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const AppLogo(size: 36, dark: true),
-                        TextButton.icon(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const MyBookingsScreen()),
-                          ),
-                          icon: const Icon(Icons.receipt_long,
-                              color: Colors.white70, size: 18),
-                          label: Text(
-                            'My Bookings',
-                            style: GoogleFonts.dmSans(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextButton.icon(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const MyBookingsScreen()),
+                              ),
+                              icon: const Icon(Icons.receipt_long,
+                                  color: Colors.white70, size: 18),
+                              label: Text(
+                                'My Bookings',
+                                style: GoogleFonts.dmSans(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
-                          ),
+                            IconButton(
+                              icon: const Icon(Icons.logout_outlined,
+                                  color: Colors.white70, size: 20),
+                              tooltip: 'Log out',
+                              onPressed: () async {
+                                await ref
+                                    .read(authProvider.notifier)
+                                    .logout();
+                                if (!context.mounted) return;
+                                context.go('/login');
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
