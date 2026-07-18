@@ -162,6 +162,72 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
+class _DepartureRow extends StatelessWidget {
+  final String window;
+  const _DepartureRow({required this.window});
+
+  static const _labels = {
+    '08-10': '08:00 – 10:00',
+    '11-13': '11:00 – 13:00',
+    '14-16': '14:00 – 16:00',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final label = _labels[window] ?? window;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade700.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.access_time_rounded,
+                color: Colors.amber.shade800, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Departure Window',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade700,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _StatusChip extends StatelessWidget {
   final String status;
 
@@ -332,13 +398,20 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                 _InfoCard(
                   title: 'Booking Info',
                   children: [
-                    // _InfoRow(label: 'Passenger', value: booking.passengerName),
-                    // _InfoRow(label: 'Pickup', value: booking.pickup.toString()),
-                    // _InfoRow(label: 'Status', value: booking.status.name),
-                    // _InfoRow(
-                    //   label: 'Passenger Status',
-                    //   value: booking.passengerStatus.name,
-                    // ),
+                    // ── Departure window — shown first so it's never missed ──
+                    if (booking.departureWindow != null &&
+                        booking.departureWindow!.isNotEmpty)
+                      _DepartureRow(window: booking.departureWindow!),
+
+                    if (booking.tripDate != null)
+                      _InfoRow(
+                        label: 'Trip Date',
+                        value: DateFormat('EEEE, d MMMM yyyy')
+                            .format(booking.tripDate!.toLocal()),
+                        icon: Icons.calendar_today,
+                        color: Colors.indigo,
+                      ),
+
                     _InfoRow(
                       label: 'Passenger',
                       value: booking.passengerName,

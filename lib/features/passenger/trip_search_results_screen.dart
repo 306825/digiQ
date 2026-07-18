@@ -192,25 +192,33 @@ class _TripCard extends StatelessWidget {
                       ],
                     ),
 
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
 
-                    // 🕐 DEPARTURE WINDOW
-                    Row(
-                      children: [
-                        Icon(Icons.schedule,
-                            size: 13,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.5)),
-                        const SizedBox(width: 4),
-                        Text(
-                          _windowLabel(trip.departureWindow),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.65),
+                    // 🕐 DEPARTURE WINDOW — prominent badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade700,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.access_time_rounded,
+                              size: 14, color: Colors.white),
+                          const SizedBox(width: 5),
+                          Text(
+                            _windowLabel(trip.departureWindow),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.2,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
 
                     const SizedBox(height: 10),

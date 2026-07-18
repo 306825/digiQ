@@ -47,19 +47,31 @@ class TripDetailsScreen extends ConsumerWidget {
                       color: Colors.grey[600],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.schedule,
-                          size: 14, color: Colors.grey[500]),
-                      const SizedBox(width: 5),
-                      Text(
-                        _windowLabel(trip.departureWindow),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade700,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.access_time_rounded,
+                            size: 16, color: Colors.white),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Departs ${_windowLabel(trip.departureWindow)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
