@@ -32,6 +32,12 @@ class DriverBookingsNotifier extends AsyncNotifier<List<DriverBooking>> {
 
   bool isProcessing(String bookingId) => _processing.contains(bookingId);
 
+  // Refresh without clearing existing state — badge stays visible during fetch
+  Future<void> silentRefresh() async {
+    final fresh = await AsyncValue.guard(build);
+    state = fresh;
+  }
+
   Future<void> respond({
     required String bookingId,
     required BookingStatus status,

@@ -18,9 +18,9 @@ class _DriverBookingListScreenState
   @override
   void initState() {
     super.initState();
-    // Always re-fetch when the screen opens so new bookings are visible
+    // Refresh in background without clearing state — badge stays visible on home screen
     Future.microtask(() {
-      ref.invalidate(driverBookingsProvider);
+      ref.read(driverBookingsProvider.notifier).silentRefresh();
     });
   }
 
@@ -39,13 +39,13 @@ class _DriverBookingListScreenState
         data: (bookings) {
           if (bookings.isEmpty) {
             return RefreshIndicator(
-              onRefresh: () async => ref.invalidate(driverBookingsProvider),
+              onRefresh: () => ref.read(driverBookingsProvider.notifier).silentRefresh(),
               child: const _EmptyState(),
             );
           }
 
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(driverBookingsProvider),
+            onRefresh: () => ref.read(driverBookingsProvider.notifier).silentRefresh(),
             child: ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: bookings.length,

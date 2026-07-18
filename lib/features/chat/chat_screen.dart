@@ -28,6 +28,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final Set<String> _seenIds = {};
 
   bool _loading = true;
+  String? _error;
   String? _currentUserId;
 
   static const _baseUrl = 'https://api.digiqueue.co.za';
@@ -53,12 +54,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         });
         _scrollToBottom();
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[CHAT] History load failed: $e');
       if (mounted) setState(() => _loading = false);
     }
 
-    // 2️⃣ Connect socket after history is in place
-    await _chat.connect(_baseUrl);
+    // 2️⃣ Connect socket after history is in place — connect() waits for live connection
+    try {
+      await _chat.connect(_baseUrl);
+    } catch (e) {
+      debugPrint('[CHAT] Socket connect failed: $e');
+      if (mounted) setState(() => _error = 'Could not connect to chat. Check your connection.');
+      return;
+    }
     _chat.joinChat(widget.bookingId);
 
     // 3️⃣ Real-time messages — skip any already in history by ID
@@ -122,6 +130,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.wifi_off_rounded,
+                                  size: 48,
+                                  color: cs.onSurface.withValues(alpha: 0.3)),
+                              const SizedBox(height: 12),
+                              Text(_error!,
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                      color:
+                                          cs.onSurface.withValues(alpha: 0.6))),
+                            ],
+                          ),
+                        ),
+                      )
                 : _messages.isEmpty
                     ? Center(
                         child: Column(
