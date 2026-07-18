@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,29 +29,30 @@ class DriverDocumentsApi {
     return Map<String, dynamic>.from(response.data);
   }
 
-  /// Upload file directly to S3
+  /// Upload file bytes directly to S3 via a presigned PUT URL.
+  ///
+  /// Uses dart:io HttpClient so that:
+  ///   1. The raw bytes are written without any Dio encoding transforms.
+  ///   2. A non-2xx status (e.g. S3 403 SignatureDoesNotMatch) throws and
+  ///      surfaces the real error instead of being silently swallowed.
   Future<void> uploadToS3({
     required String uploadUrl,
     required List<int> bytes,
     required String contentType,
   }) async {
-    final s3 = Dio();
-
+    final client = HttpClient();
     try {
-      await s3.putUri(
-        Uri.parse(uploadUrl),
-        data: Uint8List.fromList(bytes),
-        options: Options(
-          headers: {
-            'Content-Type': contentType,
-          },
-          responseType: ResponseType.plain,
-          followRedirects: false,
-          validateStatus: (status) => status != null && status < 500,
-        ),
-      );
-    } catch (e) {
-      rethrow;
+      final request = await client.putUrl(Uri.parse(uploadUrl));
+      request.headers.set(HttpHeaders.contentTypeHeader, contentType);
+      request.contentLength = bytes.length;
+      request.add(bytes);
+      final response = await request.close();
+      await response.drain<void>();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('S3 upload failed (HTTP ${response.statusCode})');
+      }
+    } finally {
+      client.close();
     }
   }
 }

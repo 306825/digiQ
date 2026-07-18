@@ -7,6 +7,8 @@ class TripPassenger {
   final String addressLine;
   final String area;
   final String? notes;
+  final String? dropoffAddressLine;
+  final String? dropoffArea;
 
   const TripPassenger({
     required this.id,
@@ -17,10 +19,13 @@ class TripPassenger {
     required this.addressLine,
     required this.area,
     this.notes,
+    this.dropoffAddressLine,
+    this.dropoffArea,
   });
 
   factory TripPassenger.fromJson(Map<String, dynamic> json) {
     final pickup = json['pickup'] as Map<String, dynamic>;
+    final dropoff = json['dropoff'] as Map<String, dynamic>?;
     return TripPassenger(
       id: json['id'] as String,
       passengerName: json['passengerName'] as String,
@@ -30,6 +35,8 @@ class TripPassenger {
       addressLine: pickup['addressLine'] as String,
       area: pickup['area'] as String? ?? '',
       notes: pickup['notes'] as String?,
+      dropoffAddressLine: dropoff?['addressLine'] as String?,
+      dropoffArea: dropoff?['area'] as String?,
     );
   }
 }

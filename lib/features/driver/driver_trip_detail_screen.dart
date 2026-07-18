@@ -307,6 +307,49 @@ class _PassengerCard extends StatelessWidget {
               ),
             ],
 
+            if (passenger.dropoffAddressLine != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.flag_outlined,
+                      size: 18, color: Colors.teal),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Drop-off',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.55),
+                          ),
+                        ),
+                        Text(
+                          passenger.dropoffAddressLine!,
+                          style: const TextStyle(
+                              fontSize: 13.5, fontWeight: FontWeight.w500),
+                        ),
+                        if (passenger.dropoffArea != null &&
+                            passenger.dropoffArea!.isNotEmpty)
+                          Text(
+                            passenger.dropoffArea!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.55),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
             const SizedBox(height: 14),
 
             // ── Navigate button ──────────────────────────────────────────

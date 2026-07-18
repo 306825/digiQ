@@ -6,6 +6,8 @@ class DriverBooking {
   final String area;
   final String? notes;
   final String? passengerProfileImageUrl;
+  final String? dropoffAddress;
+  final String? dropoffArea;
 
   DriverBooking({
     required this.id,
@@ -15,9 +17,12 @@ class DriverBooking {
     required this.area,
     this.notes,
     this.passengerProfileImageUrl,
+    this.dropoffAddress,
+    this.dropoffArea,
   });
 
   factory DriverBooking.fromJson(Map<String, dynamic> json) {
+    final dropoff = json['dropoff'] as Map<String, dynamic>?;
     return DriverBooking(
       id: json['id'] as String,
       passengerName: json['passengerName'] as String,
@@ -26,6 +31,8 @@ class DriverBooking {
       address: json['pickup']['addressLine'] as String,
       area: json['pickup']['area'] as String,
       notes: json['pickup']['notes'],
+      dropoffAddress: dropoff?['addressLine'] as String?,
+      dropoffArea: dropoff?['area'] as String?,
     );
   }
 }
