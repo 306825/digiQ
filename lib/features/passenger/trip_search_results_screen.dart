@@ -152,7 +152,7 @@ class _TripCard extends StatelessWidget {
             children: [
               // ── LEFT: INFO ─────────────────────────────
               Expanded(
-                flex: 4,
+                flex: 5,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -167,7 +167,7 @@ class _TripCard extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
 
                     // 👤 DRIVER
                     Row(
@@ -175,18 +175,40 @@ class _TripCard extends StatelessWidget {
                         UserAvatar(
                           displayName: trip.driverName,
                           imageUrl: trip.driverProfileImageUrl,
-                          size: 28,
+                          size: 40,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            trip.driverName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                trip.driverName,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (trip.driverRatingCount > 0)
+                                Text(
+                                  '⭐ ${trip.driverRating!.toStringAsFixed(1)} (${trip.driverRatingCount})',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                )
+                              else
+                                Text(
+                                  'New driver',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ],
@@ -242,7 +264,7 @@ class _TripCard extends StatelessWidget {
 
               // ── RIGHT: CAR + TOTAL SEATS ───────────────
               Expanded(
-                flex: 6, // 🔥 image dominates
+                flex: 5,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

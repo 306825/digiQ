@@ -5,6 +5,7 @@ import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/core/api/user_api.dart';
 import 'package:digiQ/core/navigation/app_navigator.dart';
 import 'package:digiQ/providers/driver_bookings_provider.dart';
+import 'package:digiQ/providers/driver_vehicle_provider.dart';
 import 'package:digiQ/providers/passenger_bookings_provider.dart';
 import 'package:digiQ/services/fcm_service.dart';
 import 'package:dio/dio.dart';
@@ -302,8 +303,10 @@ class AuthNotifier extends Notifier<AuthState> {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _userKey);
 
-    // Clear cached data so the next login always fetches fresh state.
+    // Clear all cached provider state so the next login always fetches fresh.
     ref.invalidate(passengerBookingsProvider);
+    ref.invalidate(driverBookingsProvider);
+    ref.invalidate(driverVehicleProvider);
 
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
