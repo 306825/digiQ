@@ -15,16 +15,23 @@ class UserAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: size / 2,
-        backgroundImage: NetworkImage(imageUrl!),
-        backgroundColor: Colors.grey.shade200,
+      return ClipOval(
+        child: Image.network(
+          imageUrl!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _initialsAvatar(context),
+        ),
       );
     }
+    return _initialsAvatar(context);
+  }
 
+  Widget _initialsAvatar(BuildContext context) {
     return CircleAvatar(
       radius: size / 2,
-      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
       child: Text(
         _initials(displayName),
         style: TextStyle(

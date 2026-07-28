@@ -150,9 +150,9 @@ class _TripCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // ── LEFT: INFO ─────────────────────────────
+              // ── LEFT: TRIP INFO ────────────────────────
               Expanded(
-                flex: 5,
+                flex: 6,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -161,62 +161,15 @@ class _TripCard extends StatelessWidget {
                     Text(
                       'R${trip.price.toStringAsFixed(0)}',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
-                    // 👤 DRIVER
-                    Row(
-                      children: [
-                        UserAvatar(
-                          displayName: trip.driverName,
-                          imageUrl: trip.driverProfileImageUrl,
-                          size: 40,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                trip.driverName,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (trip.driverRatingCount > 0)
-                                Text(
-                                  '⭐ ${trip.driverRating!.toStringAsFixed(1)} (${trip.driverRatingCount})',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[600],
-                                  ),
-                                )
-                              else
-                                Text(
-                                  'New driver',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // 🕐 DEPARTURE WINDOW — prominent badge
+                    // 🕐 DEPARTURE WINDOW
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
@@ -233,10 +186,9 @@ class _TripCard extends StatelessWidget {
                           Text(
                             _windowLabel(trip.departureWindow),
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
-                              letterSpacing: 0.2,
                             ),
                           ),
                         ],
@@ -247,44 +199,22 @@ class _TripCard extends StatelessWidget {
 
                     // 🪑 SEATS REMAINING
                     Text(
-                      '${trip.seatsAvailable} seats remaining',
+                      isFull
+                          ? 'Fully booked'
+                          : '${trip.seatsAvailable} seats left',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: isFull ? Colors.red : theme.colorScheme.primary,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // ── RIGHT: CAR + TOTAL SEATS ───────────────
-              Expanded(
-                flex: 5,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 🚗 CAR IMAGE (BIGGER)
-                    SizedBox(
-                      height: 150, // 🔥 BIGGER than before
-                      child: Image.asset(
-                        'assets/branding/image_car_suv.png',
-                        fit: BoxFit.contain,
-                      ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
 
-                    // 🟢 TOTAL SEATS PILL — SOLID GREEN
+                    // 🟢 TOTAL SEATS PILL
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.green,
                         borderRadius: BorderRadius.circular(20),
@@ -292,43 +222,77 @@ class _TripCard extends StatelessWidget {
                       child: Text(
                         '${trip.seatsTotal} seats total',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
                       ),
                     ),
+
                     if (trip.minPassengers > 1) ...[
                       const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.orange.shade300),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.info_outline,
-                                size: 12,
-                                color: Colors.orange.shade800),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Min ${trip.minPassengers} pax',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.orange.shade800,
-                              ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.info_outline,
+                              size: 12, color: Colors.orange.shade800),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Min ${trip.minPassengers} pax',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange.shade800,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 16),
+
+              // ── RIGHT: DRIVER ──────────────────────────
+              Expanded(
+                flex: 4,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    UserAvatar(
+                      displayName: trip.driverName,
+                      imageUrl: trip.driverProfileImageUrl,
+                      size: 72,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      trip.driverName,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    if (trip.driverRatingCount > 0)
+                      Text(
+                        '⭐ ${trip.driverRating!.toStringAsFixed(1)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      )
+                    else
+                      Text(
+                        'New driver',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[500],
+                        ),
+                      ),
                   ],
                 ),
               ),
