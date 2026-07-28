@@ -91,7 +91,9 @@ class _DriverVerificationScreenState
       );
       final savedUrl = await userApi.saveAvatar(signed['publicUrl'] as String);
       setState(() => profilePhotoUrl = savedUrl);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[PHOTO] Upload failed: $e');
+      debugPrint('[PHOTO] $st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Photo upload failed. Please try again.')),

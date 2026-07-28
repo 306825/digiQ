@@ -40,13 +40,15 @@ class DriverDocumentsApi {
     required List<int> bytes,
     required String contentType,
   }) async {
-    final client = HttpClient();
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 30);
     try {
       final request = await client.putUrl(Uri.parse(uploadUrl));
       request.headers.set(HttpHeaders.contentTypeHeader, contentType);
       request.contentLength = bytes.length;
       request.add(bytes);
-      final response = await request.close();
+      final response = await request.close()
+          .timeout(const Duration(seconds: 60));
       await response.drain<void>();
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('S3 upload failed (HTTP ${response.statusCode})');
