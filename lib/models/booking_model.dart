@@ -133,6 +133,7 @@ class Booking {
   final String? routeTo;
   final String? driverName;
   final String? driverPhone;
+  final String? driverProfileImageUrl;
   final String? vehicleDescription;
   final double? price;
 
@@ -152,6 +153,7 @@ class Booking {
     this.routeTo,
     this.driverName,
     this.driverPhone,
+    this.driverProfileImageUrl,
     this.vehicleDescription,
     this.price,
   });
@@ -187,6 +189,7 @@ class Booking {
       routeTo: routeTo,
       driverName: driverName,
       driverPhone: driverPhone,
+      driverProfileImageUrl: driverProfileImageUrl,
       vehicleDescription: vehicleDescription,
       price: price,
     );
@@ -213,6 +216,7 @@ class Booking {
       routeTo: json['routeTo'] as String?,
       driverName: json['driverName'] as String?,
       driverPhone: json['driverPhone'] as String?,
+      driverProfileImageUrl: json['driverProfileImageUrl'] as String?,
       vehicleDescription: json['vehicleDescription'] as String?,
       price: _parseDouble(json['price']),
     );

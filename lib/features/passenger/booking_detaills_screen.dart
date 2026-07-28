@@ -1,4 +1,5 @@
 import 'package:digiQ/core/api/api_providers.dart';
+import 'package:digiQ/features/shared/widgets/user_avatar.dart';
 import 'package:digiQ/theme/app.theme.dart';
 import 'package:digiQ/core/api/booking_api.dart';
 import 'package:digiQ/core/api/incident_api.dart';
@@ -395,6 +396,51 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
+                // ── DRIVER ────────────────────────────────────
+                if (booking.driverName != null)
+                  _InfoCard(
+                    title: 'Your Driver',
+                    children: [
+                      Row(
+                        children: [
+                          UserAvatar(
+                            displayName: booking.driverName!,
+                            imageUrl: booking.driverProfileImageUrl,
+                            size: 64,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  booking.driverName!,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (booking.vehicleDescription != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      booking.vehicleDescription!,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                if (booking.driverName != null) const SizedBox(height: 16),
+
                 _InfoCard(
                   title: 'Booking Info',
                   children: [
