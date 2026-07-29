@@ -495,7 +495,7 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
                 // Live tracking — only visible when driver has accepted
                 if (booking.status == BookingStatus.approved)
                   _InfoCard(
-                    title: 'Track Your Driver',
+                    title: 'Where is my driver?',
                     children: [
                       SizedBox(
                         width: double.infinity,
