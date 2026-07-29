@@ -1,5 +1,6 @@
+import 'dart:async';
+
 import 'package:digiQ/core/api/chat_api.dart';
-import 'package:digiQ/core/services/chat_service.dart';
 import 'package:digiQ/models/chat_message_model.dart';
 import 'package:digiQ/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +22,6 @@ class ChatScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
-  final ChatService _chat = ChatService();
   final TextEditingController _inputCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
   final List<ChatMessage> _messages = [];
@@ -29,9 +29,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   bool _loading = true;
   String? _error;
+  bool _sending = false;
   String? _currentUserId;
-
-  static const _baseUrl = 'https://api.digiqueue.co.za';
+  DateTime? _lastMessageTime;
+  Timer? _pollTimer;
 
   @override
   void initState() {
@@ -40,44 +41,49 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _init() async {
+    if (mounted) setState(() { _loading = true; _error = null; });
     _currentUserId = ref.read(authProvider).user?.id;
 
-    // 1️⃣ Load history first so it appears in chronological order
     try {
       final history = await ref.read(chatApiProvider).getHistory(widget.bookingId);
-      if (mounted) {
-        setState(() {
-          for (final msg in history) {
-            if (_seenIds.add(msg.id)) _messages.add(msg);
-          }
-          _loading = false;
-        });
-        _scrollToBottom();
-      }
+      if (!mounted) return;
+      setState(() {
+        for (final msg in history) {
+          if (_seenIds.add(msg.id)) _messages.add(msg);
+        }
+        _lastMessageTime = _messages.isEmpty
+            ? DateTime.now().toUtc()
+            : _messages.last.createdAt.toUtc();
+        _loading = false;
+      });
+      _scrollToBottom();
     } catch (e) {
       debugPrint('[CHAT] History load failed: $e');
-      if (mounted) setState(() => _loading = false);
-    }
-
-    // 2️⃣ Connect socket after history is in place — connect() waits for live connection
-    try {
-      await _chat.connect(_baseUrl);
-    } catch (e) {
-      final detail = e.toString();
-      debugPrint('[CHAT] Socket connect failed: $detail');
-      if (mounted) setState(() => _error = 'Could not connect to chat.\n$detail');
+      if (mounted) setState(() { _loading = false; _error = 'Could not load messages.'; });
       return;
     }
-    _chat.joinChat(widget.bookingId);
 
-    // 3️⃣ Real-time messages — skip any already in history by ID
-    _chat.onMessage((data) {
-      final msg = ChatMessage.fromJson(data);
-      if (mounted && _seenIds.add(msg.id)) {
-        setState(() => _messages.add(msg));
-        _scrollToBottom();
-      }
-    });
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _poll());
+  }
+
+  Future<void> _poll() async {
+    if (!mounted || _lastMessageTime == null) return;
+    try {
+      final newMessages = await ref
+          .read(chatApiProvider)
+          .getHistory(widget.bookingId, since: _lastMessageTime);
+      if (!mounted || newMessages.isEmpty) return;
+      setState(() {
+        for (final msg in newMessages) {
+          if (_seenIds.add(msg.id)) _messages.add(msg);
+        }
+        _lastMessageTime = _messages.last.createdAt.toUtc();
+      });
+      _scrollToBottom();
+    } catch (_) {
+      // Silent — will retry on next tick
+    }
   }
 
   void _scrollToBottom() {
@@ -92,17 +98,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
-  void _send() {
+  Future<void> _send() async {
     final text = _inputCtrl.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _sending) return;
     _inputCtrl.clear();
-    _chat.sendMessage(widget.bookingId, text);
-    // Message will appear via the socket echo — no local optimistic insert needed
+    setState(() => _sending = true);
+
+    try {
+      final msg = await ref.read(chatApiProvider).sendMessage(widget.bookingId, text);
+      if (!mounted) return;
+      if (_seenIds.add(msg.id)) {
+        setState(() {
+          _messages.add(msg);
+          _lastMessageTime = msg.createdAt.toUtc();
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      debugPrint('[CHAT] Send failed: $e');
+      if (mounted) _inputCtrl.text = text;
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   @override
   void dispose() {
-    _chat.dispose();
+    _pollTimer?.cancel();
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -145,50 +167,55 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               Text(_error!,
                                   textAlign: TextAlign.center,
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                      color:
-                                          cs.onSurface.withValues(alpha: 0.6))),
+                                      color: cs.onSurface.withValues(alpha: 0.6))),
+                              const SizedBox(height: 16),
+                              FilledButton.icon(
+                                onPressed: _init,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Retry'),
+                              ),
                             ],
                           ),
                         ),
                       )
-                : _messages.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.chat_bubble_outline,
-                                size: 52, color: cs.onSurface.withValues(alpha: 0.25)),
-                            const SizedBox(height: 12),
-                            Text('No messages yet',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: cs.onSurface.withValues(alpha: 0.4))),
-                            const SizedBox(height: 4),
-                            Text('Send the first message below',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                    color: cs.onSurface.withValues(alpha: 0.3))),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollCtrl,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                        itemCount: _messages.length,
-                        itemBuilder: (_, i) {
-                          final msg = _messages[i];
-                          final isMine = msg.senderId == _currentUserId;
-                          final showTimestamp = i == 0 ||
-                              msg.createdAt
-                                      .difference(_messages[i - 1].createdAt)
-                                      .inMinutes
-                                      .abs() >
-                                  5;
-                          return _MessageBubble(
-                            message: msg,
-                            isMine: isMine,
-                            showTimestamp: showTimestamp,
-                          );
-                        },
-                      ),
+                    : _messages.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.chat_bubble_outline,
+                                    size: 52, color: cs.onSurface.withValues(alpha: 0.25)),
+                                const SizedBox(height: 12),
+                                Text('No messages yet',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: cs.onSurface.withValues(alpha: 0.4))),
+                                const SizedBox(height: 4),
+                                Text('Send the first message below',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                        color: cs.onSurface.withValues(alpha: 0.3))),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            controller: _scrollCtrl,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            itemCount: _messages.length,
+                            itemBuilder: (_, i) {
+                              final msg = _messages[i];
+                              final isMine = msg.senderId == _currentUserId;
+                              final showTimestamp = i == 0 ||
+                                  msg.createdAt
+                                          .difference(_messages[i - 1].createdAt)
+                                          .inMinutes
+                                          .abs() >
+                                      5;
+                              return _MessageBubble(
+                                message: msg,
+                                isMine: isMine,
+                                showTimestamp: showTimestamp,
+                              );
+                            },
+                          ),
           ),
 
           // ── INPUT BAR ─────────────────────────────────────────────────────
@@ -222,7 +249,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _SendButton(onTap: _send),
+                  _SendButton(onTap: _sending ? null : _send),
                 ],
               ),
             ),
@@ -344,7 +371,7 @@ class _MessageBubble extends StatelessWidget {
  * -------------------------------------------------------------------------- */
 
 class _SendButton extends StatelessWidget {
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _SendButton({required this.onTap});
 
   @override
@@ -356,10 +383,18 @@ class _SendButton extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: cs.primary,
+          color: onTap == null
+              ? cs.primary.withValues(alpha: 0.5)
+              : cs.primary,
           shape: BoxShape.circle,
         ),
-        child: Icon(Icons.send_rounded, color: cs.onPrimary, size: 20),
+        child: onTap == null
+            ? Padding(
+                padding: const EdgeInsets.all(12),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: cs.onPrimary),
+              )
+            : Icon(Icons.send_rounded, color: cs.onPrimary, size: 20),
       ),
     );
   }
