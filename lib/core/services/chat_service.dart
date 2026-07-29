@@ -20,7 +20,7 @@ class ChatService {
     _socket = IO.io(
       '$baseUrl/chat',
       IO.OptionBuilder()
-          .setTransports(['polling', 'websocket'])
+          .setTransports(['polling'])
           .disableAutoConnect()
           .setQuery({'token': token})
           .setAuth({'token': token})
