@@ -46,6 +46,14 @@ post_install do |installer|
         config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
         # Skip dSYM generation in debug; saves significant link time.
         config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf'
+        # Skip the Xcode source index — only needed for IDE jump-to-definition, not for builds.
+        config.build_settings['COMPILER_INDEX_STORE_ENABLE'] = 'NO'
+        # No Metal shader debug info needed during development.
+        config.build_settings['MTL_ENABLE_DEBUG_INFO'] = 'NO'
+        # No Clang module debugging — reduces .pcm cache size and recompilation.
+        config.build_settings['CLANG_ENABLE_MODULE_DEBUGGING'] = 'NO'
+        # Explicit no-optimisation for Swift pods (default, but avoids accidental override).
+        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
       end
     end
   end
