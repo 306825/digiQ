@@ -63,8 +63,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     try {
       await _chat.connect(_baseUrl);
     } catch (e) {
-      debugPrint('[CHAT] Socket connect failed: $e');
-      if (mounted) setState(() => _error = 'Could not connect to chat. Check your connection.');
+      final detail = e.toString();
+      debugPrint('[CHAT] Socket connect failed: $detail');
+      if (mounted) setState(() => _error = 'Could not connect to chat.\n$detail');
       return;
     }
     _chat.joinChat(widget.bookingId);

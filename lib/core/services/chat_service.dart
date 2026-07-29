@@ -22,6 +22,7 @@ class ChatService {
       IO.OptionBuilder()
           .setTransports(['polling', 'websocket'])
           .disableAutoConnect()
+          .setQuery({'token': token})
           .setAuth({'token': token})
           .build(),
     );
