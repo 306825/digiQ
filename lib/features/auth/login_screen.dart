@@ -67,7 +67,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ref.watch(authProvider).status == AuthStatus.authenticating;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -76,7 +75,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             // ── HERO ───────────────────────────────────────────────────
             Container(
               width: double.infinity,
-              height: size.height * 0.36,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isDark
@@ -88,30 +86,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               child: SafeArea(
                 bottom: false,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AppLogo(size: 68, dark: true),
-                    const SizedBox(height: 16),
-                    Text(
-                      'digiQ',
-                      style: GoogleFonts.dmSans(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppLogo(size: 68, dark: true),
+                      const SizedBox(height: 16),
+                      Text(
+                        'digiQ',
+                        style: GoogleFonts.dmSans(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Your trusted ride-share platform',
-                      style: GoogleFonts.dmSans(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
+                      const SizedBox(height: 6),
+                      Text(
+                        'Your trusted ride-share platform',
+                        style: GoogleFonts.dmSans(
+                          color: Colors.white.withValues(alpha: 0.75),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
