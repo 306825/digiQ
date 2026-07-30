@@ -328,38 +328,114 @@ class _TripCard extends ConsumerWidget {
                     color: Colors.blueGrey,
                   ),
                 if (isScheduled) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          final tripsApi = ref.read(tripsApiProvider);
-                          _tripsApi = tripsApi;
-                          await tripsApi.startTrip(trip.id);
-                          await startTracking(trip.id);
-                          await ref
-                              .read(driverTripsProvider.notifier)
-                              .refresh();
-                        },
-                        child: const Text('Start Trip'),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red.shade700,
-                          side: BorderSide(color: Colors.red.shade300),
+                  if (_isPastWindow(trip)) ...[
+                    // Window has passed — driver never clicked Start Trip
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.amber.shade300),
                         ),
-                        onPressed: () => _confirmCancel(context, ref),
-                        child: const Text('Cancel Trip'),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.help_outline,
+                                size: 18, color: Colors.amber.shade800),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'This trip\'s window has passed.\nDid it actually run?',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.amber.shade900,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          icon: const Icon(Icons.check_circle_outline, size: 18),
+                          label: const Text('Yes, mark it complete'),
+                          onPressed: () async {
+                            try {
+                              await ref.read(tripsApiProvider).completeTrip(trip.id);
+                              stopTracking();
+                              await ref
+                                  .read(driverTripsProvider.notifier)
+                                  .refresh();
+                            } catch (_) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Failed to complete trip')),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          icon: Icon(Icons.cancel_outlined,
+                              size: 18, color: Colors.red.shade700),
+                          label: const Text('No, cancel it'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red.shade700,
+                            side: BorderSide(color: Colors.red.shade300),
+                          ),
+                          onPressed: () => _confirmCancel(context, ref),
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final tripsApi = ref.read(tripsApiProvider);
+                            _tripsApi = tripsApi;
+                            await tripsApi.startTrip(trip.id);
+                            await startTracking(trip.id);
+                            await ref
+                                .read(driverTripsProvider.notifier)
+                                .refresh();
+                          },
+                          child: const Text('Start Trip'),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red.shade700,
+                            side: BorderSide(color: Colors.red.shade300),
+                          ),
+                          onPressed: () => _confirmCancel(context, ref),
+                          child: const Text('Cancel Trip'),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
 
                 if (isActive) ...[
@@ -463,6 +539,18 @@ class _TripCard extends ConsumerWidget {
 
   static String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  static bool _isPastWindow(Trip trip) {
+    final endHour = switch (trip.departureWindow) {
+      '08-10' => 10,
+      '11-13' => 13,
+      '14-16' => 16,
+      _       => 23,
+    };
+    final local = trip.date.toLocal();
+    final windowEnd = DateTime(local.year, local.month, local.day, endHour);
+    return DateTime.now().isAfter(windowEnd);
   }
 }
 
