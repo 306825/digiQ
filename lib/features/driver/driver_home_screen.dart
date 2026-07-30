@@ -7,6 +7,7 @@ import 'package:digiQ/features/driver/driver_booking_list_screen.dart';
 import 'package:digiQ/features/driver/driver_verification_screen.dart';
 import 'package:digiQ/features/driver/my_trips_screen.dart';
 import 'package:digiQ/features/driver/payout_history_screen.dart';
+import 'package:digiQ/features/shared/feedback_screen.dart';
 import 'package:digiQ/features/shared/widgets/animated_hourglass.dart';
 import 'package:digiQ/models/user_model.dart';
 import 'package:digiQ/providers/auth_provider.dart';
@@ -369,6 +370,17 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                 onTap: () => context.push('/driver/vehicle'),
               ),
             ],
+
+            // ── BETA FEEDBACK ──────────────────────────────────────────
+            const SizedBox(height: 24),
+            _ActionTile(
+              label: 'Send Feedback',
+              subtitle: 'Report a bug or suggest an improvement',
+              icon: Icons.feedback_outlined,
+              outlined: true,
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const FeedbackScreen())),
+            ),
           ],
         ),
         ),

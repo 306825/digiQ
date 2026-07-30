@@ -1,5 +1,6 @@
 import 'package:digiQ/features/passenger/live_tracking_screen.dart';
 import 'package:digiQ/features/passenger/my_bookings_screen.dart';
+import 'package:digiQ/features/shared/feedback_screen.dart';
 import 'package:digiQ/features/shared/widgets/app_logo.dart';
 import 'package:digiQ/models/booking_model.dart';
 import 'package:digiQ/models/route_model.dart';
@@ -222,6 +223,16 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                 ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.feedback_outlined,
+                                  color: Colors.white70, size: 20),
+                              tooltip: 'Send feedback',
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const FeedbackScreen()),
                               ),
                             ),
                             IconButton(
