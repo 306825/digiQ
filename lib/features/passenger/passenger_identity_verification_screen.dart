@@ -220,38 +220,38 @@ class _EmptyPhotoBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 240,
-      height: 240,
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade300, width: 1.5),
       ),
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.person_outlined, size: 56, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             'No photo selected',
-            style:
-                TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              OutlinedButton.icon(
-                icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                label: const Text('Camera'),
-                onPressed: () => state._pickSelfie(ImageSource.camera),
-              ),
-              const SizedBox(width: 10),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.photo_library_outlined, size: 16),
-                label: const Text('Gallery'),
-                onPressed: () => state._pickSelfie(ImageSource.gallery),
-              ),
-            ],
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.camera_alt_outlined, size: 16),
+              label: const Text('Camera'),
+              onPressed: () => state._pickSelfie(ImageSource.camera),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.photo_library_outlined, size: 16),
+              label: const Text('Gallery'),
+              onPressed: () => state._pickSelfie(ImageSource.gallery),
+            ),
           ),
         ],
       ),
