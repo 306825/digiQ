@@ -5,11 +5,24 @@ import 'package:digiQ/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class PassengerProfileScreen extends ConsumerWidget {
+class PassengerProfileScreen extends ConsumerStatefulWidget {
   const PassengerProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PassengerProfileScreen> createState() =>
+      _PassengerProfileScreenState();
+}
+
+class _PassengerProfileScreenState
+    extends ConsumerState<PassengerProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(authProvider.notifier).refreshMe());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     if (user == null) return const SizedBox.shrink();
 

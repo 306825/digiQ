@@ -4,6 +4,7 @@ import 'package:digiQ/core/api/driver_documents_api.dart';
 import 'package:digiQ/core/api/user_api.dart';
 import 'package:digiQ/models/user_model.dart';
 import 'package:digiQ/providers/auth_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -68,19 +69,34 @@ class _PassengerIdentityVerificationScreenState
       // 3. Submit selfie S3 key to backend
       await userApi.submitPassengerVerification(s3Key);
 
-      // 4. Update in-memory auth state
-      ref
+      // 4. Persist updated status to memory and secure storage
+      await ref
           .read(authProvider.notifier)
           .updatePassengerVerificationStatus(PassengerVerificationStatus.pending);
 
       if (mounted) setState(() => _submitted = true);
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = 'Upload failed. Please try again.';
-          _uploading = false;
-        });
+      if (!mounted) return;
+
+      // Backend rejects re-submission for already-approved passengers.
+      // Refresh the local status so the profile screen reflects it.
+      final isAlreadyVerified = e is DioException &&
+          e.response?.statusCode == 400 &&
+          (e.response?.data?['message'] ?? '')
+              .toString()
+              .toLowerCase()
+              .contains('already verified');
+
+      if (isAlreadyVerified) {
+        await ref.read(authProvider.notifier).refreshMe();
+        if (mounted) Navigator.of(context).pop();
+        return;
       }
+
+      setState(() {
+        _error = 'Upload failed. Please try again.';
+        _uploading = false;
+      });
     }
   }
 

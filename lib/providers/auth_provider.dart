@@ -325,20 +325,14 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final response = await api.dio.get('/auth/me');
       final user = UserModel.fromJson(response.data);
-      // state = AuthState(
-      //   status: AuthStatus.authenticated,
-      //   token: token,
-      //   user: user,
-      // );
-      final currentUser = state.user;
 
+      final currentUser = state.user;
       if (currentUser != null &&
           currentUser.id == user.id &&
           currentUser.fullName == user.fullName &&
           currentUser.verificationStatus == user.verificationStatus &&
           currentUser.passengerVerificationStatus ==
               user.passengerVerificationStatus) {
-        // 🔒 NO CHANGE → DO NOTHING
         return;
       }
 
@@ -347,6 +341,7 @@ class AuthNotifier extends Notifier<AuthState> {
         token: token,
         user: user,
       );
+      await _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
     } catch (_) {}
   }
 
@@ -359,12 +354,13 @@ class AuthNotifier extends Notifier<AuthState> {
     );
   }
 
-  void updatePassengerVerificationStatus(PassengerVerificationStatus status) {
+  Future<void> updatePassengerVerificationStatus(
+      PassengerVerificationStatus status) async {
     final current = state.user;
     if (current == null) return;
-    state = state.copyWith(
-      user: current.copyWith(passengerVerificationStatus: status),
-    );
+    final updated = current.copyWith(passengerVerificationStatus: status);
+    state = state.copyWith(user: updated);
+    await _storage.write(key: _userKey, value: jsonEncode(updated.toJson()));
   }
 }
 
