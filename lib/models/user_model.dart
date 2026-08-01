@@ -5,6 +5,8 @@ enum UserRole { passenger, driver, admin, fleetOwner }
 
 enum DriverVerificationStatus { none, pending, approved, rejected }
 
+enum PassengerVerificationStatus { none, pending, approved, rejected }
+
 enum VehicleVerificationStatus { pending, approved, rejected, none }
 
 class UserModel {
@@ -13,6 +15,7 @@ class UserModel {
   final String email;
   final UserRole role;
   final DriverVerificationStatus verificationStatus;
+  final PassengerVerificationStatus passengerVerificationStatus;
   final bool? isActive;
   final DriverProfile? driverProfile;
   final String? profileImageUrl;
@@ -23,6 +26,7 @@ class UserModel {
     required this.fullName,
     required this.role,
     required this.verificationStatus,
+    this.passengerVerificationStatus = PassengerVerificationStatus.none,
     this.isActive = true,
     this.profileImageUrl,
     this.driverProfile,
@@ -35,12 +39,15 @@ class UserModel {
       verificationStatus == DriverVerificationStatus.approved;
   bool get isVerificationPending =>
       verificationStatus == DriverVerificationStatus.none;
+  bool get isPassengerVerified =>
+      passengerVerificationStatus == PassengerVerificationStatus.approved;
 
   UserModel copyWith({
     String? id,
     String? fullName,
     UserRole? role,
     DriverVerificationStatus? verificationStatus,
+    PassengerVerificationStatus? passengerVerificationStatus,
     bool? isActive,
     String? profileImageUrl,
   }) {
@@ -49,6 +56,8 @@ class UserModel {
         fullName: fullName ?? this.fullName,
         role: role ?? this.role,
         verificationStatus: verificationStatus ?? this.verificationStatus,
+        passengerVerificationStatus:
+            passengerVerificationStatus ?? this.passengerVerificationStatus,
         isActive: isActive ?? this.isActive,
         profileImageUrl: profileImageUrl ?? this.profileImageUrl,
         email: email,
@@ -62,11 +71,12 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['_id'] ?? json['id'],
-      //fullName: json['fullName'] as String,
       fullName: (json['fullName'] as String?) ??
           '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'.trim(),
       role: _parseUserRole(json['role']),
       verificationStatus: _parseVerificationStatus(json['verificationStatus']),
+      passengerVerificationStatus:
+          _parsePassengerVerificationStatus(json['passengerVerificationStatus']),
       isActive: json['isActive'] as bool? ?? true,
       driverProfile: json['driverProfile'] != null
           ? DriverProfile.fromJson(json['driverProfile'])
@@ -79,10 +89,7 @@ class UserModel {
 
   static VehicleVerificationStatus _parseVehicleStatus(dynamic value) {
     if (value == null) return VehicleVerificationStatus.none;
-
-    final normalized = value.toString().toLowerCase();
-
-    switch (normalized) {
+    switch (value.toString().toLowerCase()) {
       case 'approved':
         return VehicleVerificationStatus.approved;
       case 'pending':
@@ -96,10 +103,7 @@ class UserModel {
 
   static UserRole _parseUserRole(dynamic value) {
     if (value == null) return UserRole.passenger;
-
-    final normalized = value.toString().toLowerCase();
-
-    switch (normalized) {
+    switch (value.toString().toLowerCase()) {
       case 'driver':
         return UserRole.driver;
       case 'admin':
@@ -116,21 +120,30 @@ class UserModel {
 
   static DriverVerificationStatus _parseVerificationStatus(dynamic value) {
     if (value == null) return DriverVerificationStatus.none;
-
-    final normalized = value.toString().toLowerCase();
-
-    switch (normalized) {
+    switch (value.toString().toLowerCase()) {
       case 'approved':
         return DriverVerificationStatus.approved;
       case 'pending':
         return DriverVerificationStatus.pending;
       case 'rejected':
         return DriverVerificationStatus.rejected;
-      case 'none':
-        return DriverVerificationStatus.none;
       default:
-        debugPrint('⚠️ Unknown verification status: $value');
         return DriverVerificationStatus.none;
+    }
+  }
+
+  static PassengerVerificationStatus _parsePassengerVerificationStatus(
+      dynamic value) {
+    if (value == null) return PassengerVerificationStatus.none;
+    switch (value.toString().toLowerCase()) {
+      case 'approved':
+        return PassengerVerificationStatus.approved;
+      case 'pending':
+        return PassengerVerificationStatus.pending;
+      case 'rejected':
+        return PassengerVerificationStatus.rejected;
+      default:
+        return PassengerVerificationStatus.none;
     }
   }
 
@@ -141,6 +154,7 @@ class UserModel {
       'fullName': fullName,
       'role': role.name,
       'verificationStatus': verificationStatus.name,
+      'passengerVerificationStatus': passengerVerificationStatus.name,
       'vehicleStatus': vehicleStatus.name,
       'isActive': isActive,
       'profileImageUrl': profileImageUrl,

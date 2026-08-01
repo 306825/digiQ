@@ -6,6 +6,7 @@ class DriverBooking {
   final String area;
   final String? notes;
   final String? passengerProfileImageUrl;
+  final bool passengerIsVerified;
   final String? dropoffAddress;
   final String? dropoffArea;
 
@@ -17,6 +18,7 @@ class DriverBooking {
     required this.area,
     this.notes,
     this.passengerProfileImageUrl,
+    this.passengerIsVerified = false,
     this.dropoffAddress,
     this.dropoffArea,
   });
@@ -28,6 +30,7 @@ class DriverBooking {
       passengerName: json['passengerName'] as String,
       passengerPhone: json['passengerPhone'] as String?,
       passengerProfileImageUrl: json['passengerProfileImageUrl'] as String?,
+      passengerIsVerified: json['passengerIsVerified'] as bool? ?? false,
       address: json['pickup']['addressLine'] as String,
       area: json['pickup']['area'] as String,
       notes: json['pickup']['notes'],

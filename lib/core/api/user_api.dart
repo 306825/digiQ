@@ -24,6 +24,19 @@ class UserApi {
     return res.data['profileImageUrl'];
   }
 
+  Future<Map<String, dynamic>> getPassengerVerificationUploadUrl() async {
+    final res = await dio.post('/users/me/passenger-verification/upload-url');
+    return res.data;
+  }
+
+  Future<String> submitPassengerVerification(String selfieUrl) async {
+    final res = await dio.post(
+      '/users/me/passenger-verification',
+      data: {'selfieUrl': selfieUrl},
+    );
+    return res.data['passengerVerificationStatus'] as String;
+  }
+
   Future<void> registerFcmToken(String token) async {
     await dio.post('/users/fcm-token', data: {'token': token});
   }

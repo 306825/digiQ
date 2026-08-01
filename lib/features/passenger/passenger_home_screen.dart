@@ -1,5 +1,6 @@
 import 'package:digiQ/features/passenger/live_tracking_screen.dart';
 import 'package:digiQ/features/passenger/my_bookings_screen.dart';
+import 'package:digiQ/features/passenger/passenger_profile_screen.dart';
 import 'package:digiQ/features/shared/feedback_screen.dart';
 import 'package:digiQ/features/shared/widgets/app_logo.dart';
 import 'package:digiQ/models/booking_model.dart';
@@ -223,6 +224,17 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                 ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.account_circle_outlined,
+                                  color: Colors.white70, size: 20),
+                              tooltip: 'My profile',
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const PassengerProfileScreen()),
                               ),
                             ),
                             IconButton(

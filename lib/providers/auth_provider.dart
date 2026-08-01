@@ -335,7 +335,9 @@ class AuthNotifier extends Notifier<AuthState> {
       if (currentUser != null &&
           currentUser.id == user.id &&
           currentUser.fullName == user.fullName &&
-          currentUser.verificationStatus == user.verificationStatus) {
+          currentUser.verificationStatus == user.verificationStatus &&
+          currentUser.passengerVerificationStatus ==
+              user.passengerVerificationStatus) {
         // 🔒 NO CHANGE → DO NOTHING
         return;
       }
@@ -354,6 +356,14 @@ class AuthNotifier extends Notifier<AuthState> {
 
     state = state.copyWith(
       user: current.copyWith(profileImageUrl: imageUrl),
+    );
+  }
+
+  void updatePassengerVerificationStatus(PassengerVerificationStatus status) {
+    final current = state.user;
+    if (current == null) return;
+    state = state.copyWith(
+      user: current.copyWith(passengerVerificationStatus: status),
     );
   }
 }
