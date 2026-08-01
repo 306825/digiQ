@@ -53,6 +53,23 @@ class AdminApi {
     await dio.patch('/admin/sos/$id/resolve');
   }
 
+  Future<List<Map<String, dynamic>>> getPendingPassengerVerifications() async {
+    final res = await dio.get('/admin/passengers/pending-verification');
+    return (res.data as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<void> approvePassengerVerification(String userId) async {
+    await dio.patch('/admin/passengers/$userId/approve-verification');
+  }
+
+  Future<void> rejectPassengerVerification(String userId,
+      {String? reason}) async {
+    await dio.patch(
+      '/admin/passengers/$userId/reject-verification',
+      data: reason != null ? {'reason': reason} : null,
+    );
+  }
+
   /* --------------------------------------------------------------------------
    * PAYOUTS
    * -------------------------------------------------------------------------- */

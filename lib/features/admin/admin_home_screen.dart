@@ -1,4 +1,5 @@
 import 'package:digiQ/features/admin/admin_incidents_screen.dart';
+import 'package:digiQ/features/admin/widgets/admin_passenger_verifications_tab.dart';
 import 'package:digiQ/features/admin/widgets/admin_payouts_tab.dart';
 import 'package:digiQ/features/admin/widgets/admin_routes_tab.dart';
 import 'package:digiQ/features/admin/widgets/admin_drivers_tab.dart';
@@ -29,7 +30,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Admin Dashboard'),
@@ -38,11 +39,13 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
             unselectedLabelColor: Colors.grey.shade600,
             indicatorColor: Theme.of(context).colorScheme.surface,
             labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+            isScrollable: true,
             tabs: const [
               Tab(icon: Icon(Icons.people), text: 'Drivers'),
               Tab(icon: Icon(Icons.alt_route), text: 'Routes'),
               Tab(icon: Icon(Icons.report), text: 'Incidents'),
               Tab(icon: Icon(Icons.payments_outlined), text: 'Payouts'),
+              Tab(icon: Icon(Icons.verified_user_outlined), text: 'Passengers'),
             ],
           ),
           actions: [
@@ -63,6 +66,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
             AdminRoutesTab(),
             AdminIncidentsScreen(),
             AdminPayoutsTab(),
+            AdminPassengerVerificationsTab(),
           ],
         ),
       ),
@@ -107,7 +111,7 @@ class StatusRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.15),
+            color: statusColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -137,7 +141,7 @@ class StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
