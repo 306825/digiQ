@@ -112,8 +112,8 @@ class _DriverTripDetailScreenState
                           const SizedBox(height: 12),
                           const Text('Failed to load passengers'),
                           const SizedBox(height: 4),
-                          Text(e.toString(),
-                              style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                          const Text('Could not load passengers.',
+                              style: TextStyle(fontSize: 11, color: Colors.grey)),
                           const SizedBox(height: 8),
                           TextButton(
                             onPressed: _refresh,

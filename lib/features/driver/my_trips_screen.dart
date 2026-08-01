@@ -124,9 +124,7 @@ class MyTripsScreen extends ConsumerWidget {
                     itemBuilder: (_, index) {
                       try {
                         return _TripCard(trip: trips[index]);
-                      } catch (e, st) {
-                        print("🔥 CRASH RENDERING TRIP INDEX $index: $e");
-                        print(st);
+                      } catch (_) {
                         return const SizedBox.shrink();
                       }
                     },
@@ -214,8 +212,6 @@ class _TripCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print("RENDERING TRIP: ${trip.toJson()}");
-
     final status = trip.status ?? 'scheduled';
 
     final isScheduled = status == 'scheduled';
@@ -409,13 +405,22 @@ class _TripCard extends ConsumerWidget {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () async {
-                            final tripsApi = ref.read(tripsApiProvider);
-                            _tripsApi = tripsApi;
-                            await tripsApi.startTrip(trip.id);
-                            await startTracking(trip.id);
-                            await ref
-                                .read(driverTripsProvider.notifier)
-                                .refresh();
+                            try {
+                              final tripsApi = ref.read(tripsApiProvider);
+                              _tripsApi = tripsApi;
+                              await tripsApi.startTrip(trip.id);
+                              await startTracking(trip.id);
+                              await ref
+                                  .read(driverTripsProvider.notifier)
+                                  .refresh();
+                            } catch (_) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Failed to start trip. Please try again.')),
+                                );
+                              }
+                            }
                           },
                           child: const Text('Start Trip'),
                         ),
@@ -468,12 +473,21 @@ class _TripCard extends ConsumerWidget {
                           foregroundColor: Colors.white,
                         ),
                         onPressed: () async {
-                          final tripsApi = ref.read(tripsApiProvider);
-                          await tripsApi.completeTrip(trip.id);
-                          stopTracking();
-                          await ref
-                              .read(driverTripsProvider.notifier)
-                              .refresh();
+                          try {
+                            final tripsApi = ref.read(tripsApiProvider);
+                            await tripsApi.completeTrip(trip.id);
+                            stopTracking();
+                            await ref
+                                .read(driverTripsProvider.notifier)
+                                .refresh();
+                          } catch (_) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Failed to complete trip. Please try again.')),
+                              );
+                            }
+                          }
                         },
                         child: const Text('Complete Trip'),
                       ),

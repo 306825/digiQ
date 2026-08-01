@@ -35,7 +35,7 @@ class _DriverBookingListScreenState
       ),
       body: bookingsAsync.when(
         loading: () => const _LoadingState(),
-        error: (error, _) => _ErrorState(message: error.toString()),
+        error: (_, __) => const _ErrorState(),
         data: (bookings) {
           if (bookings.isEmpty) {
             return RefreshIndicator(
@@ -302,31 +302,28 @@ class _LoadingState extends StatelessWidget {
 }
 
 class _ErrorState extends StatelessWidget {
-  final String? message;
-  const _ErrorState({this.message});
+  const _ErrorState();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            const Text(
+            Icon(Icons.error_outline, size: 48, color: Colors.red),
+            SizedBox(height: 16),
+            Text(
               'Could not load booking requests',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
-            if (message != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                message!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-            ],
+            SizedBox(height: 8),
+            Text(
+              'Pull down to retry.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
           ],
         ),
       ),

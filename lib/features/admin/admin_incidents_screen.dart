@@ -113,13 +113,15 @@ class AdminIncidentsScreen extends ConsumerWidget {
                                   ],
                                   onChanged: (value) async {
                                     final api = ref.read(incidentApiProvider);
-
-                                    await api.updateIncidentStatus(
-                                      incidentId: incident['_id'],
-                                      status: value!,
-                                    );
-
-                                    ref.invalidate(_incidentsProvider);
+                                    try {
+                                      await api.updateIncidentStatus(
+                                        incidentId: incident['_id'],
+                                        status: value!,
+                                      );
+                                      ref.invalidate(_incidentsProvider);
+                                    } catch (_) {
+                                      // status update failed — list not refreshed
+                                    }
                                   },
                                 ),
                               ],

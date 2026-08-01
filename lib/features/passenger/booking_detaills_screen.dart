@@ -630,20 +630,26 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
             ElevatedButton(
               onPressed: () async {
                 final api = ref.read(incidentApiProvider);
-
-                await api.reportIncident(
-                  bookingId: bookingId,
-                  type: selectedType,
-                  description: controller.text,
-                );
-
-                ref.invalidate(incidentByBookingProvider(bookingId));
-
-                Navigator.pop(context);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Incident reported')),
-                );
+                try {
+                  await api.reportIncident(
+                    bookingId: bookingId,
+                    type: selectedType,
+                    description: controller.text,
+                  );
+                  ref.invalidate(incidentByBookingProvider(bookingId));
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Incident reported')),
+                    );
+                  }
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Failed to submit. Please try again.')),
+                    );
+                  }
+                }
               },
               child: const Text('Submit'),
             ),

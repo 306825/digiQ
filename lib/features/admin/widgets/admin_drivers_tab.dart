@@ -200,10 +200,12 @@ class _PendingVehicleTile extends ConsumerWidget {
                   icon: const Icon(Icons.check, size: 16),
                   label: const Text('Approve'),
                   onPressed: () async {
-                    final api = ref.read(adminApiProvider);
-                    await api.approveVehicle(vehicleId);
-                    ref.invalidate(pendingVehiclesProvider);
-                    ref.read(adminDriversProvider.notifier).refresh();
+                    try {
+                      final api = ref.read(adminApiProvider);
+                      await api.approveVehicle(vehicleId);
+                      ref.invalidate(pendingVehiclesProvider);
+                      ref.read(adminDriversProvider.notifier).refresh();
+                    } catch (_) {}
                   },
                 ),
               ),
@@ -215,10 +217,12 @@ class _PendingVehicleTile extends ConsumerWidget {
                   icon: const Icon(Icons.close, size: 16),
                   label: const Text('Reject'),
                   onPressed: () async {
-                    final api = ref.read(adminApiProvider);
-                    await api.rejectVehicle(vehicleId);
-                    ref.invalidate(pendingVehiclesProvider);
-                    ref.read(adminDriversProvider.notifier).refresh();
+                    try {
+                      final api = ref.read(adminApiProvider);
+                      await api.rejectVehicle(vehicleId);
+                      ref.invalidate(pendingVehiclesProvider);
+                      ref.read(adminDriversProvider.notifier).refresh();
+                    } catch (_) {}
                   },
                 ),
               ),

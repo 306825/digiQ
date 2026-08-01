@@ -171,7 +171,7 @@ class FleetDriverDetailScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to remove: $e')),
+          const SnackBar(content: Text('Failed to remove driver. Please try again.')),
         );
       }
     }

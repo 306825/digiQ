@@ -31,9 +31,7 @@ class IncidentApi {
     try {
       final res = await dio.get('/incidents/booking/$bookingId');
 
-      print("🚨 INCIDENT DATA FOR BOOKING $bookingId: ${res.data}");
-
-      // ✅ Handle empty response
+      // Handle empty response
       if (res.data == null || res.data.toString().isEmpty) {
         return null;
       }
@@ -45,7 +43,6 @@ class IncidentApi {
         return null;
       }
 
-      print("❌ INCIDENT ERROR: $e");
       rethrow;
     }
   }

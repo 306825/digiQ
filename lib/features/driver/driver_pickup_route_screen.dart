@@ -33,8 +33,8 @@ class _DriverPickupRouteScreenState
     setState(() { _loading = true; _error = null; });
     try {
       await _calculateRoute();
-    } catch (e) {
-      setState(() => _error = e.toString());
+    } catch (_) {
+      setState(() => _error = 'Could not load route. Please try again.');
     } finally {
       setState(() => _loading = false);
     }

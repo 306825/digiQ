@@ -76,7 +76,7 @@ class MyBookingsScreen extends ConsumerWidget {
           Expanded(
             child: bookingsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => _ErrorState(error: e.toString()),
+              error: (_, __) => const _ErrorState(),
               data: (bookings) {
                 if (bookings.isEmpty) return const _EmptyState();
 
@@ -570,9 +570,7 @@ class _EmptyState extends StatelessWidget {
  * -------------------------------------------------------------------------- */
 
 class _ErrorState extends StatelessWidget {
-  final String error;
-
-  const _ErrorState({required this.error});
+  const _ErrorState();
 
   @override
   Widget build(BuildContext context) {

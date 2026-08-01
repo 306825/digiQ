@@ -64,7 +64,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      print('❌ Location services disabled');
       return false;
     }
 
@@ -75,12 +74,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     }
 
     if (permission == LocationPermission.denied) {
-      print('❌ Permission denied');
       return false;
     }
 
     if (permission == LocationPermission.deniedForever) {
-      print('❌ Permission permanently denied');
       await Geolocator.openAppSettings(); // 🔥 important UX
       return false;
     }
@@ -127,9 +124,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                 const Text('Error loading vehicle',
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text(e.toString(),
+                const Text(
+                    'Could not load vehicle. Please try again.',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    style: TextStyle(fontSize: 12, color: Colors.grey)),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => ref.invalidate(driverVehicleProvider),
@@ -150,7 +148,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         return _buildDashboard(context, user, vehicles, pendingBookings);
       },
     );
-    ;
   }
 
   // void _startTracking(String tripId) async {
@@ -192,10 +189,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
 
     final hasPermission = await _handleLocationPermission();
 
-    if (!hasPermission) {
-      print('⛔ Cannot start tracking — no location permission');
-      return;
-    }
+    if (!hasPermission) return;
 
     activeTripId = tripId;
 
@@ -204,8 +198,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     );
 
     trackingService.joinTrip(tripId);
-
-    print('🚀 Starting tracking for trip: $tripId');
 
     trackingTimer?.cancel();
 
@@ -220,15 +212,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
             position.latitude,
             position.longitude,
           );
-        } catch (e) {
-          print('❌ Location error: $e');
-        }
+        } catch (_) {}
       },
     );
   }
 
   void _stopTracking() {
-    print('🛑 Stopping tracking');
 
     trackingTimer?.cancel();
     trackingTimer = null;
@@ -1304,7 +1293,7 @@ class _InvitationCard extends ConsumerWidget {
                       } catch (e) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed: $e')),
+                            const SnackBar(content: Text('Failed to accept invitation. Please try again.')),
                           );
                         }
                       }

@@ -402,11 +402,6 @@ class _ErrorState extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            // 🔥 THIS IS WHAT WE NEED
-            Text(
-              error.toString(),
-              style: const TextStyle(fontSize: 12),
-            ),
             const SizedBox(height: 8),
             Text(
               'Please check your connection and try again.',

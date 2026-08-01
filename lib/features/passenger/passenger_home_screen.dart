@@ -304,10 +304,9 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                       const Text('Failed to load routes',
                           style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
-                      Text(e.toString(),
+                      const Text('Check your connection and try again.',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.grey)),
+                          style: TextStyle(fontSize: 12, color: Colors.grey)),
                       const SizedBox(height: 12),
                       ElevatedButton(
                         onPressed: () => ref.invalidate(routesProvider),
