@@ -824,9 +824,7 @@ class _ShareTripCard extends StatelessWidget {
     if (booking.driverName != null) {
       parts.add('Driver: ${booking.driverName}');
     }
-    if (booking.driverPhone != null) {
-      parts.add('Driver phone: ${booking.driverPhone}');
-    }
+
     if (booking.vehicleDescription != null) {
       parts.add('Vehicle: ${booking.vehicleDescription}');
     }
