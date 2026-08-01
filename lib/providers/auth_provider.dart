@@ -323,7 +323,7 @@ class AuthNotifier extends Notifier<AuthState> {
     api.dio.options.headers['Authorization'] = 'Bearer $token';
 
     try {
-      final response = await api.dio.get('/auth/me');
+      final response = await api.dio.get('/users/me');
       final user = UserModel.fromJson(response.data);
 
       final currentUser = state.user;
