@@ -69,7 +69,30 @@ class _PassengerIdentityVerificationScreenState
       // 3. Submit selfie S3 key to backend
       await userApi.submitPassengerVerification(s3Key);
 
-      // 4. Persist updated status to memory and secure storage
+      // 4. If the passenger has no profile picture, use the selfie as one.
+      //    Re-use the bytes already in memory — no extra camera prompt.
+      final currentUser = ref.read(authProvider).user;
+      if (currentUser?.profileImageUrl == null ||
+          currentUser!.profileImageUrl!.isEmpty) {
+        try {
+          final avatarData = await userApi.getAvatarUploadUrl(
+            contentType: 'image/jpeg',
+          );
+          final avatarUploadUrl = avatarData['uploadUrl'] as String;
+          final avatarPublicUrl = avatarData['publicUrl'] as String;
+          await docsApi.uploadToS3(
+            uploadUrl: avatarUploadUrl,
+            bytes: bytes,
+            contentType: 'image/jpeg',
+          );
+          final savedUrl = await userApi.saveAvatar(avatarPublicUrl);
+          ref.read(authProvider.notifier).updateAvatar(savedUrl);
+        } catch (_) {
+          // Non-fatal — verification succeeded; avatar will stay blank.
+        }
+      }
+
+      // 5. Persist updated status to memory and secure storage
       await ref
           .read(authProvider.notifier)
           .updatePassengerVerificationStatus(PassengerVerificationStatus.pending);
