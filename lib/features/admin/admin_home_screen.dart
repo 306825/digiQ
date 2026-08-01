@@ -18,57 +18,107 @@ class AdminHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
+  int _selectedIndex = 0;
+
+  static const _titles = [
+    'Drivers',
+    'Routes',
+    'Incidents',
+    'Payouts',
+    'Passengers',
+  ];
+
+  static const _items = [
+    (icon: Icons.people, label: 'Drivers'),
+    (icon: Icons.alt_route, label: 'Routes'),
+    (icon: Icons.report, label: 'Incidents'),
+    (icon: Icons.payments_outlined, label: 'Payouts'),
+    (icon: Icons.verified_user_outlined, label: 'Passengers'),
+  ];
+
   @override
   void initState() {
     super.initState();
-
-    Future.microtask(() {
-      ref.invalidate(adminDriversProvider);
-    });
+    Future.microtask(() => ref.invalidate(adminDriversProvider));
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 5,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Admin Dashboard'),
-          bottom: TabBar(
-            labelColor: Theme.of(context).colorScheme.surface,
-            unselectedLabelColor: Colors.grey.shade600,
-            indicatorColor: Theme.of(context).colorScheme.surface,
-            labelStyle: const TextStyle(fontWeight: FontWeight.w600),
-            isScrollable: true,
-            tabs: const [
-              Tab(icon: Icon(Icons.people), text: 'Drivers'),
-              Tab(icon: Icon(Icons.alt_route), text: 'Routes'),
-              Tab(icon: Icon(Icons.report), text: 'Incidents'),
-              Tab(icon: Icon(Icons.payments_outlined), text: 'Payouts'),
-              Tab(icon: Icon(Icons.verified_user_outlined), text: 'Passengers'),
-            ],
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_titles[_selectedIndex]),
+        actions: [
+          IconButton(
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await ref.read(authProvider.notifier).logout();
+              if (!context.mounted) return;
+              context.go('/login');
+            },
           ),
-          actions: [
-            IconButton(
-              tooltip: 'Logout',
-              icon: const Icon(Icons.logout),
-              onPressed: () async {
-                await ref.read(authProvider.notifier).logout();
-                if (!context.mounted) return;
-                context.go('/login');
-              },
-            ),
-          ],
-        ),
-        body: const TabBarView(
+        ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
-            AdminDriversTab(),
-            AdminRoutesTab(),
-            AdminIncidentsScreen(),
-            AdminPayoutsTab(),
-            AdminPassengerVerificationsTab(),
+            DrawerHeader(
+              decoration: BoxDecoration(color: primary),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(Icons.admin_panel_settings,
+                      color: Colors.white, size: 36),
+                  SizedBox(height: 8),
+                  Text(
+                    'Admin Dashboard',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            for (int i = 0; i < _items.length; i++)
+              ListTile(
+                leading: Icon(_items[i].icon,
+                    color: _selectedIndex == i ? primary : null),
+                title: Text(
+                  _items[i].label,
+                  style: TextStyle(
+                    fontWeight: _selectedIndex == i
+                        ? FontWeight.w700
+                        : FontWeight.normal,
+                    color: _selectedIndex == i ? primary : null,
+                  ),
+                ),
+                selected: _selectedIndex == i,
+                selectedTileColor: primary.withValues(alpha: 0.08),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                onTap: () {
+                  setState(() => _selectedIndex = i);
+                  Navigator.pop(context);
+                },
+              ),
           ],
         ),
+      ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: const [
+          AdminDriversTab(),
+          AdminRoutesTab(),
+          AdminIncidentsScreen(),
+          AdminPayoutsTab(),
+          AdminPassengerVerificationsTab(),
+        ],
       ),
     );
   }
