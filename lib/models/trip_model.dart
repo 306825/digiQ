@@ -12,6 +12,7 @@ class Trip {
   final int seatsTotal;
   final int seatsAvailable;
   final double price;
+  final double? netPricePerSeat;
   final int minPassengers;
 
   final String status;
@@ -30,6 +31,7 @@ class Trip {
     required this.seatsTotal,
     required this.seatsAvailable,
     required this.price,
+    this.netPricePerSeat,
     required this.status,
     this.minPassengers = 1,
     this.driverProfileImageUrl,
@@ -54,6 +56,7 @@ class Trip {
       seatsTotal: (json['seatsTotal'] as num).toInt(),
       seatsAvailable: (json['seatsAvailable'] as num?)?.toInt() ?? 0,
       price: (json['price'] as num).toDouble(),
+      netPricePerSeat: (json['netPricePerSeat'] as num?)?.toDouble(),
       minPassengers: (json['minPassengers'] as num?)?.toInt() ?? 1,
       status: json['status'] ?? 'closed',
     );

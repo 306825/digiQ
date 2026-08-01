@@ -3,12 +3,14 @@ class RouteModel {
   final String fromLabel;
   final String toLabel;
   final double? price;
+  final double? netPricePerSeat;
 
   const RouteModel({
     required this.id,
     required this.fromLabel,
     required this.toLabel,
     this.price,
+    this.netPricePerSeat,
   });
 
   factory RouteModel.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class RouteModel {
       fromLabel: json['fromLabel']?.toString() ?? '',
       toLabel: json['toLabel']?.toString() ?? '',
       price: _parseDouble(json['price']),
+      netPricePerSeat: _parseDouble(json['netPricePerSeat']),
     );
   }
 

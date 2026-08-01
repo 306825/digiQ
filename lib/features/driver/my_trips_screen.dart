@@ -257,12 +257,24 @@ class _TripCard extends ConsumerWidget {
                     ),
                   ),
                 ),
-                Text(
-                  'R ${trip.price.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'R ${(trip.netPricePerSeat ?? trip.price).toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'per seat (net)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

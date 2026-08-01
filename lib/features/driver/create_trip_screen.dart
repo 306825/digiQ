@@ -316,12 +316,26 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                             Icon(Icons.payments,
                                 color: Colors.green.shade700, size: 20),
                             const SizedBox(width: 10),
-                            Text(
-                              'Price per seat: R${selectedRoute!.price!.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                color: Colors.green.shade800,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Passenger pays: R${selectedRoute!.price!.toStringAsFixed(2)}/seat',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                                if (selectedRoute!.netPricePerSeat != null)
+                                  Text(
+                                    'You earn: R${selectedRoute!.netPricePerSeat!.toStringAsFixed(2)}/seat',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.green.shade900,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ],
                         ),
