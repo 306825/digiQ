@@ -300,51 +300,47 @@ class _SosSection extends ConsumerWidget {
                       title: Text('Trip: ${a['tripId']}'),
                       subtitle: Text('User: ${a['userId']}'),
                       //trailing: const Icon(Icons.warning, color: Colors.red),
-                      trailing: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                        ),
-                        // onPressed: () async {
-                        //   final api = ref.read(adminApiProvider);
+                      trailing: SizedBox(
+                        width: 80,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 6),
+                          ),
+                          onPressed: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('Resolve Alert'),
+                                content: const Text(
+                                    'Mark this emergency as resolved?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Resolve'),
+                                  ),
+                                ],
+                              ),
+                            );
 
-                        //   await api.resolveSos(a['_id']);
+                            if (!context.mounted || confirmed != true) return;
 
-                        //   // 🔁 refresh alerts after resolving
-                        //   ref.invalidate(adminSosProvider);
-                        // },
-                        onPressed: () async {
-                          final confirmed = await showDialog<bool>(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text('Resolve Alert'),
-                              content: const Text(
-                                  'Mark this emergency as resolved?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Resolve'),
-                                ),
-                              ],
-                            ),
-                          );
+                            final api = ref.read(adminApiProvider);
+                            await api.resolveSos(a['_id']);
 
-                          if (!context.mounted || confirmed != true) return;
-
-                          final api = ref.read(adminApiProvider);
-                          await api.resolveSos(a['_id']);
-
-                          ref.invalidate(adminSosProvider);
-                        },
-                        child: const Text(
-                          'Resolve',
-                          style: TextStyle(fontSize: 12),
+                            ref.invalidate(adminSosProvider);
+                          },
+                          child: const Text(
+                            'Resolve',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ),
                     ),
