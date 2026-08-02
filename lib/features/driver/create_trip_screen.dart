@@ -180,7 +180,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                           context: context,
                           initialDate: todayOnly,
                           firstDate: todayOnly,
-                          lastDate: todayOnly.add(const Duration(days: 90)),
+                          lastDate: todayOnly.add(const Duration(days: 21)),
                         );
                         if (picked != null) {
                           setState(() {
