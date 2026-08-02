@@ -162,37 +162,49 @@ class TripDetailsScreen extends ConsumerWidget {
 
                     // 🪑 AVAILABILITY
                     _InfoCard(
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isFull ? Colors.red : Colors.green,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              isFull ? 'FULL' : '${trip.seatsAvailable} LEFT',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isFull ? Colors.red : Colors.green,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  isFull
+                                      ? 'FULL'
+                                      : '${trip.seatsAvailable} of ${trip.seatsTotal} left',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  isFull
+                                      ? 'This trip is fully booked'
+                                      : 'Seats available',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              isFull
-                                  ? 'This trip is fully booked'
-                                  : 'Seats still available',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.grey[700],
-                              ),
-                            ),
+                          const SizedBox(height: 12),
+                          _SeatBar(
+                            total: trip.seatsTotal,
+                            available: trip.seatsAvailable,
                           ),
                         ],
                       ),
@@ -285,6 +297,39 @@ class TripDetailsScreen extends ConsumerWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+class _SeatBar extends StatelessWidget {
+  final int total;
+  final int available;
+
+  const _SeatBar({required this.total, required this.available});
+
+  @override
+  Widget build(BuildContext context) {
+    final taken = total - available;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: total == 0 ? 1 : taken / total,
+            minHeight: 8,
+            backgroundColor: Colors.green.shade100,
+            valueColor: AlwaysStoppedAnimation(
+              available == 0 ? Colors.red : Colors.green,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '$taken booked · $available open · $total total',
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        ),
+      ],
+    );
   }
 }
 

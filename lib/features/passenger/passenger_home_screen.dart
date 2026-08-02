@@ -5,13 +5,11 @@ import 'package:digiQ/features/shared/feedback_screen.dart';
 import 'package:digiQ/features/shared/widgets/app_logo.dart';
 import 'package:digiQ/models/booking_model.dart';
 import 'package:digiQ/models/route_model.dart';
-import 'package:digiQ/providers/auth_provider.dart';
 import 'package:digiQ/providers/passenger_bookings_provider.dart';
 import 'package:digiQ/providers/routes_provider.dart';
 import 'package:digiQ/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'trip_search_results_screen.dart';
 
@@ -201,65 +199,21 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top row: logo + bookings link + logout
+                    // Top row: logo + profile icon
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const AppLogo(size: 36, dark: true),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextButton.icon(
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const MyBookingsScreen()),
-                              ),
-                              icon: const Icon(Icons.receipt_long,
-                                  color: Colors.white70, size: 18),
-                              label: Text(
-                                'My Bookings',
-                                style: GoogleFonts.dmSans(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.account_circle_outlined,
-                                  color: Colors.white70, size: 20),
-                              tooltip: 'My profile',
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) =>
-                                        const PassengerProfileScreen()),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.feedback_outlined,
-                                  color: Colors.white70, size: 20),
-                              tooltip: 'Send feedback',
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const FeedbackScreen()),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.logout_outlined,
-                                  color: Colors.white70, size: 20),
-                              tooltip: 'Log out',
-                              onPressed: () async {
-                                await ref
-                                    .read(authProvider.notifier)
-                                    .logout();
-                                if (!context.mounted) return;
-                                context.go('/login');
-                              },
-                            ),
-                          ],
+                        IconButton(
+                          icon: const Icon(Icons.account_circle_outlined,
+                              color: Colors.white70, size: 26),
+                          tooltip: 'My profile',
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const PassengerProfileScreen()),
+                          ),
                         ),
                       ],
                     ),
@@ -441,6 +395,32 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
 
                     const SizedBox(height: 16),
 
+                    // ── Quick action tiles ────────────────────────────────
+                    _PassengerActionTile(
+                      icon: Icons.receipt_long_outlined,
+                      label: 'My Bookings',
+                      subtitle: 'View and manage your trip bookings',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const MyBookingsScreen()),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _PassengerActionTile(
+                      icon: Icons.feedback_outlined,
+                      label: 'Send Feedback',
+                      subtitle: 'Share your experience with us',
+                      outlined: true,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const FeedbackScreen()),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
                     // ── Feature chips ─────────────────────────────────────
                     Row(
                       children: [
@@ -472,6 +452,107 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Passenger Action Tile  (matches driver _ActionTile style)
+ * -------------------------------------------------------------------------- */
+
+class _PassengerActionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool outlined;
+
+  const _PassengerActionTile({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+    this.outlined = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = isDark ? AppTheme.darkPrimary : AppTheme.primary;
+
+    return Material(
+      color: outlined ? Colors.transparent : primary,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: outlined
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: primary, width: 1.5),
+                )
+              : null,
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: outlined
+                      ? primary.withValues(alpha: 0.12)
+                      : Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: outlined ? primary : Colors.white,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: outlined
+                            ? (isDark
+                                ? AppTheme.darkTextPrimary
+                                : AppTheme.textDark)
+                            : Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: outlined
+                            ? (isDark
+                                ? AppTheme.darkTextMuted
+                                : AppTheme.textMuted)
+                            : Colors.white.withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: outlined
+                    ? (isDark ? AppTheme.darkTextMuted : AppTheme.textMuted)
+                    : Colors.white.withValues(alpha: 0.75),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
