@@ -21,6 +21,12 @@ class UserAvatar extends StatelessWidget {
           width: size,
           height: size,
           fit: BoxFit.cover,
+          // Show initials while the presigned S3 URL is in flight so there
+          // is never a blank space (presigned URLs can take 1-2 s on mobile).
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return _initialsAvatar(context);
+          },
           errorBuilder: (_, __, ___) => _initialsAvatar(context),
         ),
       );

@@ -1,3 +1,5 @@
+import 'package:digiQ/core/api/api_providers.dart';
+import 'package:digiQ/features/passenger/payfast_webview_screen.dart';
 import 'package:digiQ/models/booking_model.dart';
 import 'package:digiQ/models/booking_status_ui.dart';
 import 'package:digiQ/providers/passenger_bookings_provider.dart';
@@ -260,6 +262,14 @@ class _BookingCard extends ConsumerWidget {
                         ],
                       ),
 
+                      // Awaiting payment — resume or cancel
+                      if (status == BookingStatus.awaitingPayment) ...[
+                        const SizedBox(height: 12),
+                        _ContinuePaymentButton(booking: booking),
+                        const SizedBox(height: 8),
+                        _CancelButton(booking: booking, isDark: isDark),
+                      ],
+
                       // Cancel button — pending or approved
                       if (status == BookingStatus.pending ||
                           status == BookingStatus.approved) ...[
@@ -380,6 +390,96 @@ class _PaymentBadge extends StatelessWidget {
  * Cancel Button
  * -------------------------------------------------------------------------- */
 
+/* --------------------------------------------------------------------------
+ * Continue Payment Button  (awaitingPayment only)
+ * -------------------------------------------------------------------------- */
+
+class _ContinuePaymentButton extends ConsumerStatefulWidget {
+  final Booking booking;
+
+  const _ContinuePaymentButton({required this.booking});
+
+  @override
+  ConsumerState<_ContinuePaymentButton> createState() =>
+      _ContinuePaymentButtonState();
+}
+
+class _ContinuePaymentButtonState
+    extends ConsumerState<_ContinuePaymentButton> {
+  bool _loading = false;
+
+  Future<void> _resume() async {
+    setState(() => _loading = true);
+    try {
+      final paymentsApi = ref.read(paymentsApiProvider);
+      final paymentInit =
+          await paymentsApi.initiatePayfast(bookingId: widget.booking.id);
+      if (!mounted) return;
+
+      final processUrl = paymentInit['processUrl'] as String;
+      final payload =
+          Map<String, String>.from(paymentInit['payload'] as Map);
+
+      await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PayfastWebViewScreen(
+            processUrl: processUrl,
+            payload: payload,
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+      ref.read(passengerBookingsProvider.notifier).refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to resume payment. Please try again.',
+              style: GoogleFonts.dmSans()),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppTheme.primary,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          textStyle:
+              GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
+        icon: _loading
+            ? const SizedBox(
+                width: 15,
+                height: 15,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
+              )
+            : const Icon(Icons.payment, size: 15),
+        label: Text(_loading ? 'Loading…' : 'Complete Payment'),
+        onPressed: _loading ? null : _resume,
+      ),
+    );
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Cancel Button
+ * -------------------------------------------------------------------------- */
+
 class _CancelButton extends ConsumerWidget {
   final Booking booking;
   final bool isDark;
@@ -399,6 +499,8 @@ class _CancelButton extends ConsumerWidget {
       );
     }
 
+    final isAwaitingPayment =
+        booking.status == BookingStatus.awaitingPayment;
     final withinCutoff = booking.isWithin24HoursOfDeparture;
 
     return SizedBox(
@@ -425,48 +527,56 @@ class _CancelButton extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    withinCutoff
-                        ? 'This trip departs in less than 24 hours.'
-                        : 'Are you sure you want to cancel this booking?',
+                    isAwaitingPayment
+                        ? 'No payment has been charged yet. Cancel this booking?'
+                        : withinCutoff
+                            ? 'This trip departs in less than 24 hours.'
+                            : 'Are you sure you want to cancel this booking?',
                     style: GoogleFonts.dmSans(fontSize: 14),
                   ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: withinCutoff
-                          ? AppTheme.danger.withValues(alpha: 0.08)
-                          : Colors.green.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
+                  if (!isAwaitingPayment) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
                         color: withinCutoff
-                            ? AppTheme.danger.withValues(alpha: 0.3)
-                            : Colors.green.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          withinCutoff ? Icons.money_off : Icons.check_circle_outline,
-                          size: 18,
-                          color: withinCutoff ? AppTheme.danger : Colors.green,
+                            ? AppTheme.danger.withValues(alpha: 0.08)
+                            : Colors.green.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: withinCutoff
+                              ? AppTheme.danger.withValues(alpha: 0.3)
+                              : Colors.green.withValues(alpha: 0.3),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
                             withinCutoff
-                                ? 'Your payment will be forfeited — cancellations within 24 hours of departure are non-refundable.'
-                                : 'Your payment will be fully refunded.',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 13,
-                              color: withinCutoff ? AppTheme.danger : Colors.green,
-                              fontWeight: FontWeight.w500,
+                                ? Icons.money_off
+                                : Icons.check_circle_outline,
+                            size: 18,
+                            color: withinCutoff ? AppTheme.danger : Colors.green,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              withinCutoff
+                                  ? 'Your payment will be forfeited — cancellations within 24 hours of departure are non-refundable.'
+                                  : 'Your payment will be fully refunded.',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 13,
+                                color: withinCutoff
+                                    ? AppTheme.danger
+                                    : Colors.green,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
               actions: [
@@ -477,7 +587,8 @@ class _CancelButton extends ConsumerWidget {
                 FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.danger,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () => Navigator.pop(context, true),
                   child: const Text('Yes, cancel'),
@@ -493,13 +604,16 @@ class _CancelButton extends ConsumerWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  refunded
-                      ? 'Booking cancelled — your payment will be refunded.'
-                      : 'Booking cancelled — payment forfeited (within 24h of departure).',
+                  isAwaitingPayment
+                      ? 'Booking cancelled.'
+                      : refunded
+                          ? 'Booking cancelled — your payment will be refunded.'
+                          : 'Booking cancelled — payment forfeited (within 24h of departure).',
                   style: GoogleFonts.dmSans(),
                 ),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             );
           }
