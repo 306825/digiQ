@@ -2,13 +2,15 @@ import 'dart:math' as math;
 import 'package:digiQ/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 
-/// Rizec logo mark — a Z-shaped route path.
+/// Rizec logo mark.
 ///
-/// The Z encodes the "Z" in Rizec while reading as a route map:
-/// origin pin (top-left) → waypoint → diagonal route → waypoint → destination (bottom-right).
+/// A backward-leaning L whose tail curves back around to form a closed loop —
+/// reads as both a route (origin pin → corner waypoint → destination) and a
+/// continuous journey. Rendered in an amber → deep-orange gradient that pops
+/// against the app's blue backgrounds.
 ///
-/// [dark] = true  → white mark on transparent bg (for dark/blue surfaces)
-/// [dark] = false → white mark inside blue gradient container (for light surfaces)
+/// [dark] = true  → gradient mark on transparent bg (blue/dark surfaces)
+/// [dark] = false → gradient mark inside blue gradient container (light surfaces)
 class AppLogo extends StatelessWidget {
   final double size;
   final bool dark;
@@ -21,7 +23,7 @@ class AppLogo extends StatelessWidget {
       return SizedBox(
         width: size,
         height: size,
-        child: CustomPaint(painter: _ZRoutePainter(Colors.white)),
+        child: CustomPaint(painter: const _LoopPainter()),
       );
     }
 
@@ -43,75 +45,84 @@ class AppLogo extends StatelessWidget {
           ),
         ],
       ),
-      child: CustomPaint(painter: _ZRoutePainter(Colors.white)),
+      child: CustomPaint(painter: const _LoopPainter()),
     );
   }
 }
 
-class _ZRoutePainter extends CustomPainter {
-  final Color color;
-  const _ZRoutePainter(this.color);
+class _LoopPainter extends CustomPainter {
+  const _LoopPainter();
+
+  // Amber → deep-orange: vivid against the app's blue palette
+  static const _grad = LinearGradient(
+    colors: [Color(0xFFFFAB00), Color(0xFFFF5722)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
-    final s   = math.min(size.width, size.height);
-    final ox  = (size.width  - s) / 2;
-    final oy  = (size.height - s) / 2;
-    final sw  = s * 0.105;
-    final dot = sw * 0.78;
+    final s  = math.min(size.width, size.height);
+    final ox = (size.width  - s) / 2;
+    final oy = (size.height - s) / 2;
+    final sw = s * 0.105;
 
-    // ── Four Z-corners ──────────────────────────────────────────
-    final p1 = Offset(ox + s * 0.13, oy + s * 0.23); // top-left  (origin)
-    final p2 = Offset(ox + s * 0.87, oy + s * 0.23); // top-right (waypoint)
-    final p3 = Offset(ox + s * 0.13, oy + s * 0.77); // bot-left  (waypoint)
-    // p4 = bottom-right tip is the arrowhead, path stops just before it
-    final p4end = Offset(ox + s * 0.77, oy + s * 0.77);
-    final p4tip = Offset(ox + s * 0.90, oy + s * 0.77);
+    final shader = _grad.createShader(Rect.fromLTWH(ox, oy, s, s));
+    final stroke  = Paint()
+      ..shader      = shader
+      ..style       = PaintingStyle.stroke
+      ..strokeWidth = sw
+      ..strokeCap   = StrokeCap.round
+      ..strokeJoin  = StrokeJoin.round;
+    final fill = Paint()
+      ..shader = shader
+      ..style  = PaintingStyle.fill;
 
-    // ── Z route path ────────────────────────────────────────────
-    // Top horizontal → subtly curved diagonal → bottom horizontal
+    // ── Lean the whole shape 14° clockwise (backward lean) ──────
+    canvas.save();
+    canvas.translate(ox + s / 2, oy + s / 2); // pivot on icon centre
+    canvas.rotate(14 * math.pi / 180);
+    // All subsequent coords are centred at (0,0); icon spans ≈ ±s/2
+
+    // ── Three key points of the backward L ──────────────────────
+    final ax = -s * 0.27; final ay = -s * 0.21; // A — origin  (start of arm)
+    final bx =  s * 0.27; final by = -s * 0.21; // B — corner  (the L-turn)
+    final cx =  s * 0.27; final cy =  s * 0.21; // C — leg end (before arrowhead)
+    final aLen = sw * 1.15;                       // arrow length
+    final aHW  = sw * 0.72;                       // arrow half-width
+
+    // Γ shape: arm (A→B) + leg (B→C) + sweeping loop curve (C→A)
     final path = Path()
-      ..moveTo(p1.dx, p1.dy)
-      ..lineTo(p2.dx, p2.dy)
-      ..cubicTo(
-        p2.dx - s * 0.20, p2.dy + s * 0.20,
-        p3.dx + s * 0.20, p3.dy - s * 0.20,
-        p3.dx, p3.dy,
-      )
-      ..lineTo(p4end.dx, p4end.dy);
+      ..moveTo(ax, ay)
+      ..lineTo(bx, by)                         // ── arm: goes right
+      ..lineTo(cx, cy - aLen)                  // ── leg: goes down (stops before arrowhead)
+      ..cubicTo(                               // ── loop sweep back to origin
+        -s * 0.10, cy + s * 0.20,             //    cp1: dip below-left of C
+        ax - s * 0.04, s * 0.08,             //    cp2: rise from lower-left
+        ax, ay,                               //    land at A
+      );
 
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color  = color
-        ..style  = PaintingStyle.stroke
-        ..strokeWidth = sw
-        ..strokeCap   = StrokeCap.round
-        ..strokeJoin  = StrokeJoin.round,
-    );
+    canvas.drawPath(path, stroke);
 
-    final fill = Paint()..color = color..style = PaintingStyle.fill;
+    // ── Origin pin at A (larger filled circle) ───────────────────
+    canvas.drawCircle(Offset(ax, ay), sw * 0.82, fill);
 
-    // ── Origin pin at p1 (larger filled circle) ─────────────────
-    canvas.drawCircle(p1, dot, fill);
+    // ── Waypoint dot at corner B ─────────────────────────────────
+    canvas.drawCircle(Offset(bx, by), sw * 0.50, fill);
 
-    // ── Waypoint dots at p2 and p3 (smaller) ────────────────────
-    canvas.drawCircle(p2, dot * 0.58, fill);
-    canvas.drawCircle(p3, dot * 0.58, fill);
-
-    // ── Destination arrowhead at p4 pointing right ──────────────
-    final aLen = sw * 1.25;
-    final aHW  = sw * 0.82;
+    // ── Destination arrowhead at C (pointing down along the leg) ─
     canvas.drawPath(
       Path()
-        ..moveTo(p4tip.dx, p4tip.dy)
-        ..lineTo(p4tip.dx - aLen, p4tip.dy - aHW)
-        ..lineTo(p4tip.dx - aLen, p4tip.dy + aHW)
+        ..moveTo(cx,        cy)         // tip
+        ..lineTo(cx - aHW, cy - aLen)   // base-left
+        ..lineTo(cx + aHW, cy - aLen)   // base-right
         ..close(),
       fill,
     );
+
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(_ZRoutePainter old) => old.color != color;
+  bool shouldRepaint(_LoopPainter old) => false;
 }
