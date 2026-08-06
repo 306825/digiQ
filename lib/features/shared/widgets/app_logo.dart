@@ -2,10 +2,13 @@ import 'dart:math' as math;
 import 'package:digiQ/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 
-/// Rizev slanted-infinity logo mark.
+/// Rizec logo mark — a Z-shaped route path.
 ///
-/// [dark] = true  → white symbol, transparent background (for dark/blue surfaces)
-/// [dark] = false → white symbol inside blue gradient container (for light surfaces)
+/// The Z encodes the "Z" in Rizec while reading as a route map:
+/// origin pin (top-left) → waypoint → diagonal route → waypoint → destination (bottom-right).
+///
+/// [dark] = true  → white mark on transparent bg (for dark/blue surfaces)
+/// [dark] = false → white mark inside blue gradient container (for light surfaces)
 class AppLogo extends StatelessWidget {
   final double size;
   final bool dark;
@@ -18,7 +21,7 @@ class AppLogo extends StatelessWidget {
       return SizedBox(
         width: size,
         height: size,
-        child: CustomPaint(painter: _InfinityPainter(Colors.white)),
+        child: CustomPaint(painter: _ZRoutePainter(Colors.white)),
       );
     }
 
@@ -40,61 +43,75 @@ class AppLogo extends StatelessWidget {
           ),
         ],
       ),
-      child: CustomPaint(painter: _InfinityPainter(Colors.white)),
+      child: CustomPaint(painter: _ZRoutePainter(Colors.white)),
     );
   }
 }
 
-class _InfinityPainter extends CustomPainter {
+class _ZRoutePainter extends CustomPainter {
   final Color color;
-  const _InfinityPainter(this.color);
+  const _ZRoutePainter(this.color);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final s = math.min(size.width, size.height);
+    final s   = math.min(size.width, size.height);
+    final ox  = (size.width  - s) / 2;
+    final oy  = (size.height - s) / 2;
+    final sw  = s * 0.105;
+    final dot = sw * 0.78;
 
-    // Proportions — all relative to s so the logo scales perfectly
-    final sw = s * 0.075; // stroke width
-    final w  = s * 0.355; // half-width to each lobe tip
-    final h  = s * 0.175; // half-height of each lobe
-    final c1 = s * 0.120; // inner bezier control offset x
-    final c2 = s * 0.230; // mid bezier control offset x
-    final c3 = s * 0.475; // outer bezier control offset x (gives round outside)
+    // ── Four Z-corners ──────────────────────────────────────────
+    final p1 = Offset(ox + s * 0.13, oy + s * 0.23); // top-left  (origin)
+    final p2 = Offset(ox + s * 0.87, oy + s * 0.23); // top-right (waypoint)
+    final p3 = Offset(ox + s * 0.13, oy + s * 0.77); // bot-left  (waypoint)
+    // p4 = bottom-right tip is the arrowhead, path stops just before it
+    final p4end = Offset(ox + s * 0.77, oy + s * 0.77);
+    final p4tip = Offset(ox + s * 0.90, oy + s * 0.77);
 
-    // Slanted ∞: two crossing bezier lobes, drawn at origin then rotated -22°
+    // ── Z route path ────────────────────────────────────────────
+    // Top horizontal → subtly curved diagonal → bottom horizontal
     final path = Path()
-      ..moveTo(0, 0)
-      ..cubicTo(-c1, -h, -c2, -h, -w,  0)  // upper arc, left lobe
-      ..cubicTo(-c3,  h, -c1,  h,  0,  0)  // lower arc, left lobe → back to centre
-      ..cubicTo( c1, -h,  c2, -h,  w,  0)  // upper arc, right lobe
-      ..cubicTo( c3,  h,  c1,  h,  0,  0)  // lower arc, right lobe → back to centre
-      ..close();
+      ..moveTo(p1.dx, p1.dy)
+      ..lineTo(p2.dx, p2.dy)
+      ..cubicTo(
+        p2.dx - s * 0.20, p2.dy + s * 0.20,
+        p3.dx + s * 0.20, p3.dy - s * 0.20,
+        p3.dx, p3.dy,
+      )
+      ..lineTo(p4end.dx, p4end.dy);
 
-    final strokePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = sw
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color  = color
+        ..style  = PaintingStyle.stroke
+        ..strokeWidth = sw
+        ..strokeCap   = StrokeCap.round
+        ..strokeJoin  = StrokeJoin.round,
+    );
 
-    final dotPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+    final fill = Paint()..color = color..style = PaintingStyle.fill;
 
-    canvas.save();
-    canvas.translate(size.width / 2, size.height / 2);
-    canvas.rotate(-22 * math.pi / 180);
+    // ── Origin pin at p1 (larger filled circle) ─────────────────
+    canvas.drawCircle(p1, dot, fill);
 
-    canvas.drawPath(path, strokePaint);
+    // ── Waypoint dots at p2 and p3 (smaller) ────────────────────
+    canvas.drawCircle(p2, dot * 0.58, fill);
+    canvas.drawCircle(p3, dot * 0.58, fill);
 
-    // Origin dot (left lobe tip) and destination dot (right lobe tip)
-    final dotR = sw * 0.80;
-    canvas.drawCircle(Offset(-w, 0), dotR, dotPaint);
-    canvas.drawCircle(Offset( w, 0), dotR, dotPaint);
-
-    canvas.restore();
+    // ── Destination arrowhead at p4 pointing right ──────────────
+    final aLen = sw * 1.25;
+    final aHW  = sw * 0.82;
+    canvas.drawPath(
+      Path()
+        ..moveTo(p4tip.dx, p4tip.dy)
+        ..lineTo(p4tip.dx - aLen, p4tip.dy - aHW)
+        ..lineTo(p4tip.dx - aLen, p4tip.dy + aHW)
+        ..close(),
+      fill,
+    );
   }
 
   @override
-  bool shouldRepaint(_InfinityPainter old) => old.color != color;
+  bool shouldRepaint(_ZRoutePainter old) => old.color != color;
 }

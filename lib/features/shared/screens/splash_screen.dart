@@ -126,12 +126,12 @@ class _SplashScreenState extends State<SplashScreen>
                           child: Transform.translate(
                             offset: Offset(0, _textOffset.value),
                             child: Text(
-                              'Rizev',
+                              'Rizec',
                               style: GoogleFonts.dmSans(
                                 color: Colors.white,
                                 fontSize: 36,
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: 2,
+                                letterSpacing: -1,
                               ),
                             ),
                           ),
