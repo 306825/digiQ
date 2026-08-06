@@ -126,12 +126,12 @@ class _SplashScreenState extends State<SplashScreen>
                           child: Transform.translate(
                             offset: Offset(0, _textOffset.value),
                             child: Text(
-                              'digiQ',
+                              'Rizev',
                               style: GoogleFonts.dmSans(
                                 color: Colors.white,
                                 fontSize: 36,
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: -1,
+                                letterSpacing: 2,
                               ),
                             ),
                           ),
@@ -143,7 +143,7 @@ class _SplashScreenState extends State<SplashScreen>
                         Opacity(
                           opacity: _taglineOpacity.value,
                           child: Text(
-                            'Your trusted ride-share platform',
+                            'Your trusted ride-sharing platform',
                             style: GoogleFonts.dmSans(
                               color: Colors.white.withValues(alpha: 0.65),
                               fontSize: 14,

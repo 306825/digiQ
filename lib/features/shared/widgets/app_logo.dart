@@ -2,10 +2,10 @@ import 'dart:math' as math;
 import 'package:digiQ/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 
-/// The digiQ "Q" logo mark.
+/// Rizev slanted-infinity logo mark.
 ///
-/// [dark] = true  → white Q mark with no background  (for use on blue/gradient surfaces)
-/// [dark] = false → white Q mark inside blue gradient container (for use on light surfaces)
+/// [dark] = true  → white symbol, transparent background (for dark/blue surfaces)
+/// [dark] = false → white symbol inside blue gradient container (for light surfaces)
 class AppLogo extends StatelessWidget {
   final double size;
   final bool dark;
@@ -15,13 +15,10 @@ class AppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (dark) {
-      // Transparent — the caller's background provides the colour
       return SizedBox(
         width: size,
         height: size,
-        child: CustomPaint(
-          painter: _QMarkPainter(Colors.white),
-        ),
+        child: CustomPaint(painter: _InfinityPainter(Colors.white)),
       );
     }
 
@@ -43,52 +40,61 @@ class AppLogo extends StatelessWidget {
           ),
         ],
       ),
-      child: CustomPaint(
-        painter: _QMarkPainter(Colors.white),
-      ),
+      child: CustomPaint(painter: _InfinityPainter(Colors.white)),
     );
   }
 }
 
-class _QMarkPainter extends CustomPainter {
+class _InfinityPainter extends CustomPainter {
   final Color color;
-  const _QMarkPainter(this.color);
+  const _InfinityPainter(this.color);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final sw = size.width * 0.11;
-    final cx = size.width * 0.43;
-    final cy = size.height * 0.43;
-    final r = size.width * 0.255;
+    final s = math.min(size.width, size.height);
 
-    final paint = Paint()
+    // Proportions — all relative to s so the logo scales perfectly
+    final sw = s * 0.075; // stroke width
+    final w  = s * 0.355; // half-width to each lobe tip
+    final h  = s * 0.175; // half-height of each lobe
+    final c1 = s * 0.120; // inner bezier control offset x
+    final c2 = s * 0.230; // mid bezier control offset x
+    final c3 = s * 0.475; // outer bezier control offset x (gives round outside)
+
+    // Slanted ∞: two crossing bezier lobes, drawn at origin then rotated -22°
+    final path = Path()
+      ..moveTo(0, 0)
+      ..cubicTo(-c1, -h, -c2, -h, -w,  0)  // upper arc, left lobe
+      ..cubicTo(-c3,  h, -c1,  h,  0,  0)  // lower arc, left lobe → back to centre
+      ..cubicTo( c1, -h,  c2, -h,  w,  0)  // upper arc, right lobe
+      ..cubicTo( c3,  h,  c1,  h,  0,  0)  // lower arc, right lobe → back to centre
+      ..close();
+
+    final strokePaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = sw
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    // ── Circle (body of Q) ──────────────────────────────────
-    // Draw 300° of arc, leaving a small gap at bottom-right where tail starts
-    const startAngle = math.pi * 0.60; // ~108° — just past bottom-right
-    const sweepAngle = math.pi * 1.70; // 306° sweep
-    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: r);
-    canvas.drawArc(rect, startAngle, sweepAngle, false, paint);
+    final dotPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
 
-    // ── Tail of Q ──────────────────────────────────────────
-    // Starts where the arc ends (at startAngle on the circle edge),
-    // extends diagonally to the bottom-right corner.
-    final tailStart = Offset(
-      cx + r * math.cos(startAngle) * 0.55,
-      cy + r * math.sin(startAngle) * 0.55,
-    );
-    final tailEnd = Offset(
-      cx + r * 1.25,
-      cy + r * 1.25,
-    );
-    canvas.drawLine(tailStart, tailEnd, paint);
+    canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.rotate(-22 * math.pi / 180);
+
+    canvas.drawPath(path, strokePaint);
+
+    // Origin dot (left lobe tip) and destination dot (right lobe tip)
+    final dotR = sw * 0.80;
+    canvas.drawCircle(Offset(-w, 0), dotR, dotPaint);
+    canvas.drawCircle(Offset( w, 0), dotR, dotPaint);
+
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(_QMarkPainter old) => old.color != color;
+  bool shouldRepaint(_InfinityPainter old) => old.color != color;
 }
