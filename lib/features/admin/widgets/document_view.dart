@@ -24,7 +24,7 @@ class _DocumentTile extends StatelessWidget {
           builder: (_) => Dialog(
             child: InteractiveViewer(
               child: Image.network(
-                "https://api.digiqueue.co.za/uploads/$url",
+                "https://api.struttech.co.za/uploads/$url",
                 fit: BoxFit.contain,
               ),
             ),

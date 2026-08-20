@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:digiQ/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 
-/// The digiQ "Q" logo mark.
+/// The Struttech "Q" logo mark.
 ///
 /// [dark] = true  → white Q mark with no background  (for use on blue/gradient surfaces)
 /// [dark] = false → white Q mark inside blue gradient container (for use on light surfaces)

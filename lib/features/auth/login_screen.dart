@@ -94,7 +94,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       AppLogo(size: 68, dark: true),
                       const SizedBox(height: 16),
                       Text(
-                        'digiQ',
+                        'Struttech',
                         style: GoogleFonts.dmSans(
                           color: Colors.white,
                           fontSize: 28,

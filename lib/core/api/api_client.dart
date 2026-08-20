@@ -34,7 +34,7 @@ class ApiClient {
   ApiClient()
       : dio = Dio(
           BaseOptions(
-            baseUrl: 'https://api.digiqueue.co.za/api/v1',
+            baseUrl: 'https://api.struttech.co.za/api/v1',
             connectTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 10),
             headers: {

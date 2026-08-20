@@ -183,7 +183,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
 
   void _startTracking(String tripId) async {
     // trackingService.connect(
-    //   'https://api.digiqueue.co.za',
+    //   'https://api.struttech.co.za',
     // );
     if (activeTripId == tripId) return;
 
@@ -194,7 +194,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     activeTripId = tripId;
 
     trackingService.connect(
-      'https://api.digiqueue.co.za',
+      'https://api.struttech.co.za',
     );
 
     trackingService.joinTrip(tripId);
