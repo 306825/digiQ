@@ -126,7 +126,7 @@ class _SplashScreenState extends State<SplashScreen>
                           child: Transform.translate(
                             offset: Offset(0, _textOffset.value),
                             child: Text(
-                              'Struttech',
+                              'Stuct',
                               style: GoogleFonts.dmSans(
                                 color: Colors.white,
                                 fontSize: 36,
