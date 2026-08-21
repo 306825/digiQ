@@ -46,26 +46,26 @@ class _RoutePainter extends CustomPainter {
     final h = size.height;
     final rw = w * 0.16;
 
-    // ── Smooth S-curve ────────────────────────────────────────
+    // ── Gentle S-curve (less wavy) ────────────────────────────
     final path = Path()
       ..moveTo(w * 0.18, h * 0.82)
-      ..cubicTo(w * 0.85, h * 0.82, w * 0.85, h * 0.50, w * 0.50, h * 0.50)
-      ..cubicTo(w * 0.15, h * 0.50, w * 0.15, h * 0.18, w * 0.82, h * 0.18);
+      ..cubicTo(w * 0.65, h * 0.82, w * 0.65, h * 0.50, w * 0.50, h * 0.50)
+      ..cubicTo(w * 0.35, h * 0.50, w * 0.35, h * 0.18, w * 0.82, h * 0.18);
 
-    // White road
+    // Gold road
     canvas.drawPath(
       path,
       Paint()
-        ..color = _white
+        ..color = _gold
         ..style = PaintingStyle.stroke
         ..strokeWidth = rw
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
 
-    // Gold dashes along centre
+    // White dashes along centre
     final dashPaint = Paint()
-      ..color = _gold
+      ..color = _white
       ..style = PaintingStyle.stroke
       ..strokeWidth = w * 0.026
       ..strokeCap = StrokeCap.round;
@@ -80,10 +80,10 @@ class _RoutePainter extends CustomPainter {
       }
     }
 
-    // ── Origin marker — gold ring with white centre ───────────
+    // ── Origin marker — white ring with dark centre ───────────
     final origin = Offset(w * 0.18, h * 0.82);
-    canvas.drawCircle(origin, rw * 0.65, Paint()..color = _gold);
-    canvas.drawCircle(origin, rw * 0.32, Paint()..color = _white);
+    canvas.drawCircle(origin, rw * 0.65, Paint()..color = _white);
+    canvas.drawCircle(origin, rw * 0.32, Paint()..color = const Color(0xFF0A1628));
 
     // ── Destination pin — white teardrop with gold centre ─────
     _drawPin(canvas, Offset(w * 0.82, h * 0.18), rw * 0.72);
