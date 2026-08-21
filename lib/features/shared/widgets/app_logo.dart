@@ -1,7 +1,6 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-/// Struttech logo — navigation route mark on midnight-blue background.
+/// Strut logo mark — uses the official brand asset.
 class AppLogo extends StatelessWidget {
   final double size;
   final bool dark;
@@ -14,100 +13,27 @@ class AppLogo extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0A1628), Color(0xFF1B3A6B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(size * 0.22),
+        boxShadow: dark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  blurRadius: size * 0.25,
+                  offset: Offset(0, size * 0.08),
+                ),
+              ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.22),
+        child: Image.asset(
+          'assets/branding/strut/logos/strut_mark_master.png',
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
         ),
-        borderRadius: BorderRadius.circular(size * 0.24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0A1628).withValues(alpha: 0.60),
-            blurRadius: size * 0.35,
-            offset: Offset(0, size * 0.12),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(size * 0.11),
-        child: CustomPaint(painter: _RoutePainter()),
       ),
     );
   }
-}
-
-class _RoutePainter extends CustomPainter {
-  static const _gold = Color(0xFFFFB300);
-  static const _white = Colors.white;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final rw = w * 0.16;
-
-    // ── Straight S — right-angle road turns ──────────────────
-    final path = Path()
-      ..moveTo(w * 0.18, h * 0.82)  // origin (bottom-left)
-      ..lineTo(w * 0.82, h * 0.82)  // go right
-      ..lineTo(w * 0.82, h * 0.50)  // go up
-      ..lineTo(w * 0.18, h * 0.50)  // go left
-      ..lineTo(w * 0.18, h * 0.18)  // go up
-      ..lineTo(w * 0.82, h * 0.18); // destination (top-right)
-
-    // Gold road
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = _gold
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = rw
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-
-    // White dashes along centre
-    final dashPaint = Paint()
-      ..color = _white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.026
-      ..strokeCap = StrokeCap.round;
-
-    for (final metric in path.computeMetrics()) {
-      final len = metric.length;
-      double pos = len * 0.05;
-      while (pos < len * 0.95) {
-        final end = math.min(pos + len * 0.05, len * 0.95);
-        canvas.drawPath(metric.extractPath(pos, end), dashPaint);
-        pos = end + len * 0.04;
-      }
-    }
-
-    // ── Origin marker — white ring with dark centre ───────────
-    final origin = Offset(w * 0.18, h * 0.82);
-    canvas.drawCircle(origin, rw * 0.65, Paint()..color = _white);
-    canvas.drawCircle(origin, rw * 0.32, Paint()..color = const Color(0xFF0A1628));
-
-    // ── Destination pin — white teardrop with gold centre ─────
-    _drawPin(canvas, Offset(w * 0.82, h * 0.18), rw * 0.72);
-
-  }
-
-  void _drawPin(Canvas canvas, Offset c, double r) {
-    // White outer
-    canvas.drawCircle(c, r, Paint()..color = _white);
-    canvas.drawPath(
-      Path()
-        ..moveTo(c.dx - r * 0.58, c.dy + r * 0.55)
-        ..lineTo(c.dx + r * 0.58, c.dy + r * 0.55)
-        ..lineTo(c.dx, c.dy + r * 1.70)
-        ..close(),
-      Paint()..color = _white,
-    );
-    // Gold inner dot
-    canvas.drawCircle(c, r * 0.40, Paint()..color = _gold);
-  }
-
-  @override
-  bool shouldRepaint(_RoutePainter old) => false;
 }
