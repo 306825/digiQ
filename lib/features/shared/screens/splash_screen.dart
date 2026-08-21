@@ -114,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen>
                           opacity: _logoOpacity.value,
                           child: Transform.scale(
                             scale: _logoScale.value,
-                            child: const AppLogo(size: 96, dark: true),
+                            child: const AppLogo(size: 120, dark: true),
                           ),
                         ),
 

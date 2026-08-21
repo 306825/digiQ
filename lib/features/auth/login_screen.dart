@@ -91,7 +91,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      AppLogo(size: 68, dark: true),
+                      AppLogo(size: 88, dark: true),
                       const SizedBox(height: 16),
                       Text(
                         'Struttech',

@@ -27,7 +27,7 @@ class AppLogo extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(size * 0.22),
         child: Image.asset(
-          'assets/branding/struttech_logo.png',
+          'assets/branding/struttech_mark.png',
           width: size,
           height: size,
           fit: BoxFit.cover,
