@@ -46,11 +46,14 @@ class _RoutePainter extends CustomPainter {
     final h = size.height;
     final rw = w * 0.16;
 
-    // ── Gentle S-curve (less wavy) ────────────────────────────
+    // ── Straight S — right-angle road turns ──────────────────
     final path = Path()
-      ..moveTo(w * 0.18, h * 0.82)
-      ..cubicTo(w * 0.65, h * 0.82, w * 0.65, h * 0.50, w * 0.50, h * 0.50)
-      ..cubicTo(w * 0.35, h * 0.50, w * 0.35, h * 0.18, w * 0.82, h * 0.18);
+      ..moveTo(w * 0.18, h * 0.82)  // origin (bottom-left)
+      ..lineTo(w * 0.82, h * 0.82)  // go right
+      ..lineTo(w * 0.82, h * 0.50)  // go up
+      ..lineTo(w * 0.18, h * 0.50)  // go left
+      ..lineTo(w * 0.18, h * 0.18)  // go up
+      ..lineTo(w * 0.82, h * 0.18); // destination (top-right)
 
     // Gold road
     canvas.drawPath(
@@ -87,6 +90,7 @@ class _RoutePainter extends CustomPainter {
 
     // ── Destination pin — white teardrop with gold centre ─────
     _drawPin(canvas, Offset(w * 0.82, h * 0.18), rw * 0.72);
+
   }
 
   void _drawPin(Canvas canvas, Offset c, double r) {
