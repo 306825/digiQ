@@ -48,7 +48,7 @@ class AppLogo extends StatelessWidget {
 }
 
 class _SRoadPainter extends CustomPainter {
-  static const _orange = Color(0xFFFF7020);
+  static const _orange = Color(0xFFFFB300);
 
   @override
   void paint(Canvas canvas, Size size) {
