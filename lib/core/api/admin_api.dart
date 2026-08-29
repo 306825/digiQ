@@ -88,6 +88,19 @@ class AdminApi {
     await dio.patch('/payouts/admin/$id/reject',
         data: {'adminNote': adminNote});
   }
+
+  /* --------------------------------------------------------------------------
+   * MANUAL PAYMENTS
+   * -------------------------------------------------------------------------- */
+
+  Future<List<Map<String, dynamic>>> getPendingManualPayments() async {
+    final res = await dio.get('/payments/manual/pending');
+    return (res.data as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<void> confirmManualPayment(String bookingId) async {
+    await dio.post('/payments/manual/confirm/$bookingId');
+  }
 }
 
 final adminSosProvider = FutureProvider((ref) async {

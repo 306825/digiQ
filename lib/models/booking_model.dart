@@ -136,6 +136,7 @@ class Booking {
   final String? driverProfileImageUrl;
   final String? vehicleDescription;
   final double? price;
+  final String? paymentReference;
 
   const Booking({
     required this.id,
@@ -156,6 +157,7 @@ class Booking {
     this.driverProfileImageUrl,
     this.vehicleDescription,
     this.price,
+    this.paymentReference,
   });
 
   /// Returns true when the trip departs in less than 24 hours (local time).
@@ -219,6 +221,7 @@ class Booking {
       driverProfileImageUrl: json['driverProfileImageUrl'] as String?,
       vehicleDescription: json['vehicleDescription'] as String?,
       price: _parseDouble(json['price']),
+      paymentReference: json['paymentReference'] as String?,
     );
   }
 

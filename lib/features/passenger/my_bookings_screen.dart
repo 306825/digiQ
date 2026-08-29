@@ -1,5 +1,4 @@
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/features/passenger/payfast_webview_screen.dart';
+import 'package:digiQ/features/passenger/bank_payment_screen.dart';
 import 'package:digiQ/models/booking_model.dart';
 import 'package:digiQ/models/booking_status_ui.dart';
 import 'package:digiQ/providers/passenger_bookings_provider.dart';
@@ -394,59 +393,10 @@ class _PaymentBadge extends StatelessWidget {
  * Continue Payment Button  (awaitingPayment only)
  * -------------------------------------------------------------------------- */
 
-class _ContinuePaymentButton extends ConsumerStatefulWidget {
+class _ContinuePaymentButton extends StatelessWidget {
   final Booking booking;
 
   const _ContinuePaymentButton({required this.booking});
-
-  @override
-  ConsumerState<_ContinuePaymentButton> createState() =>
-      _ContinuePaymentButtonState();
-}
-
-class _ContinuePaymentButtonState
-    extends ConsumerState<_ContinuePaymentButton> {
-  bool _loading = false;
-
-  Future<void> _resume() async {
-    setState(() => _loading = true);
-    try {
-      final paymentsApi = ref.read(paymentsApiProvider);
-      final paymentInit =
-          await paymentsApi.initiatePayfast(bookingId: widget.booking.id);
-      if (!mounted) return;
-
-      final processUrl = paymentInit['processUrl'] as String;
-      final payload =
-          Map<String, String>.from(paymentInit['payload'] as Map);
-
-      await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PayfastWebViewScreen(
-            processUrl: processUrl,
-            payload: payload,
-          ),
-        ),
-      );
-
-      if (!mounted) return;
-      ref.read(passengerBookingsProvider.notifier).refresh();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to resume payment. Please try again.',
-              style: GoogleFonts.dmSans()),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -456,21 +406,23 @@ class _ContinuePaymentButtonState
         style: FilledButton.styleFrom(
           backgroundColor: AppTheme.primary,
           padding: const EdgeInsets.symmetric(vertical: 10),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          textStyle:
-              GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 13),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          textStyle: GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 13),
         ),
-        icon: _loading
-            ? const SizedBox(
-                width: 15,
-                height: 15,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
-              )
-            : const Icon(Icons.payment, size: 15),
-        label: Text(_loading ? 'Loading…' : 'Complete Payment'),
-        onPressed: _loading ? null : _resume,
+        icon: const Icon(Icons.account_balance, size: 15),
+        label: const Text('View Payment Details'),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BankPaymentScreen(
+                bookingId: booking.id,
+                paymentReference: booking.paymentReference ?? booking.id,
+                amount: booking.price ?? 0.0,
+              ),
+            ),
+          );
+        },
       ),
     );
   }

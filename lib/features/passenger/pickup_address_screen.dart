@@ -1,13 +1,12 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/core/api/booking_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/trip_model.dart';
 import '../shared/widgets/primary_button.dart';
-import 'payfast_webview_screen.dart';
+import 'bank_payment_screen.dart';
 
 const _kApiKey = 'AIzaSyBUPxGXp0U0plvCgHl_icV8e2kXuI8CX1A';
 
@@ -250,7 +249,6 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
     setState(() => _isSubmitting = true);
 
     final bookingApi = ref.read(bookingApiProvider);
-    final paymentsApi = ref.read(paymentsApiProvider);
 
     try {
       final bookingRes = await bookingApi.createBooking(
@@ -275,32 +273,23 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
       );
 
       final bookingId = bookingRes.data['bookingId'] as String;
+      final paymentReference = bookingRes.data['paymentReference'] as String? ?? '';
+      final amount = (bookingRes.data['amount'] as num?)?.toDouble() ?? 0.0;
 
-      final paymentInit = await paymentsApi.initiatePayfast(
-        bookingId: bookingId,
-      );
+      if (!mounted) return;
 
-      final processUrl = paymentInit['processUrl'] as String;
-      final payload = Map<String, String>.from(paymentInit['payload'] as Map);
-
-      final paid = await Navigator.push<bool>(
+      await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => PayfastWebViewScreen(
-            processUrl: processUrl,
-            payload: payload,
+          builder: (_) => BankPaymentScreen(
+            bookingId: bookingId,
+            paymentReference: paymentReference,
+            amount: amount,
           ),
         ),
       );
 
       if (!mounted) return;
-
-      if (paid == true) {
-        _showSnack('Payment initiated. Waiting for confirmation from PayFast.');
-      } else {
-        _showSnack('Payment cancelled.');
-      }
-
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
       debugPrint('❌ BOOKING ERROR: $e');

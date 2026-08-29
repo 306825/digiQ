@@ -1,5 +1,6 @@
 import 'package:digiQ/features/admin/admin_incidents_screen.dart';
 import 'package:digiQ/features/admin/widgets/admin_passenger_verifications_tab.dart';
+import 'package:digiQ/features/admin/widgets/admin_payments_tab.dart';
 import 'package:digiQ/features/admin/widgets/admin_payouts_tab.dart';
 import 'package:digiQ/features/admin/widgets/admin_routes_tab.dart';
 import 'package:digiQ/features/admin/widgets/admin_drivers_tab.dart';
@@ -26,6 +27,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
     'Incidents',
     'Payouts',
     'Passengers',
+    'Payments',
   ];
 
   static const _items = [
@@ -34,6 +36,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
     (icon: Icons.report, label: 'Incidents'),
     (icon: Icons.payments_outlined, label: 'Payouts'),
     (icon: Icons.verified_user_outlined, label: 'Passengers'),
+    (icon: Icons.account_balance, label: 'Payments'),
   ];
 
   @override
@@ -118,6 +121,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
           AdminIncidentsScreen(),
           AdminPayoutsTab(),
           AdminPassengerVerificationsTab(),
+          AdminPaymentsTab(),
         ],
       ),
     );
