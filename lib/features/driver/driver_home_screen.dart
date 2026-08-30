@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:digiQ/core/api/api_providers.dart';
 import 'package:digiQ/features/driver/create_trip_screen.dart';
 import 'package:digiQ/features/driver/driver_booking_list_screen.dart';
+import 'package:digiQ/features/driver/driver_profile_screen.dart';
 import 'package:digiQ/features/driver/driver_verification_screen.dart';
 import 'package:digiQ/features/driver/my_trips_screen.dart';
 import 'package:digiQ/features/driver/payout_history_screen.dart';
@@ -360,8 +361,19 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               ),
             ],
 
+            // ── PROFILE ───────────────────────────────────────────────
+            const SizedBox(height: 10),
+            _ActionTile(
+              label: 'My Profile',
+              subtitle: 'Update banking details and personal info',
+              icon: Icons.manage_accounts_outlined,
+              outlined: true,
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const DriverProfileScreen())),
+            ),
+
             // ── BETA FEEDBACK ──────────────────────────────────────────
-            const SizedBox(height: 24),
+            const SizedBox(height: 10),
             _ActionTile(
               label: 'Send Feedback',
               subtitle: 'Report a bug or suggest an improvement',
