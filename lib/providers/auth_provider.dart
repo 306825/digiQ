@@ -117,10 +117,21 @@ class AuthNotifier extends Notifier<AuthState> {
         return const AuthState(status: AuthStatus.unauthenticated);
       }
 
-      final user = UserModel.fromJson(jsonDecode(cachedUserJson));
+      final cachedUser = UserModel.fromJson(jsonDecode(cachedUserJson));
       final api = ref.read(apiClientProvider);
       api.dio.options.headers['Authorization'] = 'Bearer $token';
       _registerFcmToken();
+
+      // Refresh user from server so driverProfile/passengerProfile are current.
+      UserModel user = cachedUser;
+      try {
+        final res = await api.dio.get('/users/me');
+        user = UserModel.fromJson(res.data);
+        await _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
+      } catch (_) {
+        // Fall back to cached user if the server is unreachable at startup.
+      }
+
       return AuthState(status: AuthStatus.authenticated, token: token, user: user);
     } catch (_) {
       return const AuthState(status: AuthStatus.unauthenticated);
@@ -325,16 +336,6 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final response = await api.dio.get('/users/me');
       final user = UserModel.fromJson(response.data);
-
-      final currentUser = state.user;
-      if (currentUser != null &&
-          currentUser.id == user.id &&
-          currentUser.fullName == user.fullName &&
-          currentUser.verificationStatus == user.verificationStatus &&
-          currentUser.passengerVerificationStatus ==
-              user.passengerVerificationStatus) {
-        return;
-      }
 
       state = AuthState(
         status: AuthStatus.authenticated,

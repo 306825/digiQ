@@ -46,4 +46,27 @@ class DriverProfile {
       proofOfBanking: DriverDocument.fromJson(json['proofOfBanking']),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (residentialAddress != null) 'residentialAddress': residentialAddress,
+      if (bankName != null) 'bankName': bankName,
+      if (accountName != null) 'accountName': accountName,
+      if (accountNumber != null) 'accountNumber': accountNumber,
+      if (branchCode != null) 'branchCode': branchCode,
+      if (accountType != null) 'accountType': accountType,
+      if (idDocument?.fileUrl != null)
+        'idDocument': {'fileUrl': idDocument!.fileUrl},
+      if (driversLicense?.fileUrl != null)
+        'driversLicense': {'fileUrl': driversLicense!.fileUrl},
+      if (permit?.fileUrl != null)
+        'permit': {'fileUrl': permit!.fileUrl},
+      if (prdp?.fileUrl != null)
+        'prdp': {'fileUrl': prdp!.fileUrl},
+      if (proofOfAddress?.fileUrl != null)
+        'proofOfAddress': {'fileUrl': proofOfAddress!.fileUrl},
+      if (proofOfBanking?.fileUrl != null)
+        'proofOfBanking': {'fileUrl': proofOfBanking!.fileUrl},
+    };
+  }
 }

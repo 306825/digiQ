@@ -158,6 +158,7 @@ class UserModel {
       'vehicleStatus': vehicleStatus.name,
       'isActive': isActive,
       'profileImageUrl': profileImageUrl,
+      if (driverProfile != null) 'driverProfile': driverProfile!.toJson(),
     };
   }
 }

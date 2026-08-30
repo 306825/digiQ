@@ -103,7 +103,7 @@ class DriverProfileScreen extends ConsumerWidget {
           TextButton.icon(
             icon: const Icon(Icons.logout_outlined, size: 18),
             label: Text('Log out', style: GoogleFonts.dmSans(fontSize: 13)),
-            style: TextButton.styleFrom(foregroundColor: Colors.red.shade400),
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
             onPressed: () async {
               await ref.read(authProvider.notifier).logout();
               if (!context.mounted) return;
