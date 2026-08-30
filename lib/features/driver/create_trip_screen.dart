@@ -301,33 +301,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                         );
                       },
                     ),
-                    if (selectedRoute?.price != null) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.green.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.payments,
-                                color: Colors.green.shade700, size: 20),
-                            const SizedBox(width: 10),
-                            Text(
-                              'You earn: R${(selectedRoute!.netPricePerSeat ?? selectedRoute!.price!).toStringAsFixed(2)}/seat',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.green.shade900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    // Earnings preview hidden until payment gateway is enabled
                     const SizedBox(height: 12),
                     _MinPassengersStepper(
                       value: minPassengers,
