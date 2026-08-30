@@ -1,4 +1,6 @@
 import 'package:digiQ/core/api/api_providers.dart';
+import 'package:digiQ/features/driver/widgets/documents_upload_tile.dart';
+import 'package:digiQ/features/shared/widgets/avatar_picker.dart';
 import 'package:digiQ/providers/auth_provider.dart';
 import 'package:digiQ/theme/app.theme.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +15,7 @@ const _banks = [
   'Nedbank',
   'Standard Bank',
   'TymeBank',
+  'African Bank',
 ];
 
 class DriverProfileScreen extends ConsumerStatefulWidget {
@@ -35,6 +38,9 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
   bool _saving = false;
   bool _populated = false;
 
+  // Tracks the S3 key set after a bank letter upload in this session
+  String? _pendingBankDocKey;
+
   @override
   void dispose() {
     _accountNameCtrl.dispose();
@@ -45,10 +51,9 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
 
   void _populateFromProfile() {
     if (_populated) return;
-    final user = ref.read(authProvider).user;
-    final profile = user?.driverProfile;
+    final profile = ref.read(authProvider).user?.driverProfile;
     if (profile == null) return;
-    _bankName = profile.bankName;
+    _bankName = _banks.contains(profile.bankName) ? profile.bankName : null;
     _accountNameCtrl.text = profile.accountName ?? '';
     _accountNumberCtrl.text = profile.accountNumber ?? '';
     _branchCodeCtrl.text = profile.branchCode ?? '';
@@ -73,14 +78,15 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
             ? null
             : _branchCodeCtrl.text.trim(),
         accountType: _accountType,
+        proofOfBankingUrl: _pendingBankDocKey,
       );
-      // Refresh auth so updated profile is reflected everywhere
       await ref.read(authProvider.notifier).refreshMe();
       if (!mounted) return;
-      _snack('Banking details saved', success: true);
+      setState(() => _pendingBankDocKey = null);
+      _snack('Profile saved', success: true);
     } catch (e) {
       if (!mounted) return;
-      _snack('Failed to save: $e');
+      _snack('Failed to save. Please try again.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -99,9 +105,12 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
-    final user = authState.user;
+    final user = ref.watch(authProvider).user;
     _populateFromProfile();
+
+    final profile = user?.driverProfile;
+    final hasBankDoc = _pendingBankDocKey != null ||
+        (profile?.proofOfBanking?.fileUrl?.isNotEmpty == true);
 
     return Scaffold(
       appBar: AppBar(
@@ -110,147 +119,175 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Personal info (read-only) ──────────────────────────
+              // ── Avatar ────────────────────────────────────────────────────
+              const SizedBox(height: 28),
+              Center(
+                child: Column(
+                  children: [
+                    const AvatarPicker(),
+                    const SizedBox(height: 10),
+                    Text(
+                      user?.fullName ?? '',
+                      style: GoogleFonts.dmSans(
+                          fontWeight: FontWeight.w700, fontSize: 18),
+                    ),
+                    Text(
+                      user?.email ?? '',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 28),
+              const _Divider(),
+              const SizedBox(height: 20),
+
+              // ── Personal info ─────────────────────────────────────────────
               _SectionHeader('Personal Information'),
               const SizedBox(height: 12),
-              _InfoTile(label: 'Name', value: user?.fullName ?? '—'),
+              _InfoTile(label: 'Full Name', value: user?.fullName ?? '—'),
               _InfoTile(label: 'Email', value: user?.email ?? '—'),
+              if (profile?.residentialAddress != null &&
+                  profile!.residentialAddress!.isNotEmpty)
+                _InfoTile(
+                    label: 'Address', value: profile.residentialAddress!),
 
-                  const SizedBox(height: 28),
+              const SizedBox(height: 24),
+              const _Divider(),
+              const SizedBox(height: 20),
 
-                  // ── Banking details (editable) ─────────────────────────
-                  _SectionHeader('Banking Details'),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Your banking details are shown to passengers when they book your trips.',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 13, color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Bank name
-                  DropdownButtonFormField<String>(
-                    value: _bankName,
-                    decoration: InputDecoration(
-                      labelText: 'Bank *',
-                      labelStyle: GoogleFonts.dmSans(),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    items: _banks
-                        .map((b) => DropdownMenuItem(
-                            value: b,
-                            child: Text(b, style: GoogleFonts.dmSans())))
-                        .toList(),
-                    onChanged: (v) => setState(() => _bankName = v),
-                    validator: (_) =>
-                        _bankName == null ? 'Please select your bank' : null,
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Account holder
-                  TextFormField(
-                    controller: _accountNameCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Account Holder Name *',
-                      labelStyle: GoogleFonts.dmSans(),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    style: GoogleFonts.dmSans(),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Account holder name is required'
-                        : null,
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Account number
-                  TextFormField(
-                    controller: _accountNumberCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Account Number *',
-                      labelStyle: GoogleFonts.dmSans(),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    style: GoogleFonts.dmSans(),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Account number is required'
-                        : null,
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Branch code
-                  TextFormField(
-                    controller: _branchCodeCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Branch Code (optional)',
-                      labelStyle: GoogleFonts.dmSans(),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    style: GoogleFonts.dmSans(),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Account type
-                  DropdownButtonFormField<String>(
-                    value: _accountType,
-                    decoration: InputDecoration(
-                      labelText: 'Account Type *',
-                      labelStyle: GoogleFonts.dmSans(),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'cheque', child: Text('Cheque Account')),
-                      DropdownMenuItem(
-                          value: 'savings', child: Text('Savings Account')),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) setState(() => _accountType = v);
-                    },
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        textStyle: GoogleFonts.dmSans(
-                            fontWeight: FontWeight.w700, fontSize: 15),
-                      ),
-                      onPressed: _saving ? null : _save,
-                      child: _saving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Text('Save Banking Details'),
-                    ),
-                  ),
-                ],
+              // ── Banking details ───────────────────────────────────────────
+              _SectionHeader('Banking Details'),
+              const SizedBox(height: 4),
+              Text(
+                'Shown to passengers when they book your trips.',
+                style: GoogleFonts.dmSans(
+                    fontSize: 13, color: Colors.grey.shade600),
               ),
-            ),
+              const SizedBox(height: 16),
+
+              DropdownButtonFormField<String>(
+                value: _bankName,
+                decoration: _inputDec('Bank *'),
+                items: _banks
+                    .map((b) => DropdownMenuItem(
+                        value: b,
+                        child: Text(b, style: GoogleFonts.dmSans())))
+                    .toList(),
+                onChanged: (v) => setState(() => _bankName = v),
+                validator: (_) =>
+                    _bankName == null ? 'Please select your bank' : null,
+              ),
+              const SizedBox(height: 14),
+
+              TextFormField(
+                controller: _accountNameCtrl,
+                decoration: _inputDec('Account Holder Name *'),
+                style: GoogleFonts.dmSans(),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Account holder name is required'
+                    : null,
+              ),
+              const SizedBox(height: 14),
+
+              TextFormField(
+                controller: _accountNumberCtrl,
+                keyboardType: TextInputType.number,
+                decoration: _inputDec('Account Number *'),
+                style: GoogleFonts.dmSans(),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Account number is required'
+                    : null,
+              ),
+              const SizedBox(height: 14),
+
+              TextFormField(
+                controller: _branchCodeCtrl,
+                keyboardType: TextInputType.number,
+                decoration: _inputDec('Branch Code (optional)'),
+                style: GoogleFonts.dmSans(),
+              ),
+              const SizedBox(height: 14),
+
+              DropdownButtonFormField<String>(
+                value: _accountType,
+                decoration: _inputDec('Account Type *'),
+                items: const [
+                  DropdownMenuItem(
+                      value: 'cheque', child: Text('Cheque Account')),
+                  DropdownMenuItem(
+                      value: 'savings', child: Text('Savings Account')),
+                ],
+                onChanged: (v) {
+                  if (v != null) setState(() => _accountType = v);
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // ── Bank confirmation letter ───────────────────────────────────
+              _SectionHeader('Bank Confirmation Letter'),
+              const SizedBox(height: 4),
+              Text(
+                'Upload a bank-issued letter confirming your account details.',
+                style: GoogleFonts.dmSans(
+                    fontSize: 13, color: Colors.grey.shade600),
+              ),
+              const SizedBox(height: 12),
+              DocumentUploadTile(
+                title: 'Bank Confirmation Letter',
+                type: 'bank',
+                uploaded: hasBankDoc,
+                onUploaded: (key) {
+                  setState(() => _pendingBankDocKey = key);
+                  _snack('Letter uploaded — tap Save to confirm', success: true);
+                },
+              ),
+
+              const SizedBox(height: 32),
+
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    textStyle: GoogleFonts.dmSans(
+                        fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Save Profile'),
+                ),
+              ),
+            ],
           ),
-        );
+        ),
+      ),
+    );
   }
+
+  InputDecoration _inputDec(String label) => InputDecoration(
+        labelText: label,
+        labelStyle: GoogleFonts.dmSans(),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      );
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -261,12 +298,17 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: GoogleFonts.dmSans(
-        fontSize: 16,
-        fontWeight: FontWeight.w700,
-      ),
+      style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w700),
     );
   }
+}
+
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) =>
+      Divider(color: Colors.grey.shade200, height: 1);
 }
 
 class _InfoTile extends StatelessWidget {
@@ -286,7 +328,7 @@ class _InfoTile extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 72,
+            width: 80,
             child: Text(label,
                 style: GoogleFonts.dmSans(
                     fontSize: 12, color: Colors.grey.shade600)),

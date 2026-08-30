@@ -236,6 +236,14 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.account_circle_outlined, size: 26),
+            tooltip: 'My profile',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DriverProfileScreen()),
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout_outlined),
             onPressed: () async {
               await ref.read(authProvider.notifier).logout();
