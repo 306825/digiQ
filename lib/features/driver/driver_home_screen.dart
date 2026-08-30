@@ -243,14 +243,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               MaterialPageRoute(builder: (_) => const DriverProfileScreen()),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.logout_outlined),
-            onPressed: () async {
-              await ref.read(authProvider.notifier).logout();
-              if (!context.mounted) return;
-              context.go('/login');
-            },
-          ),
         ],
       ),
       body: SafeArea(
@@ -368,17 +360,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                 onTap: () => context.push('/driver/vehicle'),
               ),
             ],
-
-            // ── PROFILE ───────────────────────────────────────────────
-            const SizedBox(height: 10),
-            _ActionTile(
-              label: 'My Profile',
-              subtitle: 'Update banking details and personal info',
-              icon: Icons.manage_accounts_outlined,
-              outlined: true,
-              onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const DriverProfileScreen())),
-            ),
 
             // ── BETA FEEDBACK ──────────────────────────────────────────
             const SizedBox(height: 10),

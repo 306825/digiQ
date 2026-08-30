@@ -161,6 +161,10 @@ class DriverApi {
         .toList();
   }
 
+  Future<void> retireVehicle(String vehicleId) async {
+    await dio.patch('/drivers/me/vehicles/$vehicleId/retire');
+  }
+
   /// Approve or reject a booking
   Future<void> updateBookingStatus({
     required String bookingId,

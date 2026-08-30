@@ -20,6 +20,7 @@ class VehicleModel {
   bool get isApproved => status == 'approved';
   bool get isPending => status == 'pending';
   bool get isRejected => status == 'rejected';
+  bool get isRetired => status == 'retired';
 
   String get displayName {
     final parts = [

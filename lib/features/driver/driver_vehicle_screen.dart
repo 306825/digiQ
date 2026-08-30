@@ -73,7 +73,7 @@ class DriverVehicleScreen extends ConsumerWidget {
   Future<void> _openAddVehicle(BuildContext context, WidgetRef ref) async {
     final added = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => const _AddVehicleScreen()),
+      MaterialPageRoute(builder: (_) => const AddVehicleScreen()),
     );
     if (added == true) ref.invalidate(driverVehicleProvider);
   }
@@ -153,14 +153,14 @@ class _VehicleCard extends StatelessWidget {
 // Add vehicle form
 // ---------------------------------------------------------------------------
 
-class _AddVehicleScreen extends ConsumerStatefulWidget {
-  const _AddVehicleScreen();
+class AddVehicleScreen extends ConsumerStatefulWidget {
+  const AddVehicleScreen();
 
   @override
-  ConsumerState<_AddVehicleScreen> createState() => _AddVehicleScreenState();
+  ConsumerState<AddVehicleScreen> createState() => AddVehicleScreenState();
 }
 
-class _AddVehicleScreenState extends ConsumerState<_AddVehicleScreen> {
+class AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   final regCtrl = TextEditingController();
   final makeCtrl = TextEditingController();
   final modelCtrl = TextEditingController();
