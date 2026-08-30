@@ -712,31 +712,41 @@ class _VehicleCard extends ConsumerWidget {
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: color, size: 16),
-                  const SizedBox(width: 4),
-                  Text(label,
-                      style: GoogleFonts.dmSans(
-                          color: color,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
-                ],
-              ),
-              const SizedBox(height: 6),
-              GestureDetector(
-                onTap: () => _confirmRetire(context, ref),
-                child: Text(
-                  'Retire',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 12,
-                      color: Colors.red.shade400,
-                      decoration: TextDecoration.underline),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
                 ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, color: color, size: 13),
+                    const SizedBox(width: 4),
+                    Text(label,
+                        style: GoogleFonts.dmSans(
+                            color: color,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: () => _confirmRetire(context, ref),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red.shade400,
+                  side: BorderSide(color: Colors.red.shade300),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w600),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+                child: const Text('Retire'),
               ),
             ],
           ),
