@@ -275,6 +275,11 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
       final bookingId = bookingRes.data['bookingId'] as String;
       final paymentReference = bookingRes.data['paymentReference'] as String? ?? '';
       final amount = (bookingRes.data['amount'] as num?)?.toDouble() ?? 0.0;
+      final bankRaw = bookingRes.data['driverBankDetails'];
+      final driverBankDetails = bankRaw != null
+          ? Map<String, String?>.from(
+              (bankRaw as Map).map((k, v) => MapEntry(k.toString(), v?.toString())))
+          : null;
 
       if (!mounted) return;
 
@@ -285,6 +290,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
             bookingId: bookingId,
             paymentReference: paymentReference,
             amount: amount,
+            driverBankDetails: driverBankDetails,
           ),
         ),
       );

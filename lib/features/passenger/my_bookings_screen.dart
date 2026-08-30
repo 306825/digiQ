@@ -419,6 +419,7 @@ class _ContinuePaymentButton extends StatelessWidget {
                 bookingId: booking.id,
                 paymentReference: booking.paymentReference ?? booking.id,
                 amount: booking.price ?? 0.0,
+                driverBankDetails: booking.driverBankDetails,
               ),
             ),
           );

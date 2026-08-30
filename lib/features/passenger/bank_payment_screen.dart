@@ -3,24 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:digiQ/theme/app.theme.dart';
 
-// ─── Banking details — update these when your account changes ─────────────────
-const _bankName = 'FNB';
-const _accountName = 'Strut (Pty) Ltd';
-const _accountNumber = '123 456 7890'; // TODO: replace with real account number
-const _accountType = 'Cheque';
-const _branchCode = '250655';
-// ─────────────────────────────────────────────────────────────────────────────
-
 class BankPaymentScreen extends StatelessWidget {
   final String bookingId;
   final String paymentReference;
   final double amount;
+  final Map<String, String?>? driverBankDetails;
 
   const BankPaymentScreen({
     super.key,
     required this.bookingId,
     required this.paymentReference,
     required this.amount,
+    this.driverBankDetails,
   });
 
   void _copy(BuildContext context, String value, String label) {
@@ -73,35 +67,57 @@ class BankPaymentScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            Text('Banking Details',
+            Text('Driver Banking Details',
                 style: GoogleFonts.dmSans(
                     fontWeight: FontWeight.w700, fontSize: 16)),
             const SizedBox(height: 12),
 
-            _DetailTile(
-              label: 'Bank',
-              value: _bankName,
-              onCopy: () => _copy(context, _bankName, 'Bank name'),
-            ),
-            _DetailTile(
-              label: 'Account Name',
-              value: _accountName,
-              onCopy: () => _copy(context, _accountName, 'Account name'),
-            ),
-            _DetailTile(
-              label: 'Account Number',
-              value: _accountNumber,
-              onCopy: () => _copy(context, _accountNumber, 'Account number'),
-            ),
-            _DetailTile(
-              label: 'Account Type',
-              value: _accountType,
-            ),
-            _DetailTile(
-              label: 'Branch Code',
-              value: _branchCode,
-              onCopy: () => _copy(context, _branchCode, 'Branch code'),
-            ),
+            if (driverBankDetails == null ||
+                driverBankDetails!.values.every((v) => v == null || v.isEmpty))
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Text(
+                  'Driver banking details are not available. '
+                  'Please contact support to complete your payment.',
+                  style: GoogleFonts.dmSans(color: Colors.orange.shade900),
+                ),
+              )
+            else ...[
+              if (driverBankDetails!['bankName']?.isNotEmpty == true)
+                _DetailTile(
+                  label: 'Bank',
+                  value: driverBankDetails!['bankName']!,
+                  onCopy: () => _copy(context, driverBankDetails!['bankName']!, 'Bank name'),
+                ),
+              if (driverBankDetails!['accountName']?.isNotEmpty == true)
+                _DetailTile(
+                  label: 'Account Name',
+                  value: driverBankDetails!['accountName']!,
+                  onCopy: () => _copy(context, driverBankDetails!['accountName']!, 'Account name'),
+                ),
+              if (driverBankDetails!['accountNumber']?.isNotEmpty == true)
+                _DetailTile(
+                  label: 'Account Number',
+                  value: driverBankDetails!['accountNumber']!,
+                  onCopy: () => _copy(context, driverBankDetails!['accountNumber']!, 'Account number'),
+                ),
+              if (driverBankDetails!['accountType']?.isNotEmpty == true)
+                _DetailTile(
+                  label: 'Account Type',
+                  value: driverBankDetails!['accountType']!,
+                ),
+              if (driverBankDetails!['branchCode']?.isNotEmpty == true)
+                _DetailTile(
+                  label: 'Branch Code',
+                  value: driverBankDetails!['branchCode']!,
+                  onCopy: () => _copy(context, driverBankDetails!['branchCode']!, 'Branch code'),
+                ),
+            ],
 
             const SizedBox(height: 20),
 

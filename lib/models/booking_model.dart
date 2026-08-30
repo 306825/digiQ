@@ -137,6 +137,7 @@ class Booking {
   final String? vehicleDescription;
   final double? price;
   final String? paymentReference;
+  final Map<String, String?>? driverBankDetails;
 
   const Booking({
     required this.id,
@@ -158,6 +159,7 @@ class Booking {
     this.vehicleDescription,
     this.price,
     this.paymentReference,
+    this.driverBankDetails,
   });
 
   /// Returns true when the trip departs in less than 24 hours (local time).
@@ -222,6 +224,13 @@ class Booking {
       vehicleDescription: json['vehicleDescription'] as String?,
       price: _parseDouble(json['price']),
       paymentReference: json['paymentReference'] as String?,
+      driverBankDetails: json['driverBankDetails'] != null
+          ? Map<String, String?>.from(
+              (json['driverBankDetails'] as Map).map(
+                (k, v) => MapEntry(k.toString(), v?.toString()),
+              ),
+            )
+          : null,
     );
   }
 
