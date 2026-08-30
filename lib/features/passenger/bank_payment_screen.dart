@@ -1,9 +1,11 @@
+import 'package:digiQ/core/api/booking_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:digiQ/theme/app.theme.dart';
 
-class BankPaymentScreen extends StatelessWidget {
+class BankPaymentScreen extends ConsumerStatefulWidget {
   final String bookingId;
   final String paymentReference;
   final double amount;
@@ -17,7 +19,26 @@ class BankPaymentScreen extends StatelessWidget {
     this.driverBankDetails,
   });
 
-  void _copy(BuildContext context, String value, String label) {
+  @override
+  ConsumerState<BankPaymentScreen> createState() => _BankPaymentScreenState();
+}
+
+class _BankPaymentScreenState extends ConsumerState<BankPaymentScreen> {
+  bool _submitting = false;
+
+  Future<void> _reportPaymentSent() async {
+    setState(() => _submitting = true);
+    try {
+      final api = ref.read(bookingApiProvider);
+      await api.reportPaymentSent(widget.bookingId);
+    } catch (_) {
+      // Non-critical — navigate home regardless; booking state updated server-side
+    } finally {
+      if (mounted) Navigator.popUntil(context, (r) => r.isFirst);
+    }
+  }
+
+  void _copy(String value, String label) {
     Clipboard.setData(ClipboardData(text: value));
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
@@ -32,10 +53,14 @@ class BankPaymentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final bank = widget.driverBankDetails;
+    final hasBank =
+        bank != null && bank.values.any((v) => v != null && v.isNotEmpty);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Complete Payment', style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+        title: Text('Complete Payment',
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -46,7 +71,8 @@ class BankPaymentScreen extends StatelessWidget {
             // ── Amount banner ──────────────────────────────────────────────
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
               decoration: BoxDecoration(
                 color: AppTheme.primary,
                 borderRadius: BorderRadius.circular(16),
@@ -54,9 +80,10 @@ class BankPaymentScreen extends StatelessWidget {
               child: Column(
                 children: [
                   Text('Amount Due',
-                      style: GoogleFonts.dmSans(color: Colors.white70, fontSize: 13)),
+                      style: GoogleFonts.dmSans(
+                          color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 6),
-                  Text('R ${amount.toStringAsFixed(2)}',
+                  Text('R ${widget.amount.toStringAsFixed(2)}',
                       style: GoogleFonts.dmSans(
                           color: Colors.white,
                           fontSize: 36,
@@ -72,8 +99,7 @@ class BankPaymentScreen extends StatelessWidget {
                     fontWeight: FontWeight.w700, fontSize: 16)),
             const SizedBox(height: 12),
 
-            if (driverBankDetails == null ||
-                driverBankDetails!.values.every((v) => v == null || v.isEmpty))
+            if (!hasBank)
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -84,38 +110,42 @@ class BankPaymentScreen extends StatelessWidget {
                 child: Text(
                   'Driver banking details are not available. '
                   'Please contact support to complete your payment.',
-                  style: GoogleFonts.dmSans(color: Colors.orange.shade900),
+                  style:
+                      GoogleFonts.dmSans(color: Colors.orange.shade900),
                 ),
               )
             else ...[
-              if (driverBankDetails!['bankName']?.isNotEmpty == true)
+              if (bank!['bankName']?.isNotEmpty == true)
                 _DetailTile(
                   label: 'Bank',
-                  value: driverBankDetails!['bankName']!,
-                  onCopy: () => _copy(context, driverBankDetails!['bankName']!, 'Bank name'),
+                  value: bank['bankName']!,
+                  onCopy: () => _copy(bank['bankName']!, 'Bank name'),
                 ),
-              if (driverBankDetails!['accountName']?.isNotEmpty == true)
+              if (bank['accountName']?.isNotEmpty == true)
                 _DetailTile(
                   label: 'Account Name',
-                  value: driverBankDetails!['accountName']!,
-                  onCopy: () => _copy(context, driverBankDetails!['accountName']!, 'Account name'),
+                  value: bank['accountName']!,
+                  onCopy: () =>
+                      _copy(bank['accountName']!, 'Account name'),
                 ),
-              if (driverBankDetails!['accountNumber']?.isNotEmpty == true)
+              if (bank['accountNumber']?.isNotEmpty == true)
                 _DetailTile(
                   label: 'Account Number',
-                  value: driverBankDetails!['accountNumber']!,
-                  onCopy: () => _copy(context, driverBankDetails!['accountNumber']!, 'Account number'),
+                  value: bank['accountNumber']!,
+                  onCopy: () =>
+                      _copy(bank['accountNumber']!, 'Account number'),
                 ),
-              if (driverBankDetails!['accountType']?.isNotEmpty == true)
+              if (bank['accountType']?.isNotEmpty == true)
                 _DetailTile(
                   label: 'Account Type',
-                  value: driverBankDetails!['accountType']!,
+                  value: bank['accountType']!,
                 ),
-              if (driverBankDetails!['branchCode']?.isNotEmpty == true)
+              if (bank['branchCode']?.isNotEmpty == true)
                 _DetailTile(
                   label: 'Branch Code',
-                  value: driverBankDetails!['branchCode']!,
-                  onCopy: () => _copy(context, driverBankDetails!['branchCode']!, 'Branch code'),
+                  value: bank['branchCode']!,
+                  onCopy: () =>
+                      _copy(bank['branchCode']!, 'Branch code'),
                 ),
             ],
 
@@ -147,7 +177,7 @@ class BankPaymentScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'You MUST use this exact reference when making the payment. '
-                    'Without it we cannot link your payment to your booking.',
+                    'Without it the driver cannot link your payment to your booking.',
                     style: GoogleFonts.dmSans(
                         fontSize: 13, color: Colors.amber.shade900),
                   ),
@@ -156,7 +186,7 @@ class BankPaymentScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          paymentReference,
+                          widget.paymentReference,
                           style: GoogleFonts.dmSans(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
@@ -169,8 +199,8 @@ class BankPaymentScreen extends StatelessWidget {
                         icon: const Icon(Icons.copy, size: 20),
                         color: Colors.amber.shade800,
                         tooltip: 'Copy reference',
-                        onPressed: () =>
-                            _copy(context, paymentReference, 'Payment reference'),
+                        onPressed: () => _copy(
+                            widget.paymentReference, 'Payment reference'),
                       ),
                     ],
                   ),
@@ -194,15 +224,15 @@ class BankPaymentScreen extends StatelessWidget {
                       style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 10),
                   for (final step in [
-                    '1. Make an EFT to the account above using your reference number.',
+                    '1. Make an EFT to the driver\'s account above using your reference number.',
                     '2. Tap "I\'ve Sent Payment" below.',
-                    '3. Our team will verify your payment — this usually takes a few hours.',
-                    '4. Once confirmed, your driver will be notified and can accept your booking.',
+                    '3. The driver will receive a notification to review and approve your booking.',
                   ])
                     Padding(
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Text(step,
-                          style: GoogleFonts.dmSans(fontSize: 13, height: 1.4)),
+                          style: GoogleFonts.dmSans(
+                              fontSize: 13, height: 1.4)),
                     ),
                 ],
               ),
@@ -222,15 +252,24 @@ class BankPaymentScreen extends StatelessWidget {
                   textStyle: GoogleFonts.dmSans(
                       fontWeight: FontWeight.w700, fontSize: 15),
                 ),
-                onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
-                child: const Text("I've Sent Payment"),
+                onPressed: _submitting ? null : _reportPaymentSent,
+                child: _submitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text("I've Sent Payment"),
               ),
             ),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: TextButton(
-                onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
+                onPressed: _submitting
+                    ? null
+                    : () => Navigator.popUntil(context, (r) => r.isFirst),
                 child: Text('Pay Later',
                     style: GoogleFonts.dmSans(color: Colors.grey)),
               ),
@@ -264,7 +303,9 @@ class _DetailTile extends StatelessWidget {
             style: GoogleFonts.dmSans(fontSize: 11, color: Colors.grey)),
         subtitle: Text(value,
             style: GoogleFonts.dmSans(
-                fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87)),
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: Colors.black87)),
         trailing: onCopy != null
             ? IconButton(
                 icon: const Icon(Icons.copy, size: 18),

@@ -76,6 +76,10 @@ class BookingApi {
       if (comment != null && comment.isNotEmpty) 'comment': comment,
     });
   }
+
+  Future<void> reportPaymentSent(String bookingId) async {
+    await dio.post('/bookings/$bookingId/payment-sent');
+  }
 }
 
 final bookingApiProvider = Provider<BookingApi>((ref) {
