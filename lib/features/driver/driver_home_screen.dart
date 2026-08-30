@@ -235,12 +235,32 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         title: const Text('Driver Dashboard'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle_outlined, size: 26),
-            tooltip: 'My profile',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const DriverProfileScreen()),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DriverProfileScreen()),
+              ),
+              child: CircleAvatar(
+                radius: 17,
+                backgroundColor: Colors.white24,
+                backgroundImage: user.profileImageUrl != null
+                    ? NetworkImage(user.profileImageUrl!)
+                    : null,
+                child: user.profileImageUrl == null
+                    ? Text(
+                        user.fullName.isNotEmpty
+                            ? user.fullName[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
+                    : null,
+              ),
             ),
           ),
         ],
