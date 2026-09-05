@@ -49,6 +49,7 @@ class _DriverVerificationScreenState
     final picker = ImagePicker();
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
+      useRootNavigator: true,
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
