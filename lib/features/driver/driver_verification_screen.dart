@@ -237,6 +237,8 @@ class _DriverVerificationScreenState
           content: Text('Verification submitted successfully'),
         ),
       );
+
+      context.go('/driver/home');
     } catch (e) {
       debugPrint('❌ Submit failed: $e');
 
