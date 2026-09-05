@@ -98,28 +98,34 @@ class _DocumentUploadTileState extends ConsumerState<DocumentUploadTile> {
         border: Border.all(
           color: isUploaded ? Colors.green : Colors.grey.shade300,
         ),
-        color: isUploaded ? Colors.green.withOpacity(0.05) : null,
+        color: isUploaded ? Colors.green.withValues(alpha: 0.05) : null,
       ),
-      child: ListTile(
-        leading: Icon(
-          isUploaded ? Icons.check_circle : Icons.upload_file,
-          color: isUploaded ? Colors.green : Colors.grey,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Material(
+          color: Colors.transparent,
+          child: ListTile(
+            leading: Icon(
+              isUploaded ? Icons.check_circle : Icons.upload_file,
+              color: isUploaded ? Colors.green : Colors.grey,
+            ),
+            title: Text(widget.title),
+            subtitle: isUploaded
+                ? const Text('Uploaded · tap to replace',
+                    style: TextStyle(color: Colors.green))
+                : const Text('Tap to upload'),
+            trailing: uploading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : isUploaded
+                    ? const Icon(Icons.edit_outlined, size: 18, color: Colors.green)
+                    : const Icon(Icons.chevron_right),
+            onTap: uploading ? null : _pickAndUpload,
+          ),
         ),
-        title: Text(widget.title),
-        subtitle: isUploaded
-            ? const Text('Uploaded · tap to replace',
-                style: TextStyle(color: Colors.green))
-            : const Text('Tap to upload'),
-        trailing: uploading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : isUploaded
-                ? const Icon(Icons.edit_outlined, size: 18, color: Colors.green)
-                : const Icon(Icons.chevron_right),
-        onTap: uploading ? null : _pickAndUpload,
       ),
     );
   }
