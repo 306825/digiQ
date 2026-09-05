@@ -9,6 +9,7 @@ class DriverBooking {
   final bool passengerIsVerified;
   final String? dropoffAddress;
   final String? dropoffArea;
+  final String? paymentReference;
 
   DriverBooking({
     required this.id,
@@ -21,6 +22,7 @@ class DriverBooking {
     this.passengerIsVerified = false,
     this.dropoffAddress,
     this.dropoffArea,
+    this.paymentReference,
   });
 
   factory DriverBooking.fromJson(Map<String, dynamic> json) {
@@ -36,6 +38,7 @@ class DriverBooking {
       notes: json['pickup']['notes'],
       dropoffAddress: dropoff?['addressLine'] as String?,
       dropoffArea: dropoff?['area'] as String?,
+      paymentReference: json['paymentReference'] as String?,
     );
   }
 }
