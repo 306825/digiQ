@@ -2,10 +2,8 @@ import 'package:digiQ/features/shared/widgets/user_avatar.dart';
 import 'package:digiQ/models/route_model.dart';
 import 'package:digiQ/models/trip_model.dart';
 import 'package:digiQ/models/trip_search_params.dart';
-import 'package:digiQ/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../providers/trip_search_provider.dart';
 import 'trip_details_screen.dart';
 
@@ -61,16 +59,6 @@ class _TripSearchResultsScreenState
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await ref.read(authProvider.notifier).logout();
-              if (!context.mounted) return;
-              context.go('/login');
-            },
-          ),
-        ],
       ),
       body: tripsAsync.when(
         loading: () => const _LoadingState(),

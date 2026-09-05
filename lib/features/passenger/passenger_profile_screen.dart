@@ -4,6 +4,7 @@ import 'package:digiQ/models/user_model.dart';
 import 'package:digiQ/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class PassengerProfileScreen extends ConsumerStatefulWidget {
   const PassengerProfileScreen({super.key});
@@ -32,6 +33,17 @@ class _PassengerProfileScreenState
       appBar: AppBar(
         title: const Text('My Profile'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () async {
+              await ref.read(authProvider.notifier).logout();
+              if (!context.mounted) return;
+              context.go('/login');
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
