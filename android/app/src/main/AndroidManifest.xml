@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <application
-        android:label="digi_q"
+        android:label="Strut"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
