@@ -7,6 +7,7 @@ class DriverProfile {
   final String? accountNumber;
   final String? branchCode;
   final String? accountType;
+  final String? payshapId;
 
   final DriverDocument? idDocument;
   final DriverDocument? driversLicense;
@@ -22,6 +23,7 @@ class DriverProfile {
     this.accountNumber,
     this.branchCode,
     this.accountType,
+    this.payshapId,
     this.idDocument,
     this.driversLicense,
     this.permit,
@@ -38,6 +40,7 @@ class DriverProfile {
       accountNumber: json['accountNumber'],
       branchCode: json['branchCode'],
       accountType: json['accountType'],
+      payshapId: json['payshapId'],
       idDocument: DriverDocument.fromJson(json['idDocument']),
       driversLicense: DriverDocument.fromJson(json['driversLicense']),
       permit: DriverDocument.fromJson(json['permit']),
@@ -55,6 +58,7 @@ class DriverProfile {
       if (accountNumber != null) 'accountNumber': accountNumber,
       if (branchCode != null) 'branchCode': branchCode,
       if (accountType != null) 'accountType': accountType,
+      if (payshapId != null) 'payshapId': payshapId,
       if (idDocument?.fileUrl != null)
         'idDocument': {'fileUrl': idDocument!.fileUrl},
       if (driversLicense?.fileUrl != null)

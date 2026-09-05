@@ -94,6 +94,7 @@ class DriverApi {
     String? branchCode,
     required String accountType,
     String? proofOfBankingUrl,
+    String? payshapId,
   }) async {
     await dio.patch('/drivers/me/bank-details', data: {
       'bankName': bankName,
@@ -102,6 +103,7 @@ class DriverApi {
       'branchCode': branchCode ?? '',
       'accountType': accountType,
       if (proofOfBankingUrl != null) 'proofOfBankingUrl': proofOfBankingUrl,
+      'payshapId': payshapId ?? '',
     });
   }
 

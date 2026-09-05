@@ -10,6 +10,7 @@ class BankPaymentScreen extends ConsumerStatefulWidget {
   final String paymentReference;
   final double amount;
   final Map<String, String?>? driverBankDetails;
+  final String? payshapId;
 
   const BankPaymentScreen({
     super.key,
@@ -17,6 +18,7 @@ class BankPaymentScreen extends ConsumerStatefulWidget {
     required this.paymentReference,
     required this.amount,
     this.driverBankDetails,
+    this.payshapId,
   });
 
   @override
@@ -56,6 +58,7 @@ class _BankPaymentScreenState extends ConsumerState<BankPaymentScreen> {
     final bank = widget.driverBankDetails;
     final hasBank =
         bank != null && bank.values.any((v) => v != null && v.isNotEmpty);
+    final hasPayshap = (widget.payshapId ?? '').isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -93,6 +96,104 @@ class _BankPaymentScreenState extends ConsumerState<BankPaymentScreen> {
             ),
 
             const SizedBox(height: 24),
+
+            // ── PayShap (shown first when available) ───────────────────────
+            if (hasPayshap) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.green.shade300, width: 1.5),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.flash_on, color: Colors.green.shade700, size: 20),
+                        const SizedBox(width: 6),
+                        Text('Pay with PayShap',
+                            style: GoogleFonts.dmSans(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                color: Colors.green.shade800)),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade600,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text('Recommended',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'PayShap reflects immediately — the driver can confirm your booking right away.',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12, color: Colors.green.shade800, height: 1.4),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('PayShap ID',
+                                  style: GoogleFonts.dmSans(
+                                      fontSize: 11,
+                                      color: Colors.green.shade700,
+                                      fontWeight: FontWeight.w600)),
+                              Text(widget.payshapId!,
+                                  style: GoogleFonts.dmSans(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.green.shade900,
+                                      letterSpacing: 0.5)),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy, size: 20),
+                          color: Colors.green.shade700,
+                          tooltip: 'Copy PayShap ID',
+                          onPressed: () => _copy(widget.payshapId!, 'PayShap ID'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Use reference: ${widget.paymentReference}',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          color: Colors.green.shade800,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('or pay by EFT',
+                        style: GoogleFonts.dmSans(color: Colors.grey, fontSize: 13)),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
 
             Text('Driver Banking Details',
                 style: GoogleFonts.dmSans(

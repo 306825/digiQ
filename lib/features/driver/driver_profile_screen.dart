@@ -291,6 +291,7 @@ class _BankingSectionState extends ConsumerState<_BankingSection> {
         initialAccountNumber: profile?.accountNumber ?? '',
         initialBranchCode: profile?.branchCode ?? '',
         initialAccountType: profile?.accountType ?? 'cheque',
+        initialPayshapId: profile?.payshapId ?? '',
         hasExistingBankDoc: profile?.proofOfBanking?.fileUrl?.isNotEmpty == true,
         onSaved: () => setState(() => _editing = false),
         onCancel: hasDetails ? () => setState(() => _editing = false) : null,
@@ -328,6 +329,36 @@ class _BankingSectionState extends ConsumerState<_BankingSection> {
               ? 'Savings Account'
               : 'Cheque Account',
         ),
+        if ((profile.payshapId ?? '').isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.green.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.flash_on, size: 18, color: Colors.green.shade700),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('PayShap ID',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 11, color: Colors.green.shade700, fontWeight: FontWeight.w600)),
+                      Text(profile.payshapId!,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 14, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
         Container(
           padding:
@@ -381,6 +412,7 @@ class _BankEditForm extends ConsumerStatefulWidget {
   final String initialAccountNumber;
   final String initialBranchCode;
   final String initialAccountType;
+  final String initialPayshapId;
   final bool hasExistingBankDoc;
   final VoidCallback onSaved;
   final VoidCallback? onCancel;
@@ -391,6 +423,7 @@ class _BankEditForm extends ConsumerStatefulWidget {
     required this.initialAccountNumber,
     required this.initialBranchCode,
     required this.initialAccountType,
+    required this.initialPayshapId,
     required this.hasExistingBankDoc,
     required this.onSaved,
     this.onCancel,
@@ -405,6 +438,7 @@ class _BankEditFormState extends ConsumerState<_BankEditForm> {
   late final TextEditingController _accountNameCtrl;
   late final TextEditingController _accountNumberCtrl;
   late final TextEditingController _branchCodeCtrl;
+  late final TextEditingController _payshapIdCtrl;
   String? _bankName;
   late String _accountType;
   String? _pendingBankDocKey;
@@ -422,6 +456,8 @@ class _BankEditFormState extends ConsumerState<_BankEditForm> {
         TextEditingController(text: widget.initialAccountNumber);
     _branchCodeCtrl =
         TextEditingController(text: widget.initialBranchCode);
+    _payshapIdCtrl =
+        TextEditingController(text: widget.initialPayshapId);
     _accountType = widget.initialAccountType;
   }
 
@@ -430,6 +466,7 @@ class _BankEditFormState extends ConsumerState<_BankEditForm> {
     _accountNameCtrl.dispose();
     _accountNumberCtrl.dispose();
     _branchCodeCtrl.dispose();
+    _payshapIdCtrl.dispose();
     super.dispose();
   }
 
@@ -451,6 +488,7 @@ class _BankEditFormState extends ConsumerState<_BankEditForm> {
             : _branchCodeCtrl.text.trim(),
         accountType: _accountType,
         proofOfBankingUrl: _pendingBankDocKey,
+        payshapId: _payshapIdCtrl.text.trim().isEmpty ? null : _payshapIdCtrl.text.trim(),
       );
       await ref.read(authProvider.notifier).refreshMe();
       if (!mounted) return;
@@ -564,6 +602,30 @@ class _BankEditFormState extends ConsumerState<_BankEditForm> {
                 onChanged: (v) {
                   if (v != null) setState(() => _accountType = v);
                 },
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.flash_on, size: 16, color: Colors.green.shade600),
+                  const SizedBox(width: 6),
+                  Text('PayShap (Optional)',
+                      style: GoogleFonts.dmSans(
+                          fontWeight: FontWeight.w700, fontSize: 14)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Add your PayShap ID (phone number or email) so passengers can pay instantly.',
+                style: GoogleFonts.dmSans(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _payshapIdCtrl,
+                keyboardType: TextInputType.text,
+                decoration: _dec('PayShap ID (e.g. 0821234567)'),
+                style: GoogleFonts.dmSans(),
               ),
               const SizedBox(height: 16),
               DocumentUploadTile(

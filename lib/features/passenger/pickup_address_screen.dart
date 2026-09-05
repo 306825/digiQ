@@ -280,6 +280,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
           ? Map<String, String?>.from(
               (bankRaw as Map).map((k, v) => MapEntry(k.toString(), v?.toString())))
           : null;
+      final payshapId = (bankRaw as Map?)?['payshapId'] as String?;
 
       if (!mounted) return;
 
@@ -291,6 +292,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
             paymentReference: paymentReference,
             amount: amount,
             driverBankDetails: driverBankDetails,
+            payshapId: payshapId,
           ),
         ),
       );
