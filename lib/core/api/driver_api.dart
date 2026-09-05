@@ -49,6 +49,7 @@ class DriverApi {
     String? accountNumber,
     String? branchCode,
     String? accountType,
+    String? payshapId,
     required Map<String, String> documents,
   }) async {
     final data = {
@@ -66,6 +67,7 @@ class DriverApi {
     if (accountNumber != null) data['accountNumber'] = accountNumber;
     if (branchCode != null) data['branchCode'] = branchCode;
     if (accountType != null) data['accountType'] = accountType;
+    if (payshapId != null && payshapId.isNotEmpty) data['payshapId'] = payshapId;
 
     await dio.post('/drivers/verification/submit', data: data);
   }

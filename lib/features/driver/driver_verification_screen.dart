@@ -30,6 +30,7 @@ class _DriverVerificationScreenState
   final accountNameCtrl = TextEditingController();
   final accountNumberCtrl = TextEditingController();
   final branchCodeCtrl = TextEditingController();
+  final payshapIdCtrl = TextEditingController();
   String? bankName;
   String accountType = 'cheque';
 
@@ -131,6 +132,7 @@ class _DriverVerificationScreenState
     accountNameCtrl.dispose();
     accountNumberCtrl.dispose();
     branchCodeCtrl.dispose();
+    payshapIdCtrl.dispose();
 
     super.dispose();
   }
@@ -220,6 +222,7 @@ class _DriverVerificationScreenState
             ? null
             : branchCodeCtrl.text.trim(),
         accountType: accountType,
+        payshapId: payshapIdCtrl.text.trim().isEmpty ? null : payshapIdCtrl.text.trim(),
         documents: uploadedDocs,
       );
 
@@ -474,6 +477,30 @@ class _DriverVerificationScreenState
                         onChanged: (v) {
                           if (v != null) setState(() => accountType = v);
                         },
+                      ),
+
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: const [
+                          Icon(Icons.flash_on, size: 16, color: Colors.green),
+                          SizedBox(width: 6),
+                          Text('PayShap (Optional)',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700, fontSize: 14)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Add your PayShap ID so passengers can pay you instantly.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: payshapIdCtrl,
+                        decoration: const InputDecoration(
+                            labelText: 'PayShap ID (e.g. 0821234567)'),
                       ),
                     ],
                   ),
