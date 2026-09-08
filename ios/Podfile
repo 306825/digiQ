@@ -1,4 +1,4 @@
-platform :ios, '14.0'
+platform :ios, '16.0'
 
 # Disable CocoaPods analytics to avoid a synchronous network hit on every pod install.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
