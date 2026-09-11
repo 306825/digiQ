@@ -1,30 +1,27 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/features/driver/create_trip_screen.dart';
-import 'package:digiQ/features/driver/driver_booking_list_screen.dart';
-import 'package:digiQ/features/driver/driver_profile_screen.dart';
-import 'package:digiQ/features/driver/driver_verification_screen.dart';
-import 'package:digiQ/features/driver/my_trips_screen.dart';
-import 'package:digiQ/features/driver/payout_history_screen.dart';
-import 'package:digiQ/features/shared/feedback_screen.dart';
-import 'package:digiQ/features/shared/widgets/animated_hourglass.dart';
-import 'package:digiQ/models/user_model.dart';
-import 'package:digiQ/providers/auth_provider.dart';
-import 'package:digiQ/providers/driver_balance_provider.dart';
-import 'package:digiQ/theme/app.theme.dart';
+import 'package:strut/features/driver/create_trip_screen.dart';
+import 'package:strut/features/driver/driver_booking_list_screen.dart';
+import 'package:strut/features/driver/driver_profile_screen.dart';
+import 'package:strut/features/driver/driver_verification_screen.dart';
+import 'package:strut/features/driver/my_trips_screen.dart';
+import 'package:strut/features/driver/widgets/driver_earnings_card.dart';
+import 'package:strut/features/shared/feedback_screen.dart';
+import 'package:strut/features/shared/widgets/animated_hourglass.dart';
+import 'package:strut/models/user_model.dart';
+import 'package:strut/providers/auth_provider.dart';
+import 'package:strut/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:digiQ/core/services/tracking_service.dart';
-import 'package:digiQ/models/vehicle_model.dart';
-import 'package:digiQ/providers/driver_vehicle_provider.dart';
-import 'package:digiQ/providers/driver_bookings_provider.dart';
-import 'package:digiQ/providers/fleet_provider.dart';
-import 'package:digiQ/models/fleet_invitation_model.dart';
+import 'package:strut/core/services/tracking_service.dart';
+import 'package:strut/models/vehicle_model.dart';
+import 'package:strut/providers/driver_vehicle_provider.dart';
+import 'package:strut/providers/driver_bookings_provider.dart';
+import 'package:strut/providers/fleet_provider.dart';
+import 'package:strut/models/fleet_invitation_model.dart';
 
 class DriverHomeScreen extends ConsumerStatefulWidget {
   const DriverHomeScreen({super.key});
@@ -300,8 +297,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               ),
             ),
 
-            // ── BALANCE CARD ──────────────────────────────────────────
-            const _DriverBalanceCard(),
+            // ── EARNINGS ──────────────────────────────────────────────
+            // Cumulative record only. No withdrawable balance or payout
+            // action: with PayShap and EFT the fare goes straight from
+            // passenger to driver, so Strut holds no funds to pay out.
+            // Restore the payout UI when the payment gateway is live.
+            const DriverEarningsCard(),
             const SizedBox(height: 14),
 
             // ── STATUS CARDS ──────────────────────────────────────────
@@ -593,368 +594,6 @@ class _ActionTile extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/* --------------------------------------------------------------------------
- * Balance Card
- * -------------------------------------------------------------------------- */
-
-class _DriverBalanceCard extends ConsumerWidget {
-  const _DriverBalanceCard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final balanceAsync = ref.watch(driverBalanceProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF0D2550), const Color(0xFF0D47A1)]
-              : [AppTheme.primary, AppTheme.secondary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Balance row ──────────────────────────────────────────────────
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet_outlined,
-                  color: Colors.white,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: balanceAsync.when(
-                  loading: () => const Center(
-                    child: SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    ),
-                  ),
-                  error: (_, __) => Text(
-                    'Balance unavailable',
-                    style: GoogleFonts.dmSans(
-                        color: Colors.white70, fontSize: 13),
-                  ),
-                  data: (balance) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Available Balance',
-                        style: GoogleFonts.dmSans(
-                          color: Colors.white.withValues(alpha: 0.75),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'R ${balance.balance.toStringAsFixed(2)}',
-                        style: GoogleFonts.dmSans(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── Action buttons ───────────────────────────────────────────────
-          Row(
-            children: [
-              Expanded(
-                child: _CardButton(
-                  label: 'Request Payout',
-                  icon: Icons.payments_outlined,
-                  onTap: () => _showPayoutDialog(context, ref, balanceAsync.value?.balance ?? 0),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _CardButton(
-                  label: 'History',
-                  icon: Icons.history,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const PayoutHistoryScreen()),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showPayoutDialog(
-      BuildContext context, WidgetRef ref, double currentBalance) async {
-    final amountCtrl = TextEditingController();
-
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Request Payout'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Available: R ${currentBalance.toStringAsFixed(2)}',
-              style: const TextStyle(
-                  fontSize: 13, color: Color(0xFF56687A)),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Amount (ZAR)',
-                prefixText: 'R ',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final amount = double.tryParse(amountCtrl.text.trim());
-              if (amount == null || amount <= 0) return;
-              Navigator.pop(ctx);
-              await _submitPayout(context, ref, amount);
-            },
-            child: const Text('Submit'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _submitPayout(
-      BuildContext context, WidgetRef ref, double amount) async {
-    try {
-      final api = ref.read(driverApiProvider);
-      await api.requestWithdrawal(amount);
-      ref.invalidate(driverBalanceProvider);
-      ref.invalidate(payoutHistoryProvider);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Payout request submitted — admin will process it shortly')),
-      );
-    } on DioException catch (e) {
-      if (!context.mounted) return;
-      final data = e.response?.data;
-      final msg = (data is Map && data['message'] != null)
-          ? data['message'].toString()
-          : 'Payout request failed. Please try again.';
-
-      // Bank details missing — prompt driver to add them then retry
-      if (msg.contains('Banking details not on file')) {
-        final saved = await _showBankDetailsDialog(context, ref);
-        if (saved == true && context.mounted) {
-          await _submitPayout(context, ref, amount);
-        }
-        return;
-      }
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(msg)));
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Payout request failed. Please try again.')),
-      );
-    }
-  }
-
-  Future<bool?> _showBankDetailsDialog(
-      BuildContext context, WidgetRef ref) async {
-    final bankNameCtrl = TextEditingController();
-    final accountNameCtrl = TextEditingController();
-    final accountNumberCtrl = TextEditingController();
-    final branchCodeCtrl = TextEditingController();
-    String accountType = 'cheque';
-    final formKey = GlobalKey<FormState>();
-
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setS) => AlertDialog(
-          title: const Text('Add Banking Details'),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Your banking details are required before a payout can be processed.',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: bankNameCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Bank name'),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    controller: accountNameCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Account holder name'),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    controller: accountNumberCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Account number'),
-                    keyboardType: TextInputType.number,
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    controller: branchCodeCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Branch code (optional)'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    key: ValueKey(accountType),
-                    initialValue: accountType,
-                    decoration:
-                        const InputDecoration(labelText: 'Account type'),
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'cheque', child: Text('Cheque')),
-                      DropdownMenuItem(
-                          value: 'savings', child: Text('Savings')),
-                    ],
-                    onChanged: (v) => setS(() => accountType = v!),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (!formKey.currentState!.validate()) return;
-                try {
-                  final api = ref.read(driverApiProvider);
-                  await api.updateBankDetails(
-                    bankName: bankNameCtrl.text.trim(),
-                    accountName: accountNameCtrl.text.trim(),
-                    accountNumber: accountNumberCtrl.text.trim(),
-                    branchCode: branchCodeCtrl.text.trim().isEmpty
-                        ? null
-                        : branchCodeCtrl.text.trim(),
-                    accountType: accountType,
-                  );
-                  if (ctx.mounted) Navigator.pop(ctx, true);
-                } on DioException catch (e) {
-                  final data = e.response?.data;
-                  final msg = (data is Map && data['message'] != null)
-                      ? data['message'].toString()
-                      : 'Failed to save bank details.';
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx)
-                        .showSnackBar(SnackBar(content: Text(msg)));
-                  }
-                }
-              },
-              child: const Text('Save & Continue'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CardButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _CardButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 16),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
