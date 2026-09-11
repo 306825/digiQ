@@ -123,6 +123,11 @@ class AdminApi {
     final res = await dio.get('/admin/bookings/cancelled');
     return res.data as List<dynamic>;
   }
+
+  Future<List<Map<String, dynamic>>> getFeedback() async {
+    final res = await dio.get('/admin/feedback');
+    return (res.data as List).cast<Map<String, dynamic>>();
+  }
 }
 
 final adminSosProvider = FutureProvider((ref) async {
