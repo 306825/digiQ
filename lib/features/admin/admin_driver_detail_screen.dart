@@ -317,8 +317,18 @@ class _DocumentTile extends StatelessWidget {
       trailing: const Icon(Icons.open_in_new),
       onTap: () async {
         final uri = Uri.parse(url!);
-        if (await canLaunchUrl(uri)) {
+        try {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          try {
+            await launchUrl(uri, mode: LaunchMode.platformDefault);
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Could not open document: $e')),
+              );
+            }
+          }
         }
       },
     );
