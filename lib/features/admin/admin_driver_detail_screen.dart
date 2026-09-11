@@ -1,6 +1,7 @@
 import 'package:strut/core/api/api_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/admin_drivers_provider.dart';
 import '../../../theme/app.theme.dart';
@@ -314,18 +315,11 @@ class _DocumentTile extends StatelessWidget {
     return ListTile(
       title: Text(title),
       trailing: const Icon(Icons.open_in_new),
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (_) => Dialog(
-            child: InteractiveViewer(
-              child: Image.network(
-                url!,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        );
+      onTap: () async {
+        final uri = Uri.parse(url!);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
       },
     );
   }
