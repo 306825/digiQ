@@ -1,4 +1,5 @@
 import 'package:strut/features/admin/admin_incidents_screen.dart';
+import 'package:strut/features/admin/widgets/admin_ledger_tab.dart';
 import 'package:strut/features/admin/widgets/admin_overview_tab.dart';
 import 'package:strut/features/admin/widgets/admin_passenger_verifications_tab.dart';
 import 'package:strut/features/admin/widgets/admin_payments_tab.dart';
@@ -30,6 +31,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
     'Payouts',
     'Passengers',
     'Payments',
+    'Ledger',
   ];
 
   static const _items = [
@@ -40,6 +42,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
     (icon: Icons.payments_outlined, label: 'Payouts'),
     (icon: Icons.verified_user_outlined, label: 'Passengers'),
     (icon: Icons.account_balance, label: 'Payments'),
+    (icon: Icons.receipt_long_outlined, label: 'Ledger'),
   ];
 
   @override
@@ -126,6 +129,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
           AdminPayoutsTab(),
           AdminPassengerVerificationsTab(),
           AdminPaymentsTab(),
+          AdminLedgerTab(),
         ],
       ),
     );

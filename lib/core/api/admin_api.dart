@@ -113,6 +113,11 @@ class AdminApi {
     final res = await dio.get('/admin/stats');
     return AdminStats.fromJson(res.data as Map<String, dynamic>);
   }
+
+  Future<Map<String, dynamic>> getLedger() async {
+    final res = await dio.get('/admin/ledger');
+    return res.data as Map<String, dynamic>;
+  }
 }
 
 final adminSosProvider = FutureProvider((ref) async {
