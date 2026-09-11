@@ -1,7 +1,7 @@
 import 'package:strut/core/api/api_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/admin_drivers_provider.dart';
 import '../../../theme/app.theme.dart';
@@ -315,22 +315,45 @@ class _DocumentTile extends StatelessWidget {
     return ListTile(
       title: Text(title),
       trailing: const Icon(Icons.open_in_new),
-      onTap: () async {
-        final uri = Uri.parse(url!);
-        try {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } catch (_) {
-          try {
-            await launchUrl(uri, mode: LaunchMode.platformDefault);
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Could not open document: $e')),
-              );
-            }
-          }
-        }
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _DocumentViewerScreen(title: title, url: url!),
+          ),
+        );
       },
+    );
+  }
+}
+
+class _DocumentViewerScreen extends StatefulWidget {
+  final String title;
+  final String url;
+
+  const _DocumentViewerScreen({required this.title, required this.url});
+
+  @override
+  State<_DocumentViewerScreen> createState() => _DocumentViewerScreenState();
+}
+
+class _DocumentViewerScreenState extends State<_DocumentViewerScreen> {
+  bool _loading = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.title)),
+      body: Stack(
+        children: [
+          InAppWebView(
+            initialUrlRequest: URLRequest(url: WebUri(widget.url)),
+            onLoadStop: (_, __) => setState(() => _loading = false),
+            onReceivedError: (_, __, ___) => setState(() => _loading = false),
+          ),
+          if (_loading) const Center(child: CircularProgressIndicator()),
+        ],
+      ),
     );
   }
 }
