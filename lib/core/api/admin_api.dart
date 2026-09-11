@@ -1,4 +1,5 @@
-import 'package:digiQ/models/driver_model.dart';
+import 'package:strut/models/admin_stats_model.dart';
+import 'package:strut/models/driver_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_providers.dart';
@@ -100,6 +101,17 @@ class AdminApi {
 
   Future<void> confirmManualPayment(String bookingId) async {
     await dio.post('/payments/manual/confirm/$bookingId');
+  }
+
+  /* --------------------------------------------------------------------------
+   * REPORTING
+   * -------------------------------------------------------------------------- */
+
+  /// Platform-wide totals used to evidence volume for payment gateway
+  /// applications. See [AdminStats] for the expected response shape.
+  Future<AdminStats> getStats() async {
+    final res = await dio.get('/admin/stats');
+    return AdminStats.fromJson(res.data as Map<String, dynamic>);
   }
 }
 
