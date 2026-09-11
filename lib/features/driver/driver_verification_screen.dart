@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/core/api/driver_documents_api.dart';
-import 'package:digiQ/core/api/user_api.dart';
-import 'package:digiQ/features/driver/widgets/documents_upload_tile.dart';
-import 'package:digiQ/features/shared/widgets/address_autocomplete_field.dart';
-import 'package:digiQ/models/user_model.dart';
-import 'package:digiQ/providers/auth_provider.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/core/api/driver_documents_api.dart';
+import 'package:strut/core/api/user_api.dart';
+import 'package:strut/features/driver/widgets/documents_upload_tile.dart';
+import 'package:strut/features/shared/widgets/address_autocomplete_field.dart';
+import 'package:strut/models/user_model.dart';
+import 'package:strut/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,6 +37,7 @@ class _DriverVerificationScreenState
   String? bankNameError;
   String? accountNameError;
   String? accountNumberError;
+  String? payshapIdError;
 
   final Map<String, String> uploadedDocs = {};
   bool submitting = false;
@@ -146,6 +147,7 @@ class _DriverVerificationScreenState
       bankNameError = null;
       accountNameError = null;
       accountNumberError = null;
+      payshapIdError = null;
     });
 
     if (profilePhotoUrl == null) {
@@ -166,6 +168,12 @@ class _DriverVerificationScreenState
     if (firstNameCtrl.text.trim().isEmpty ||
         lastNameCtrl.text.trim().isEmpty ||
         addressCtrl.text.trim().isEmpty) {
+      valid = false;
+    }
+
+    // PayShap is how passengers pay instantly, so it is required to onboard.
+    if (payshapIdCtrl.text.trim().isEmpty) {
+      setState(() => payshapIdError = 'PayShap ID is required');
       valid = false;
     }
 
@@ -223,7 +231,7 @@ class _DriverVerificationScreenState
             ? null
             : branchCodeCtrl.text.trim(),
         accountType: accountType,
-        payshapId: payshapIdCtrl.text.trim().isEmpty ? null : payshapIdCtrl.text.trim(),
+        payshapId: payshapIdCtrl.text.trim(),
         documents: uploadedDocs,
       );
 
@@ -489,21 +497,25 @@ class _DriverVerificationScreenState
                         children: const [
                           Icon(Icons.flash_on, size: 16, color: Colors.green),
                           SizedBox(width: 6),
-                          Text('PayShap (Optional)',
+                          Text('PayShap (Required)',
                               style: TextStyle(
                                   fontWeight: FontWeight.w700, fontSize: 14)),
                         ],
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Add your PayShap ID so passengers can pay you instantly.',
+                        'Your PayShap ID is how passengers pay you instantly, so '
+                        'you can confirm their bookings without waiting for an '
+                        'EFT to clear. This is required to complete onboarding.',
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 10),
                       TextField(
                         controller: payshapIdCtrl,
-                        decoration: const InputDecoration(
-                            labelText: 'PayShap ID (e.g. 0821234567)'),
+                        decoration: InputDecoration(
+                          labelText: 'PayShap ID (e.g. 0821234567)',
+                          errorText: payshapIdError,
+                        ),
                       ),
                     ],
                   ),
