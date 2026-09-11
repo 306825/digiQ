@@ -807,7 +807,7 @@ class _ShareTripCard extends StatelessWidget {
   _ShareTripCard({required this.booking});
 
   String _buildShareText() {
-    final parts = <String>['🚌 Struttech Trip Details'];
+    final parts = <String>['🚌 Strut Trip Details'];
 
     if (booking.routeFrom != null && booking.routeTo != null) {
       parts.add('Route: ${booking.routeFrom} → ${booking.routeTo}');
@@ -832,7 +832,7 @@ class _ShareTripCard extends StatelessWidget {
       parts.add('Fare: R${booking.price!.toStringAsFixed(2)}');
     }
 
-    parts.add('\nShared via Struttech for safety purposes.');
+    parts.add('\nShared via Strut for safety purposes.');
     return parts.join('\n');
   }
 

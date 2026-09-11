@@ -7,8 +7,8 @@ final FlutterLocalNotificationsPlugin _localNotifications =
     FlutterLocalNotificationsPlugin();
 
 const _channelId = 'digiq_high';
-const _channelName = 'Struttech Notifications';
-const _channelDesc = 'Trip and booking updates from Struttech';
+const _channelName = 'Strut Notifications';
+const _channelDesc = 'Trip and booking updates from Strut';
 
 class FcmService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
