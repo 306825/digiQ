@@ -118,6 +118,11 @@ class AdminApi {
     final res = await dio.get('/admin/ledger');
     return res.data as Map<String, dynamic>;
   }
+
+  Future<List<dynamic>> getCancelledBookings() async {
+    final res = await dio.get('/admin/bookings/cancelled');
+    return res.data as List<dynamic>;
+  }
 }
 
 final adminSosProvider = FutureProvider((ref) async {
