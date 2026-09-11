@@ -1,8 +1,8 @@
-import 'package:digiQ/features/passenger/bank_payment_screen.dart';
-import 'package:digiQ/models/booking_model.dart';
-import 'package:digiQ/models/booking_status_ui.dart';
-import 'package:digiQ/providers/passenger_bookings_provider.dart';
-import 'package:digiQ/theme/app.theme.dart';
+import 'package:strut/features/passenger/bank_payment_screen.dart';
+import 'package:strut/models/booking_model.dart';
+import 'package:strut/models/booking_status_ui.dart';
+import 'package:strut/providers/passenger_bookings_provider.dart';
+import 'package:strut/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

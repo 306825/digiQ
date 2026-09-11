@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:digiQ/core/api/api_client.dart';
-import 'package:digiQ/core/api/trips_api.dart';
-import 'package:digiQ/models/booking_model.dart';
+import 'package:strut/core/api/api_client.dart';
+import 'package:strut/core/api/trips_api.dart';
+import 'package:strut/models/booking_model.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 

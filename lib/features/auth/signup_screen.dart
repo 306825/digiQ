@@ -1,8 +1,8 @@
-import 'package:digiQ/features/shared/widgets/app_logo.dart';
-import 'package:digiQ/models/user_model.dart';
-import 'package:digiQ/providers/auth_provider.dart';
-import 'package:digiQ/theme/app.theme.dart';
-import 'package:digiQ/validators.dart';
+import 'package:strut/features/shared/widgets/app_logo.dart';
+import 'package:strut/models/user_model.dart';
+import 'package:strut/providers/auth_provider.dart';
+import 'package:strut/theme/app.theme.dart';
+import 'package:strut/validators.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

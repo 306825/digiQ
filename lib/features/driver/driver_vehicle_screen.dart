@@ -1,7 +1,7 @@
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/features/driver/widgets/documents_upload_tile.dart';
-import 'package:digiQ/models/vehicle_model.dart';
-import 'package:digiQ/providers/driver_vehicle_provider.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/features/driver/widgets/documents_upload_tile.dart';
+import 'package:strut/models/vehicle_model.dart';
+import 'package:strut/providers/driver_vehicle_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

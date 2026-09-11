@@ -1,4 +1,4 @@
-import 'package:digiQ/core/api/admin_api.dart';
+import 'package:strut/core/api/admin_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';

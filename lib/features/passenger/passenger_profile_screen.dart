@@ -1,7 +1,7 @@
-import 'package:digiQ/features/passenger/passenger_identity_verification_screen.dart';
-import 'package:digiQ/features/shared/widgets/avatar_picker.dart';
-import 'package:digiQ/models/user_model.dart';
-import 'package:digiQ/providers/auth_provider.dart';
+import 'package:strut/features/passenger/passenger_identity_verification_screen.dart';
+import 'package:strut/features/shared/widgets/avatar_picker.dart';
+import 'package:strut/models/user_model.dart';
+import 'package:strut/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

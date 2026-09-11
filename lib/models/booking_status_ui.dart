@@ -1,4 +1,4 @@
-// import 'package:digiQ/models/booking_model.dart';
+// import 'package:strut/models/booking_model.dart';
 // import 'package:flutter/material.dart';
 
 // extension BookingStatusUI on BookingStatus {
@@ -36,7 +36,7 @@
 //   }
 // }
 
-import 'package:digiQ/models/booking_model.dart';
+import 'package:strut/models/booking_model.dart';
 import 'package:flutter/material.dart';
 
 extension BookingStatusUI on BookingStatus {

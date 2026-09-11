@@ -1,4 +1,4 @@
-import 'package:digiQ/core/api/api_providers.dart';
+import 'package:strut/core/api/api_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,7 +8,7 @@ import 'driver_trip_detail_screen.dart';
 import 'driver_pickup_route_screen.dart';
 import 'dart:async';
 
-import 'package:digiQ/core/api/trips_api.dart';
+import 'package:strut/core/api/trips_api.dart';
 import 'package:geolocator/geolocator.dart';
 
 // Dio instance used by the location-push timer (outside widget tree).

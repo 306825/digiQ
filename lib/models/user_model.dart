@@ -1,4 +1,4 @@
-import 'package:digiQ/models/driver_profile_model.dart';
+import 'package:strut/models/driver_profile_model.dart';
 import 'package:flutter/material.dart';
 
 enum UserRole { passenger, driver, admin, fleetOwner }

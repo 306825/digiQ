@@ -1,13 +1,13 @@
 import 'dart:convert';
 
-import 'package:digiQ/core/api/api_client.dart';
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/core/api/user_api.dart';
-import 'package:digiQ/core/navigation/app_navigator.dart';
-import 'package:digiQ/providers/driver_bookings_provider.dart';
-import 'package:digiQ/providers/driver_vehicle_provider.dart';
-import 'package:digiQ/providers/passenger_bookings_provider.dart';
-import 'package:digiQ/services/fcm_service.dart';
+import 'package:strut/core/api/api_client.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/core/api/user_api.dart';
+import 'package:strut/core/navigation/app_navigator.dart';
+import 'package:strut/providers/driver_bookings_provider.dart';
+import 'package:strut/providers/driver_vehicle_provider.dart';
+import 'package:strut/providers/passenger_bookings_provider.dart';
+import 'package:strut/services/fcm_service.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

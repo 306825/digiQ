@@ -1,4 +1,4 @@
-import 'package:digiQ/models/driver_document.dart';
+import 'package:strut/models/driver_document.dart';
 
 class DriverProfile {
   final String? residentialAddress;

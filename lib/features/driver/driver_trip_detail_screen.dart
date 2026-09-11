@@ -1,4 +1,4 @@
-import 'package:digiQ/features/chat/chat_screen.dart';
+import 'package:strut/features/chat/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
