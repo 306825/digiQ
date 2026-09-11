@@ -1,6 +1,6 @@
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/features/shared/widgets/back_button_safe.dart';
-import 'package:digiQ/validators.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/features/shared/widgets/back_button_safe.dart';
+import 'package:strut/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

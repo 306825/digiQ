@@ -1,5 +1,5 @@
-name: digiQ
-description: "A new Flutter project."
+name: strut
+description: "Strut — ride and lift sharing for South Africa."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -81,12 +81,12 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#0A1E45"
-  image: assets/branding/digiq_splash_logo.png
+  image: assets/branding/strut/logo/strut_mark_white.png
   android: true
   ios: false
   fullscreen: true
   android_gravity: center
-  image_android: assets/branding/digiq_splash_logo.png
+  image_android: assets/branding/strut/logo/strut_mark_white.png
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

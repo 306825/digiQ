@@ -1,14 +1,15 @@
-import 'package:digiQ/features/admin/admin_incidents_screen.dart';
-import 'package:digiQ/features/admin/widgets/admin_passenger_verifications_tab.dart';
-import 'package:digiQ/features/admin/widgets/admin_payments_tab.dart';
-import 'package:digiQ/features/admin/widgets/admin_payouts_tab.dart';
-import 'package:digiQ/features/admin/widgets/admin_routes_tab.dart';
-import 'package:digiQ/features/admin/widgets/admin_drivers_tab.dart';
-import 'package:digiQ/providers/admin_drivers_provider.dart';
+import 'package:strut/features/admin/admin_incidents_screen.dart';
+import 'package:strut/features/admin/widgets/admin_overview_tab.dart';
+import 'package:strut/features/admin/widgets/admin_passenger_verifications_tab.dart';
+import 'package:strut/features/admin/widgets/admin_payments_tab.dart';
+import 'package:strut/features/admin/widgets/admin_payouts_tab.dart';
+import 'package:strut/features/admin/widgets/admin_routes_tab.dart';
+import 'package:strut/features/admin/widgets/admin_drivers_tab.dart';
+import 'package:strut/providers/admin_drivers_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:digiQ/providers/auth_provider.dart';
-import 'package:digiQ/models/user_model.dart';
+import 'package:strut/providers/auth_provider.dart';
+import 'package:strut/models/user_model.dart';
 import 'package:go_router/go_router.dart';
 
 class AdminHomeScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
   int _selectedIndex = 0;
 
   static const _titles = [
+    'Overview',
     'Drivers',
     'Routes',
     'Incidents',
@@ -31,6 +33,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
   ];
 
   static const _items = [
+    (icon: Icons.insights_outlined, label: 'Overview'),
     (icon: Icons.people, label: 'Drivers'),
     (icon: Icons.alt_route, label: 'Routes'),
     (icon: Icons.report, label: 'Incidents'),
@@ -116,6 +119,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
       body: IndexedStack(
         index: _selectedIndex,
         children: const [
+          AdminOverviewTab(),
           AdminDriversTab(),
           AdminRoutesTab(),
           AdminIncidentsScreen(),

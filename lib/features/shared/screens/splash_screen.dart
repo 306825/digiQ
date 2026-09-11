@@ -1,4 +1,4 @@
-import 'package:digiQ/features/shared/widgets/app_logo.dart';
+import 'package:strut/features/shared/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

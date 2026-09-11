@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:digiQ/core/api/chat_api.dart';
-import 'package:digiQ/models/chat_message_model.dart';
-import 'package:digiQ/providers/auth_provider.dart';
+import 'package:strut/core/api/chat_api.dart';
+import 'package:strut/models/chat_message_model.dart';
+import 'package:strut/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';

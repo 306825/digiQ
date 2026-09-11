@@ -1,7 +1,7 @@
-import 'package:digiQ/providers/auth_provider.dart';
+import 'package:strut/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/models/driver_model.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/models/driver_model.dart';
 
 final driverBalanceProvider = FutureProvider<DriverBalance>((ref) async {
   final auth = ref.watch(authProvider);

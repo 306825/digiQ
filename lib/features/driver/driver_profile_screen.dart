@@ -1,12 +1,12 @@
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/features/driver/driver_vehicle_screen.dart';
-import 'package:digiQ/features/driver/widgets/documents_upload_tile.dart';
-import 'package:digiQ/features/shared/widgets/avatar_picker.dart';
-import 'package:digiQ/models/user_model.dart';
-import 'package:digiQ/models/vehicle_model.dart';
-import 'package:digiQ/providers/auth_provider.dart';
-import 'package:digiQ/providers/driver_vehicle_provider.dart';
-import 'package:digiQ/theme/app.theme.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/features/driver/driver_vehicle_screen.dart';
+import 'package:strut/features/driver/widgets/documents_upload_tile.dart';
+import 'package:strut/features/shared/widgets/avatar_picker.dart';
+import 'package:strut/models/user_model.dart';
+import 'package:strut/models/vehicle_model.dart';
+import 'package:strut/providers/auth_provider.dart';
+import 'package:strut/providers/driver_vehicle_provider.dart';
+import 'package:strut/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -488,7 +488,7 @@ class _BankEditFormState extends ConsumerState<_BankEditForm> {
             : _branchCodeCtrl.text.trim(),
         accountType: _accountType,
         proofOfBankingUrl: _pendingBankDocKey,
-        payshapId: _payshapIdCtrl.text.trim().isEmpty ? null : _payshapIdCtrl.text.trim(),
+        payshapId: _payshapIdCtrl.text.trim(),
       );
       await ref.read(authProvider.notifier).refreshMe();
       if (!mounted) return;
@@ -610,14 +610,16 @@ class _BankEditFormState extends ConsumerState<_BankEditForm> {
                 children: [
                   Icon(Icons.flash_on, size: 16, color: Colors.green.shade600),
                   const SizedBox(width: 6),
-                  Text('PayShap (Optional)',
+                  Text('PayShap (Required)',
                       style: GoogleFonts.dmSans(
                           fontWeight: FontWeight.w700, fontSize: 14)),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
-                'Add your PayShap ID (phone number or email) so passengers can pay instantly.',
+                'Your PayShap ID (phone number or email) lets passengers pay you '
+                'instantly, so you can confirm bookings without waiting for an '
+                'EFT to clear.',
                 style: GoogleFonts.dmSans(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: 10),
@@ -626,6 +628,9 @@ class _BankEditFormState extends ConsumerState<_BankEditForm> {
                 keyboardType: TextInputType.text,
                 decoration: _dec('PayShap ID (e.g. 0821234567)'),
                 style: GoogleFonts.dmSans(),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'PayShap ID is required'
+                    : null,
               ),
               const SizedBox(height: 16),
               DocumentUploadTile(

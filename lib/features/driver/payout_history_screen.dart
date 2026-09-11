@@ -1,5 +1,5 @@
-import 'package:digiQ/models/driver_model.dart';
-import 'package:digiQ/providers/driver_balance_provider.dart';
+import 'package:strut/models/driver_model.dart';
+import 'package:strut/providers/driver_balance_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';

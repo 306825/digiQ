@@ -1,7 +1,7 @@
-import 'package:digiQ/features/shared/widgets/user_avatar.dart';
-import 'package:digiQ/models/route_model.dart';
-import 'package:digiQ/models/trip_model.dart';
-import 'package:digiQ/models/trip_search_params.dart';
+import 'package:strut/features/shared/widgets/user_avatar.dart';
+import 'package:strut/models/route_model.dart';
+import 'package:strut/models/trip_model.dart';
+import 'package:strut/models/trip_search_params.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/trip_search_provider.dart';

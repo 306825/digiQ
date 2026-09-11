@@ -1,9 +1,9 @@
-import 'package:digiQ/core/api/booking_api.dart';
+import 'package:strut/core/api/booking_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:digiQ/theme/app.theme.dart';
+import 'package:strut/theme/app.theme.dart';
 
 class BankPaymentScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -186,11 +186,18 @@ class _BankPaymentScreenState extends ConsumerState<BankPaymentScreen> {
                   const Expanded(child: Divider()),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('or pay by EFT',
+                    child: Text('or pay by EFT (slower)',
                         style: GoogleFonts.dmSans(color: Colors.grey, fontSize: 13)),
                   ),
                   const Expanded(child: Divider()),
                 ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'An EFT can take 1–2 business days to reflect, so the driver '
+                'may only be able to confirm your booking once it clears.',
+                style: GoogleFonts.dmSans(
+                    fontSize: 12, color: Colors.grey, height: 1.4),
               ),
               const SizedBox(height: 16),
             ],

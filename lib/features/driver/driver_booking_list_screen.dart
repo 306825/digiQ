@@ -1,6 +1,6 @@
-import 'package:digiQ/features/shared/widgets/user_avatar.dart';
-import 'package:digiQ/models/booking_model.dart';
-import 'package:digiQ/models/driver_booking_model.dart';
+import 'package:strut/features/shared/widgets/user_avatar.dart';
+import 'package:strut/models/booking_model.dart';
+import 'package:strut/models/driver_booking_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/driver_bookings_provider.dart';

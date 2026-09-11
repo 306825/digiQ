@@ -1,5 +1,5 @@
-import 'package:digiQ/models/booking_model.dart';
-import 'package:digiQ/models/driver_booking_model.dart';
+import 'package:strut/models/booking_model.dart';
+import 'package:strut/models/driver_booking_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

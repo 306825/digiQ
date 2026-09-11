@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:digiQ/core/api/driver_documents_api.dart';
-import 'package:digiQ/core/api/user_api.dart';
-import 'package:digiQ/models/user_model.dart';
-import 'package:digiQ/providers/auth_provider.dart';
+import 'package:strut/core/api/driver_documents_api.dart';
+import 'package:strut/core/api/user_api.dart';
+import 'package:strut/models/user_model.dart';
+import 'package:strut/providers/auth_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

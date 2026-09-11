@@ -1,5 +1,5 @@
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/models/trip_model.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/models/trip_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

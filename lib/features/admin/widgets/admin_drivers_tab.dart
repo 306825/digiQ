@@ -1,9 +1,9 @@
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/features/admin/admin_driver_detail_screen.dart';
-import 'package:digiQ/features/shared/widgets/user_avatar.dart';
-import 'package:digiQ/models/user_model.dart';
-import 'package:digiQ/providers/admin_drivers_provider.dart';
-import 'package:digiQ/theme/app.theme.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/features/admin/admin_driver_detail_screen.dart';
+import 'package:strut/features/shared/widgets/user_avatar.dart';
+import 'package:strut/models/user_model.dart';
+import 'package:strut/providers/admin_drivers_provider.dart';
+import 'package:strut/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:digiQ/models/chat_message_model.dart';
+import 'package:strut/models/chat_message_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_providers.dart';
 

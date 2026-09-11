@@ -1,7 +1,7 @@
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/models/driver_model.dart';
-import 'package:digiQ/models/driver_booking_model.dart';
-import 'package:digiQ/models/vehicle_model.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/models/driver_model.dart';
+import 'package:strut/models/driver_booking_model.dart';
+import 'package:strut/models/vehicle_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

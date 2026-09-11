@@ -1,10 +1,10 @@
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/models/departure_window.dart';
-import 'package:digiQ/models/route_model.dart';
-import 'package:digiQ/models/vehicle_model.dart';
-import 'package:digiQ/providers/driver_trips_provider.dart';
-import 'package:digiQ/providers/driver_vehicle_provider.dart';
-import 'package:digiQ/providers/routes_provider.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/models/departure_window.dart';
+import 'package:strut/models/route_model.dart';
+import 'package:strut/models/vehicle_model.dart';
+import 'package:strut/providers/driver_trips_provider.dart';
+import 'package:strut/providers/driver_vehicle_provider.dart';
+import 'package:strut/providers/routes_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

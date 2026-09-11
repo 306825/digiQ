@@ -1,6 +1,6 @@
-import 'package:digiQ/providers/admin_routes_provider.dart';
-import 'package:digiQ/providers/auth_provider.dart';
-import 'package:digiQ/theme/app.theme.dart';
+import 'package:strut/providers/admin_routes_provider.dart';
+import 'package:strut/providers/auth_provider.dart';
+import 'package:strut/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

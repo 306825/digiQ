@@ -1,6 +1,6 @@
-import 'package:digiQ/core/api/admin_api.dart';
-import 'package:digiQ/core/api/driver_api.dart';
-import 'package:digiQ/core/api/payments_api.dart';
+import 'package:strut/core/api/admin_api.dart';
+import 'package:strut/core/api/driver_api.dart';
+import 'package:strut/core/api/payments_api.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_client.dart';
 import 'trips_api.dart';
