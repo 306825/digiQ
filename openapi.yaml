@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: DigiQ Lift Share API
-  description: Backend API contract for DigiQ ride sharing platform
+  title: Strut Lift Share API
+  description: Backend API contract for the Strut ride sharing platform
   version: 1.0.0
 
 servers:
@@ -145,6 +145,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DriverVerificationResponse'
+
+  /admin/stats:
+    get:
+      tags: [Admin]
+      summary: Platform-wide totals for reporting
+      description: >
+        Aggregate registration, booking, trip and transaction totals. Used by
+        the admin Overview tab to evidence volume and flow for payment gateway
+        applications. Admin role required.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Platform totals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: object
+                    properties:
+                      passengers: { type: integer }
+                      drivers: { type: integer }
+                      driversVerified: { type: integer }
+                      fleetOwners: { type: integer }
+                  bookings:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      confirmed: { type: integer }
+                      pending: { type: integer }
+                      cancelled: { type: integer }
+                  trips:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      completed: { type: integer }
+                      cancelled: { type: integer }
+                  transactions:
+                    type: object
+                    properties:
+                      currency: { type: string, example: ZAR }
+                      confirmedAmount:
+                        type: number
+                        description: Value of driver-confirmed bookings
+                      totalAmount:
+                        type: number
+                        description: Value of all bookings including pending
+                      last30DaysAmount: { type: number }
+                      last30DaysCount: { type: integer }
+                  generatedAt:
+                    type: string
+                    format: date-time
+        '403':
+          description: Caller is not an admin
 
 components:
   securitySchemes:

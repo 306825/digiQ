@@ -1,7 +1,7 @@
-import 'package:digiQ/features/shared/widgets/app_logo.dart';
-import 'package:digiQ/providers/auth_provider.dart';
-import 'package:digiQ/theme/app.theme.dart';
-import 'package:digiQ/validators.dart';
+import 'package:strut/features/shared/widgets/app_logo.dart';
+import 'package:strut/providers/auth_provider.dart';
+import 'package:strut/theme/app.theme.dart';
+import 'package:strut/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -94,7 +94,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       AppLogo(size: 88, dark: true),
                       const SizedBox(height: 16),
                       Text(
-                        'Struttech',
+                        'Strut',
                         style: GoogleFonts.dmSans(
                           color: Colors.white,
                           fontSize: 28,
@@ -174,7 +174,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () => context.go('/forgot-password'),
+                      onPressed: () => context.push('/forgot-password'),
                       child: const Text('Forgot password?'),
                     ),
                   ),
@@ -211,7 +211,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () => context.go('/signup'),
+                        onPressed: () => context.push('/signup'),
                         child: const Text('Create one'),
                       ),
                     ],

@@ -1,13 +1,13 @@
-import 'package:digiQ/core/api/api_providers.dart';
-import 'package:digiQ/features/shared/widgets/user_avatar.dart';
-import 'package:digiQ/theme/app.theme.dart';
-import 'package:digiQ/core/api/booking_api.dart';
-import 'package:digiQ/core/api/incident_api.dart';
-import 'package:digiQ/core/services/tracking_service.dart';
-import 'package:digiQ/features/chat/chat_screen.dart';
-import 'package:digiQ/features/passenger/live_tracking_screen.dart';
-import 'package:digiQ/models/booking_model.dart';
-import 'package:digiQ/providers/passenger_bookings_provider.dart';
+import 'package:strut/core/api/api_providers.dart';
+import 'package:strut/features/shared/widgets/user_avatar.dart';
+import 'package:strut/theme/app.theme.dart';
+import 'package:strut/core/api/booking_api.dart';
+import 'package:strut/core/api/incident_api.dart';
+import 'package:strut/core/services/tracking_service.dart';
+import 'package:strut/features/chat/chat_screen.dart';
+import 'package:strut/features/passenger/live_tracking_screen.dart';
+import 'package:strut/models/booking_model.dart';
+import 'package:strut/providers/passenger_bookings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -807,7 +807,7 @@ class _ShareTripCard extends StatelessWidget {
   _ShareTripCard({required this.booking});
 
   String _buildShareText() {
-    final parts = <String>['🚌 Struttech Trip Details'];
+    final parts = <String>['🚌 Strut Trip Details'];
 
     if (booking.routeFrom != null && booking.routeTo != null) {
       parts.add('Route: ${booking.routeFrom} → ${booking.routeTo}');
@@ -832,7 +832,7 @@ class _ShareTripCard extends StatelessWidget {
       parts.add('Fare: R${booking.price!.toStringAsFixed(2)}');
     }
 
-    parts.add('\nShared via Struttech for safety purposes.');
+    parts.add('\nShared via Strut for safety purposes.');
     return parts.join('\n');
   }
 
