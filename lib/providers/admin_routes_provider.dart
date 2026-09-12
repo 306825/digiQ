@@ -20,9 +20,9 @@ class AdminRoutesNotifier extends AsyncNotifier<List<RouteModel>> {
     state = await AsyncValue.guard(_fetch);
   }
 
-  Future<void> createRoute(String from, String to, double price) async {
+  Future<void> createRoute(String from, String to, List<Map<String, dynamic>> dropoffs) async {
     final api = ref.read(adminRoutesApiProvider);
-    await api.createRoute(from: from, to: to, price: price);
+    await api.createRoute(from: from, to: to, dropoffs: dropoffs);
     await refresh();
   }
 }

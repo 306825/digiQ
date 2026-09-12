@@ -48,7 +48,7 @@ DriverEarnings _summarise(List<Trip> trips) {
 
     final sold = (trip.seatsTotal - trip.seatsAvailable).clamp(0, trip.seatsTotal);
     seatsSold += sold;
-    totalEarned += sold * (trip.netPricePerSeat ?? trip.price);
+    totalEarned += sold * (trip.minPrice ?? 0);
   }
 
   return DriverEarnings(

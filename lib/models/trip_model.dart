@@ -1,3 +1,5 @@
+import 'package:strut/models/route_model.dart';
+
 class Trip {
   final String id;
   final String driverId;
@@ -11,8 +13,7 @@ class Trip {
 
   final int seatsTotal;
   final int seatsAvailable;
-  final double price;
-  final double? netPricePerSeat;
+  final List<RouteDropoff> dropoffs;
   final int minPassengers;
 
   final String status;
@@ -30,14 +31,22 @@ class Trip {
     required this.departureWindow,
     required this.seatsTotal,
     required this.seatsAvailable,
-    required this.price,
-    this.netPricePerSeat,
+    required this.dropoffs,
     required this.status,
     this.minPassengers = 1,
     this.driverProfileImageUrl,
     this.driverRating,
     this.driverRatingCount = 0,
   });
+
+  double? get minPrice => dropoffs.isEmpty
+      ? null
+      : dropoffs.map((d) => d.price).reduce((a, b) => a < b ? a : b);
+
+  static List<RouteDropoff> _parseDropoffs(dynamic raw) {
+    if (raw is! List) return [];
+    return raw.whereType<Map<String, dynamic>>().map(RouteDropoff.fromJson).toList();
+  }
 
   /* --------------------------------------------------------------------------
    * BACKEND → APP (Driver / Mongo shape)
@@ -55,8 +64,7 @@ class Trip {
       departureWindow: json['departureWindow'] ?? 'Unspecified',
       seatsTotal: (json['seatsTotal'] as num).toInt(),
       seatsAvailable: (json['seatsAvailable'] as num?)?.toInt() ?? 0,
-      price: (json['price'] as num).toDouble(),
-      netPricePerSeat: (json['netPricePerSeat'] as num?)?.toDouble(),
+      dropoffs: _parseDropoffs(json['dropoffs']),
       minPassengers: (json['minPassengers'] as num?)?.toInt() ?? 1,
       status: json['status'] ?? 'closed',
     );
@@ -68,26 +76,17 @@ class Trip {
   factory Trip.fromSearchJson(Map<String, dynamic> json) {
     return Trip(
       id: json['id'] as String,
-
-      // 🔹 Not provided by search DTO
       driverId: '',
-
       driverName: json['driverName'] as String,
-
       from: json['route']['from'] as String,
       to: json['route']['to'] as String,
-
       date: DateTime.parse(json['date'] as String),
       departureWindow: (json['departureWindow'] as String?) ?? 'Unspecified',
-
       seatsTotal: json['seatsTotal'] as int,
       seatsAvailable: json['seatsAvailable'] as int,
-      price: (json['price'] as num).toDouble(),
+      dropoffs: _parseDropoffs(json['dropoffs']),
       minPassengers: (json['minPassengers'] as num?)?.toInt() ?? 1,
-
-      // 🔹 Search results are always open
       status: 'open',
-
       driverProfileImageUrl: json['driverProfileImageUrl'] as String?,
       driverRating: (json['driverRating'] as num?)?.toDouble(),
       driverRatingCount: (json['driverRatingCount'] as num?)?.toInt() ?? 0,
@@ -95,7 +94,7 @@ class Trip {
   }
 
   /* --------------------------------------------------------------------------
-   * APP → BACKEND (future-proof)
+   * APP → BACKEND
    * -------------------------------------------------------------------------- */
   Map<String, dynamic> toJson() {
     return {
@@ -108,7 +107,7 @@ class Trip {
       'departureWindow': departureWindow,
       'seatsTotal': seatsTotal,
       'seatsAvailable': seatsAvailable,
-      'price': price,
+      'dropoffs': dropoffs.map((d) => d.toJson()).toList(),
       'status': status,
       'driverProfileImageUrl': driverProfileImageUrl,
     };

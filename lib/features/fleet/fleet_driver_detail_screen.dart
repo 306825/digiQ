@@ -351,7 +351,7 @@ class _TripTile extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('R${trip.price.toStringAsFixed(2)}',
+                Text('${trip.minPrice != null ? 'From R${trip.minPrice!.toStringAsFixed(0)}' : '-'}',
                     style: theme.textTheme.bodySmall
                         ?.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),

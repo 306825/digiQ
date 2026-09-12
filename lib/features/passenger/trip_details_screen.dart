@@ -138,25 +138,38 @@ class TripDetailsScreen extends ConsumerWidget {
 
                     const SizedBox(height: 16),
 
-                    // 💰 PRICE
-                    _InfoCard(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Price per seat',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                          Text(
-                            'R${trip.price}',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
+                    // 💰 DROP-OFFS & PRICES
+                    if (trip.dropoffs.isNotEmpty)
+                      _InfoCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Drop-off options',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 8),
+                            ...trip.dropoffs.map(
+                              (d) => Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(d.label),
+                                    Text(
+                                      'R${d.price.toStringAsFixed(0)}',
+                                      style: const TextStyle(fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
                     const SizedBox(height: 16),
 

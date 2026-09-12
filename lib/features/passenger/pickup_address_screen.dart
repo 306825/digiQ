@@ -110,14 +110,9 @@ class PickupAddressScreen extends ConsumerStatefulWidget {
 class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
   final _searchController = TextEditingController();
   final _notesController = TextEditingController();
-  final _dropoffSearchController = TextEditingController();
-
   List<_PlaceSuggestion> _suggestions = [];
-  List<_PlaceSuggestion> _dropoffSuggestions = [];
   Timer? _debounce;
-  Timer? _dropoffDebounce;
   bool _isSearching = false;
-  bool _isDropoffSearching = false;
 
   // Confirmed pickup selection
   String? _selectedAddress;
@@ -125,71 +120,27 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
   double? _selectedLat;
   double? _selectedLng;
 
-  // Confirmed dropoff selection
-  String? _selectedDropoffAddress;
-  String? _selectedDropoffArea;
-  double? _selectedDropoffLat;
-  double? _selectedDropoffLng;
+  // Confirmed dropoff selection (from route's predefined drop-offs)
+  String? _selectedDropoffLabel;
 
   int _seatsBooked = 1;
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Auto-select the only dropoff if there's just one
+    if (widget.trip.dropoffs.length == 1) {
+      _selectedDropoffLabel = widget.trip.dropoffs.first.label;
+    }
+  }
+
+  @override
   void dispose() {
     _debounce?.cancel();
-    _dropoffDebounce?.cancel();
     _searchController.dispose();
     _notesController.dispose();
-    _dropoffSearchController.dispose();
     super.dispose();
-  }
-
-  void _onDropoffSearchChanged(String value) {
-    _dropoffDebounce?.cancel();
-    if (value.trim().isEmpty) {
-      setState(() {
-        _dropoffSuggestions = [];
-        _selectedDropoffAddress = null;
-      });
-      return;
-    }
-    if (_selectedDropoffAddress != null) {
-      setState(() => _selectedDropoffAddress = null);
-    }
-    _dropoffDebounce = Timer(const Duration(milliseconds: 350), () async {
-      setState(() => _isDropoffSearching = true);
-      final results = await _autocomplete(value.trim());
-      if (mounted) {
-        setState(() {
-          _dropoffSuggestions = results;
-          _isDropoffSearching = false;
-        });
-      }
-    });
-  }
-
-  Future<void> _selectDropoffSuggestion(_PlaceSuggestion s) async {
-    _dropoffDebounce?.cancel();
-    FocusScope.of(context).unfocus();
-    setState(() {
-      _dropoffSuggestions = [];
-      _isDropoffSearching = true;
-      _dropoffSearchController.text = '${s.mainText}, ${s.secondaryText}';
-    });
-
-    final details = await _fetchPlaceDetails(s.placeId);
-    if (!mounted) return;
-    setState(() {
-      _isDropoffSearching = false;
-      if (details != null) {
-        _selectedDropoffAddress = details['addressLine'] as String?;
-        _selectedDropoffArea = details['area'] as String? ?? s.secondaryText;
-        _selectedDropoffLat = details['lat'] as double?;
-        _selectedDropoffLng = details['lng'] as double?;
-        _dropoffSearchController.text =
-            _selectedDropoffAddress ?? _dropoffSearchController.text;
-      }
-    });
   }
 
   void _onSearchChanged(String value) {
@@ -245,6 +196,10 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
       _showSnack('Please select an address from the suggestions');
       return;
     }
+    if (_selectedDropoffLabel == null) {
+      _showSnack('Please select a drop-off point');
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
@@ -262,14 +217,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
           if (_notesController.text.trim().isNotEmpty)
             'notes': _notesController.text.trim(),
         },
-        dropoff: _selectedDropoffAddress != null
-            ? {
-                'addressLine': _selectedDropoffAddress!,
-                'area': _selectedDropoffArea ?? '',
-                if (_selectedDropoffLat != null) 'lat': _selectedDropoffLat,
-                if (_selectedDropoffLng != null) 'lng': _selectedDropoffLng,
-              }
-            : null,
+        dropoffLabel: _selectedDropoffLabel!,
       );
 
       final bookingId = bookingRes.data['bookingId'] as String;
@@ -419,67 +367,40 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
 
                     const SizedBox(height: 20),
 
-                    // ── Drop-off address ─────────────────────────────────
-                    TextField(
-                      controller: _dropoffSearchController,
-                      onChanged: _onDropoffSearchChanged,
-                      decoration: InputDecoration(
-                        labelText: 'Drop-off address (optional)',
-                        hintText: 'Where should the driver drop you off?',
-                        prefixIcon: const Icon(Icons.flag_outlined),
-                        suffixIcon: _isDropoffSearching
-                            ? const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              )
-                            : _selectedDropoffAddress != null
-                                ? const Icon(Icons.check_circle,
-                                    color: Colors.green)
-                                : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    // ── Drop-off selector ────────────────────────────────
+                    if (widget.trip.dropoffs.isNotEmpty) ...[
+                      DropdownButtonFormField<String>(
+                        value: _selectedDropoffLabel,
+                        decoration: InputDecoration(
+                          labelText: 'Drop-off point *',
+                          prefixIcon: const Icon(Icons.flag_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                         ),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        items: widget.trip.dropoffs
+                            .map((d) => DropdownMenuItem(
+                                  value: d.label,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(d.label),
+                                      Text(
+                                        'R${d.price.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (val) => setState(() => _selectedDropoffLabel = val),
                       ),
-                    ),
-
-                    if (_dropoffSuggestions.isNotEmpty)
-                      Card(
-                        margin: const EdgeInsets.only(top: 4),
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _dropoffSuggestions.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
-                          itemBuilder: (_, i) {
-                            final s = _dropoffSuggestions[i];
-                            return ListTile(
-                              leading: const Icon(Icons.location_on_outlined,
-                                  color: Colors.grey),
-                              title: Text(
-                                s.mainText,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w500),
-                              ),
-                              subtitle: Text(
-                                s.secondaryText,
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey),
-                              ),
-                              onTap: () => _selectDropoffSuggestion(s),
-                            );
-                          },
-                        ),
-                      ),
+                    ],
 
                     const SizedBox(height: 20),
 

@@ -261,7 +261,11 @@ class _TripCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'R ${(trip.netPricePerSeat ?? trip.price).toStringAsFixed(0)}',
+                      trip.dropoffs.isEmpty
+                          ? 'R 0'
+                          : trip.dropoffs.length == 1
+                              ? 'R ${trip.dropoffs.first.price.toStringAsFixed(0)}'
+                              : 'From R ${trip.minPrice!.toStringAsFixed(0)}',
                       style: const TextStyle(
                         fontSize: 16.5,
                         fontWeight: FontWeight.bold,

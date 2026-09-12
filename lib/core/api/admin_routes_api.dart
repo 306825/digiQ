@@ -13,14 +13,14 @@ class AdminRoutesApi {
   Future<Response> createRoute({
     required String from,
     required String to,
-    required double price,
+    required List<Map<String, dynamic>> dropoffs,
   }) {
     return dio.post(
       '/admin/routes',
       data: {
         'from': from,
         'to': to,
-        'price': price,
+        'dropoffs': dropoffs,
       },
     );
   }

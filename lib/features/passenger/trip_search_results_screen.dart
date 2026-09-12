@@ -147,7 +147,11 @@ class _TripCard extends StatelessWidget {
                   children: [
                     // 💰 PRICE
                     Text(
-                      'R${trip.price.toStringAsFixed(0)}',
+                      trip.dropoffs.isEmpty
+                          ? 'Price TBD'
+                          : trip.dropoffs.length == 1
+                              ? 'R${trip.dropoffs.first.price.toStringAsFixed(0)}'
+                              : 'From R${trip.minPrice!.toStringAsFixed(0)}',
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,

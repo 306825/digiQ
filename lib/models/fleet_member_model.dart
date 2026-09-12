@@ -52,7 +52,7 @@ class FleetRecentTrip {
   final String status;
   final String fromLabel;
   final String toLabel;
-  final double price;
+  final List<({String label, double price})> dropoffs;
   final int seatsTotal;
   final int seatsAvailable;
 
@@ -62,13 +62,27 @@ class FleetRecentTrip {
     required this.status,
     required this.fromLabel,
     required this.toLabel,
-    required this.price,
+    required this.dropoffs,
     required this.seatsTotal,
     required this.seatsAvailable,
   });
 
+  double? get minPrice => dropoffs.isEmpty
+      ? null
+      : dropoffs.map((d) => d.price).reduce((a, b) => a < b ? a : b);
+
   factory FleetRecentTrip.fromJson(Map<String, dynamic> json) {
     final route = json['route'] as Map<String, dynamic>? ?? {};
+    final rawDropoffs = json['dropoffs'];
+    final dropoffs = rawDropoffs is List
+        ? rawDropoffs
+            .whereType<Map<String, dynamic>>()
+            .map((d) => (
+                  label: d['label']?.toString() ?? '',
+                  price: (d['price'] as num?)?.toDouble() ?? 0,
+                ))
+            .toList()
+        : <({String label, double price})>[];
     return FleetRecentTrip(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       date: json['date'] != null
@@ -77,7 +91,7 @@ class FleetRecentTrip {
       status: json['status'] as String? ?? '',
       fromLabel: route['fromLabel'] as String? ?? '',
       toLabel: route['toLabel'] as String? ?? '',
-      price: (json['price'] as num?)?.toDouble() ?? 0,
+      dropoffs: dropoffs,
       seatsTotal: (json['seatsTotal'] as num?)?.toInt() ?? 0,
       seatsAvailable: (json['seatsAvailable'] as num?)?.toInt() ?? 0,
     );

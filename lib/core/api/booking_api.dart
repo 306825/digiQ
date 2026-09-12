@@ -13,7 +13,7 @@ class BookingApi {
   Future<Response> createBooking({
     required String tripId,
     required Map<String, dynamic> pickup,
-    Map<String, dynamic>? dropoff,
+    required String dropoffLabel,
     int seatsBooked = 1,
   }) {
     return dio.post(
@@ -21,7 +21,7 @@ class BookingApi {
       data: {
         'tripId': tripId,
         'pickup': pickup,
-        if (dropoff != null) 'dropoff': dropoff,
+        'dropoffLabel': dropoffLabel,
         'seatsBooked': seatsBooked,
       },
     );
