@@ -15,6 +15,7 @@ class Trip {
   final int seatsAvailable;
   final List<RouteDropoff> dropoffs;
   final int minPassengers;
+  final double totalAmountPaid;
 
   final String status;
   final String? driverProfileImageUrl;
@@ -34,6 +35,7 @@ class Trip {
     required this.dropoffs,
     required this.status,
     this.minPassengers = 1,
+    this.totalAmountPaid = 0,
     this.driverProfileImageUrl,
     this.driverRating,
     this.driverRatingCount = 0,
@@ -66,6 +68,7 @@ class Trip {
       seatsAvailable: (json['seatsAvailable'] as num?)?.toInt() ?? 0,
       dropoffs: _parseDropoffs(json['dropoffs']),
       minPassengers: (json['minPassengers'] as num?)?.toInt() ?? 1,
+      totalAmountPaid: (json['totalAmountPaid'] as num?)?.toDouble() ?? 0,
       status: json['status'] ?? 'closed',
     );
   }
