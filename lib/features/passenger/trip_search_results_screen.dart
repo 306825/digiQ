@@ -145,22 +145,6 @@ class _TripCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 💰 PRICE
-                    Text(
-                      trip.dropoffs.isEmpty
-                          ? 'Price TBD'
-                          : trip.dropoffs.length == 1
-                              ? 'R${trip.dropoffs.first.price.toStringAsFixed(0)}'
-                              : 'From R${trip.minPrice!.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
                     // 🕐 DEPARTURE WINDOW
                     Container(
                       padding: const EdgeInsets.symmetric(

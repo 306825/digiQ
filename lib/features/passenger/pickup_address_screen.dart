@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:strut/core/api/booking_api.dart';
+import 'package:strut/models/route_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/trip_model.dart';
@@ -71,7 +72,6 @@ Future<Map<String, dynamic>?> _fetchPlaceDetails(String placeId) async {
     final lat = (loc?['lat'] as num?)?.toDouble();
     final lng = (loc?['lng'] as num?)?.toDouble();
 
-    // Extract suburb/city from address_components
     final components = result['address_components'] as List? ?? [];
     String area = '';
     for (final c in components) {
@@ -99,12 +99,16 @@ Future<Map<String, dynamic>?> _fetchPlaceDetails(String placeId) async {
 
 class PickupAddressScreen extends ConsumerStatefulWidget {
   final Trip trip;
+  final RouteDropoff selectedDropoff;
 
-  const PickupAddressScreen({super.key, required this.trip});
+  const PickupAddressScreen({
+    super.key,
+    required this.trip,
+    required this.selectedDropoff,
+  });
 
   @override
-  ConsumerState<PickupAddressScreen> createState() =>
-      _PickupAddressScreenState();
+  ConsumerState<PickupAddressScreen> createState() => _PickupAddressScreenState();
 }
 
 class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
@@ -114,26 +118,13 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
   Timer? _debounce;
   bool _isSearching = false;
 
-  // Confirmed pickup selection
   String? _selectedAddress;
   String? _selectedArea;
   double? _selectedLat;
   double? _selectedLng;
 
-  // Confirmed dropoff selection (from route's predefined drop-offs)
-  String? _selectedDropoffLabel;
-
   int _seatsBooked = 1;
   bool _isSubmitting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Auto-select the only dropoff if there's just one
-    if (widget.trip.dropoffs.length == 1) {
-      _selectedDropoffLabel = widget.trip.dropoffs.first.label;
-    }
-  }
 
   @override
   void dispose() {
@@ -152,17 +143,18 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
       });
       return;
     }
-    // Clear confirmed selection when user types again
     if (_selectedAddress != null) {
       setState(() => _selectedAddress = null);
     }
     _debounce = Timer(const Duration(milliseconds: 350), () async {
       setState(() => _isSearching = true);
       final results = await _autocomplete(value.trim());
-      if (mounted) setState(() {
-        _suggestions = results;
-        _isSearching = false;
-      });
+      if (mounted) {
+        setState(() {
+          _suggestions = results;
+          _isSearching = false;
+        });
+      }
     });
   }
 
@@ -196,10 +188,6 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
       _showSnack('Please select an address from the suggestions');
       return;
     }
-    if (_selectedDropoffLabel == null) {
-      _showSnack('Please select a drop-off point');
-      return;
-    }
 
     setState(() => _isSubmitting = true);
 
@@ -217,7 +205,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
           if (_notesController.text.trim().isNotEmpty)
             'notes': _notesController.text.trim(),
         },
-        dropoffLabel: _selectedDropoffLabel!,
+        dropoffLabel: widget.selectedDropoff.label,
       );
 
       final bookingId = bookingRes.data['bookingId'] as String;
@@ -264,6 +252,9 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dropoff = widget.selectedDropoff;
+    final total = dropoff.price * _seatsBooked;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pickup Details'),
@@ -272,7 +263,7 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Route header
+            // Route + drop-off summary header
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -282,13 +273,70 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                 children: [
                   const Text(
                     'Where should the driver pick you up?',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     '${widget.trip.from} → ${widget.trip.to}',
                     style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6)),
+                  ),
+                  const SizedBox(height: 8),
+                  // Selected drop-off chip
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.flag,
+                                size: 14,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Drop-off: ${dropoff.label}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          _seatsBooked == 1
+                              ? 'R${dropoff.price.toStringAsFixed(0)}'
+                              : 'R${total.toStringAsFixed(0)} ($_seatsBooked seats)',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -319,14 +367,15 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                                 ),
                               )
                             : _selectedAddress != null
-                                ? const Icon(Icons.check_circle,
-                                    color: Colors.green)
+                                ? const Icon(Icons.check_circle, color: Colors.green)
                                 : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        fillColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
                       ),
                     ),
 
@@ -342,116 +391,23 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _suggestions.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 1),
+                          separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (_, i) {
                             final s = _suggestions[i];
                             return ListTile(
                               leading: const Icon(Icons.location_on_outlined,
                                   color: Colors.grey),
-                              title: Text(
-                                s.mainText,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w500),
-                              ),
-                              subtitle: Text(
-                                s.secondaryText,
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey),
-                              ),
+                              title: Text(s.mainText,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w500)),
+                              subtitle: Text(s.secondaryText,
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey)),
                               onTap: () => _selectSuggestion(s),
                             );
                           },
                         ),
                       ),
-
-                    const SizedBox(height: 20),
-
-                    // ── Drop-off selector ────────────────────────────────
-                    if (widget.trip.dropoffs.isNotEmpty) ...[
-                      DropdownButtonFormField<String>(
-                        value: _selectedDropoffLabel,
-                        decoration: InputDecoration(
-                          labelText: 'Drop-off point *',
-                          prefixIcon: const Icon(Icons.flag_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        ),
-                        items: widget.trip.dropoffs
-                            .map((d) => DropdownMenuItem(
-                                  value: d.label,
-                                  child: Row(
-                                    children: [
-                                      Expanded(child: Text(d.label)),
-                                      Text(
-                                        'R${d.price.toStringAsFixed(0)} p/seat',
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.primary,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ))
-                            .toList(),
-                        onChanged: (val) => setState(() => _selectedDropoffLabel = val),
-                      ),
-
-                      // ── Live fare summary ──────────────────────────────
-                      if (_selectedDropoffLabel != null) ...[
-                        const SizedBox(height: 12),
-                        Builder(builder: (context) {
-                          final dropoff = widget.trip.dropoffs.firstWhere(
-                            (d) => d.label == _selectedDropoffLabel,
-                          );
-                          final total = dropoff.price * _seatsBooked;
-                          return Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Your fare',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                      ),
-                                    ),
-                                    Text(
-                                      _seatsBooked == 1
-                                          ? 'R${dropoff.price.toStringAsFixed(0)}'
-                                          : 'R${total.toStringAsFixed(0)} ($_seatsBooked × R${dropoff.price.toStringAsFixed(0)})',
-                                      style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Icon(
-                                  Icons.check_circle,
-                                  color: Theme.of(context).colorScheme.primary,
-                                  size: 28,
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ],
-                    ],
 
                     const SizedBox(height: 20),
 
@@ -475,7 +431,9 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        fillColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
                       ),
                     ),
                   ],
@@ -489,22 +447,13 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
               child: SizedBox(
                 width: double.infinity,
                 height: 52,
-                child: Builder(builder: (context) {
-                  String label = 'Confirm Pickup';
-                  if (!_isSubmitting && _selectedDropoffLabel != null) {
-                    final dropoff = widget.trip.dropoffs.firstWhere(
-                      (d) => d.label == _selectedDropoffLabel,
-                      orElse: () => widget.trip.dropoffs.first,
-                    );
-                    final total = dropoff.price * _seatsBooked;
-                    label = 'Confirm — Pay R${total.toStringAsFixed(0)}';
-                  }
-                  return PrimaryButton(
-                    text: _isSubmitting ? 'Submitting…' : label,
-                    isLoading: _isSubmitting,
-                    onPressed: _isSubmitting ? null : _submitBooking,
-                  );
-                }),
+                child: PrimaryButton(
+                  text: _isSubmitting
+                      ? 'Submitting…'
+                      : 'Confirm — Pay R${total.toStringAsFixed(0)}',
+                  isLoading: _isSubmitting,
+                  onPressed: _isSubmitting ? null : _submitBooking,
+                ),
               ),
             ),
           ],
