@@ -24,6 +24,16 @@ class AdminRoutesApi {
       },
     );
   }
+
+  Future<Response> updateRouteDropoffs({
+    required String routeId,
+    required List<Map<String, dynamic>> dropoffs,
+  }) {
+    return dio.patch(
+      '/admin/routes/$routeId',
+      data: {'dropoffs': dropoffs},
+    );
+  }
 }
 
 final adminRoutesApiProvider = Provider<AdminRoutesApi>((ref) {

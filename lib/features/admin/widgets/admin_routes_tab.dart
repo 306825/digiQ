@@ -1,3 +1,4 @@
+import 'package:strut/models/route_model.dart';
 import 'package:strut/providers/admin_routes_provider.dart';
 import 'package:strut/theme/app.theme.dart';
 import 'package:flutter/material.dart';
@@ -41,20 +42,26 @@ class AdminRoutesTab extends ConsumerWidget {
                   title: Text('${route.fromLabel} → ${route.toLabel}'),
                   subtitle: Text(
                     route.dropoffs.isEmpty
-                        ? 'No drop-offs set'
+                        ? 'No drop-offs set — tap edit to add'
                         : '${route.dropoffs.length} drop-off${route.dropoffs.length == 1 ? '' : 's'} · From R${route.minPrice!.toStringAsFixed(0)}',
                     style: TextStyle(
                       color: route.dropoffs.isEmpty ? Colors.red : AppTheme.textMuted,
                       fontSize: 12,
                     ),
                   ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    tooltip: 'Edit drop-offs',
+                    onPressed: () => _showEditDropoffsDialog(context, ref, route),
+                  ),
                   children: route.dropoffs.isEmpty
                       ? [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Text(
-                              'No drop-offs configured. Edit this route to add them.',
-                              style: TextStyle(color: AppTheme.textMuted),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                            child: OutlinedButton.icon(
+                              onPressed: () => _showEditDropoffsDialog(context, ref, route),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Add drop-offs'),
                             ),
                           )
                         ]
@@ -73,6 +80,110 @@ class AdminRoutesTab extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showEditDropoffsDialog(BuildContext context, WidgetRef ref, RouteModel route) {
+    final dropoffs = route.dropoffs
+        .map((d) => {
+              'label': TextEditingController(text: d.label),
+              'price': TextEditingController(text: d.price.toStringAsFixed(0)),
+            })
+        .toList();
+
+    // Start with one empty row if no existing dropoffs
+    if (dropoffs.isEmpty) {
+      dropoffs.add({
+        'label': TextEditingController(),
+        'price': TextEditingController(),
+      });
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: Text('Edit Drop-offs\n${route.fromLabel} → ${route.toLabel}',
+              style: const TextStyle(fontSize: 16)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ...dropoffs.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final d = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller: d['label'],
+                            decoration: InputDecoration(labelText: 'Label ${i + 1}'),
+                            textCapitalization: TextCapitalization.words,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: d['price'],
+                            decoration: const InputDecoration(
+                              labelText: 'Price (R)',
+                              prefixText: 'R ',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                          onPressed: dropoffs.length > 1
+                              ? () => setState(() => dropoffs.removeAt(i))
+                              : null,
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                TextButton.icon(
+                  onPressed: () => setState(() => dropoffs.add({
+                        'label': TextEditingController(),
+                        'price': TextEditingController(),
+                      })),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add drop-off'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final parsed = dropoffs.map((d) {
+                  final label = d['label']!.text.trim();
+                  final price = double.tryParse(d['price']!.text) ?? 0;
+                  return {'label': label, 'price': price};
+                }).toList();
+                if (parsed.any((d) => (d['label'] as String).isEmpty || (d['price'] as double) <= 0)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Each drop-off needs a label and a valid price')),
+                  );
+                  return;
+                }
+                await ref.read(adminRoutesProvider.notifier).updateDropoffs(route.id, parsed);
+                if (context.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
   }
