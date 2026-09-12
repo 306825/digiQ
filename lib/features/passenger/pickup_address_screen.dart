@@ -384,14 +384,14 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                             .map((d) => DropdownMenuItem(
                                   value: d.label,
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(d.label),
+                                      Expanded(child: Text(d.label)),
                                       Text(
-                                        'R${d.price.toStringAsFixed(0)}',
+                                        'R${d.price.toStringAsFixed(0)} p/seat',
                                         style: TextStyle(
                                           color: Theme.of(context).colorScheme.primary,
                                           fontWeight: FontWeight.w600,
+                                          fontSize: 13,
                                         ),
                                       ),
                                     ],
@@ -400,6 +400,57 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
                             .toList(),
                         onChanged: (val) => setState(() => _selectedDropoffLabel = val),
                       ),
+
+                      // ── Live fare summary ──────────────────────────────
+                      if (_selectedDropoffLabel != null) ...[
+                        const SizedBox(height: 12),
+                        Builder(builder: (context) {
+                          final dropoff = widget.trip.dropoffs.firstWhere(
+                            (d) => d.label == _selectedDropoffLabel,
+                          );
+                          final total = dropoff.price * _seatsBooked;
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Your fare',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                      ),
+                                    ),
+                                    Text(
+                                      _seatsBooked == 1
+                                          ? 'R${dropoff.price.toStringAsFixed(0)}'
+                                          : 'R${total.toStringAsFixed(0)} ($_seatsBooked × R${dropoff.price.toStringAsFixed(0)})',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  size: 28,
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
                     ],
 
                     const SizedBox(height: 20),
@@ -438,11 +489,22 @@ class _PickupAddressScreenState extends ConsumerState<PickupAddressScreen> {
               child: SizedBox(
                 width: double.infinity,
                 height: 52,
-                child: PrimaryButton(
-                  text: _isSubmitting ? 'Submitting…' : 'Confirm Pickup',
-                  isLoading: _isSubmitting,
-                  onPressed: _isSubmitting ? null : _submitBooking,
-                ),
+                child: Builder(builder: (context) {
+                  String label = 'Confirm Pickup';
+                  if (!_isSubmitting && _selectedDropoffLabel != null) {
+                    final dropoff = widget.trip.dropoffs.firstWhere(
+                      (d) => d.label == _selectedDropoffLabel,
+                      orElse: () => widget.trip.dropoffs.first,
+                    );
+                    final total = dropoff.price * _seatsBooked;
+                    label = 'Confirm — Pay R${total.toStringAsFixed(0)}';
+                  }
+                  return PrimaryButton(
+                    text: _isSubmitting ? 'Submitting…' : label,
+                    isLoading: _isSubmitting,
+                    onPressed: _isSubmitting ? null : _submitBooking,
+                  );
+                }),
               ),
             ),
           ],
