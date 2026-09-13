@@ -31,12 +31,14 @@ class RouteModel {
   final String fromLabel;
   final String toLabel;
   final List<RouteDropoff> dropoffs;
+  final bool isActive;
 
   const RouteModel({
     required this.id,
     required this.fromLabel,
     required this.toLabel,
     required this.dropoffs,
+    this.isActive = true,
   });
 
   factory RouteModel.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,7 @@ class RouteModel {
       fromLabel: json['fromLabel']?.toString() ?? '',
       toLabel: json['toLabel']?.toString() ?? '',
       dropoffs: dropoffs,
+      isActive: json['isActive'] as bool? ?? true,
     );
   }
 

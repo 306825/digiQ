@@ -34,6 +34,16 @@ class AdminRoutesApi {
       data: {'dropoffs': dropoffs},
     );
   }
+
+  Future<Response> toggleRouteActive({
+    required String routeId,
+    required bool isActive,
+  }) {
+    return dio.patch(
+      '/admin/routes/$routeId',
+      data: {'isActive': isActive},
+    );
+  }
 }
 
 final adminRoutesApiProvider = Provider<AdminRoutesApi>((ref) {

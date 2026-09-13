@@ -31,6 +31,12 @@ class AdminRoutesNotifier extends AsyncNotifier<List<RouteModel>> {
     await api.updateRouteDropoffs(routeId: routeId, dropoffs: dropoffs);
     await refresh();
   }
+
+  Future<void> toggleActive(String routeId, {required bool isActive}) async {
+    final api = ref.read(adminRoutesApiProvider);
+    await api.toggleRouteActive(routeId: routeId, isActive: isActive);
+    await refresh();
+  }
 }
 
 final adminRoutesProvider =
