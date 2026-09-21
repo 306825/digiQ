@@ -22,6 +22,7 @@ class TripSearchNotifier extends AsyncNotifier<List<Trip>> {
       final trips = await api.searchTrips(
         routeId: params.routeId,
         date: params.date,
+        driverEmail: params.driverEmail,
       );
 
       state = AsyncData(trips);

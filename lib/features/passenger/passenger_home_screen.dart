@@ -10,6 +10,7 @@ import 'package:strut/providers/routes_provider.dart';
 import 'package:strut/theme/app.theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'trip_search_results_screen.dart';
 
@@ -24,6 +25,13 @@ class PassengerHomeScreen extends ConsumerStatefulWidget {
 class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
   RouteModel? _selectedRoute;
   DateTime? _date;
+  final _driverEmailCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _driverEmailCtrl.dispose();
+    super.dispose();
+  }
 
   String _formatDate(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')} / '
@@ -199,21 +207,31 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top row: logo + profile icon
+                    // Top row: logo + feed + profile icon
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const AppLogo(size: 36, dark: true),
-                        IconButton(
-                          icon: const Icon(Icons.account_circle_outlined,
-                              color: Colors.white70, size: 26),
-                          tooltip: 'My profile',
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) =>
-                                    const PassengerProfileScreen()),
-                          ),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.feed_outlined,
+                                  color: Colors.white70, size: 24),
+                              tooltip: 'Feed',
+                              onPressed: () => context.push('/feed'),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.account_circle_outlined,
+                                  color: Colors.white70, size: 26),
+                              tooltip: 'My profile',
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const PassengerProfileScreen()),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -370,6 +388,28 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                             ),
                           ),
 
+                          const SizedBox(height: 14),
+
+                          // Optional driver email filter
+                          TextField(
+                            controller: _driverEmailCtrl,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.search,
+                            decoration: InputDecoration(
+                              labelText: 'Driver email (optional)',
+                              hintText: 'Filter by a specific driver',
+                              prefixIcon: Icon(
+                                Icons.person_search_outlined,
+                                color: isDark
+                                    ? AppTheme.darkTextMuted
+                                    : AppTheme.textMuted,
+                              ),
+                              fillColor: isDark
+                                  ? AppTheme.darkBackground
+                                  : AppTheme.background,
+                            ),
+                          ),
+
                           const SizedBox(height: 20),
 
                           ElevatedButton.icon(
@@ -378,16 +418,20 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                             onPressed:
                                 _selectedRoute == null || _date == null
                                     ? null
-                                    : () => Navigator.push(
+                                    : () {
+                                        final email = _driverEmailCtrl.text.trim();
+                                        Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) =>
                                                 TripSearchResultsScreen(
                                               route: _selectedRoute!,
                                               date: _date!,
+                                              driverEmail: email.isEmpty ? null : email,
                                             ),
                                           ),
-                                        ),
+                                        );
+                                      },
                           ),
                         ],
                       ),

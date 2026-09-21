@@ -10,11 +10,13 @@ import 'trip_details_screen.dart';
 class TripSearchResultsScreen extends ConsumerStatefulWidget {
   final RouteModel route;
   final DateTime date;
+  final String? driverEmail;
 
   const TripSearchResultsScreen({
     super.key,
     required this.route,
     required this.date,
+    this.driverEmail,
   });
 
   @override
@@ -33,6 +35,7 @@ class _TripSearchResultsScreenState
             TripSearchParams(
               routeId: widget.route.id,
               date: widget.date,
+              driverEmail: widget.driverEmail,
             ),
           );
     });

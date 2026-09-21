@@ -119,6 +119,17 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
                   Navigator.pop(context);
                 },
               ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.feed_outlined),
+              title: const Text('Feed'),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/feed');
+              },
+            ),
           ],
         ),
       ),

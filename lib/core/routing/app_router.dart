@@ -16,6 +16,7 @@ import 'package:strut/features/driver/driver_home_screen.dart';
 import 'package:strut/features/fleet/fleet_home_screen.dart';
 import 'package:strut/features/driver/driver_vehicle_screen.dart';
 import 'package:strut/features/driver/driver_verification_screen.dart';
+import 'package:strut/features/feed/feed_screen.dart';
 import 'package:strut/features/passenger/booking_detaills_screen.dart';
 import 'package:strut/features/passenger/passenger_home_screen.dart';
 import 'package:strut/features/shared/screens/splash_screen.dart';
@@ -150,6 +151,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(path: '/fleet/home', builder: (_, __) => const FleetHomeScreen()),
+      GoRoute(path: '/feed', builder: (_, __) => const FeedScreen()),
       GoRoute(path: '/terms', builder: (_, __) => const TermsScreen()),
       GoRoute(path: '/privacy', builder: (_, __) => const PrivacyScreen()),
       GoRoute(

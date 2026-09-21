@@ -115,7 +115,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           children: [
             // Header
             Text(
-              'Help us improve Digi-Q',
+              'Help us improve Strut',
               style: theme.textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),

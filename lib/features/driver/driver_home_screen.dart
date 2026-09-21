@@ -232,6 +232,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         title: const Text('Driver Dashboard'),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.feed_outlined),
+            tooltip: 'Feed',
+            onPressed: () => context.push('/feed'),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(

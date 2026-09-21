@@ -58,14 +58,16 @@ class TripsApi {
   Future<List<Trip>> searchTrips({
     required String routeId,
     required DateTime date,
+    String? driverEmail,
   }) async {
-    final response = await dio.get(
-      '/trips/search',
-      queryParameters: {
-        'routeId': routeId,
-        'date': date.toIso8601String(),
-      },
-    );
+    final params = <String, dynamic>{
+      'routeId': routeId,
+      'date': date.toIso8601String(),
+    };
+    if (driverEmail != null && driverEmail.isNotEmpty) {
+      params['driverEmail'] = driverEmail.trim().toLowerCase();
+    }
+    final response = await dio.get('/trips/search', queryParameters: params);
 
     if (response.data is! List) {
       throw Exception('Invalid search payload');
