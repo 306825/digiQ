@@ -21,6 +21,7 @@ class Trip {
   final String? driverProfileImageUrl;
   final double? driverRating;
   final int driverRatingCount;
+  final bool offersFreeWifi;
 
   const Trip({
     required this.id,
@@ -39,6 +40,7 @@ class Trip {
     this.driverProfileImageUrl,
     this.driverRating,
     this.driverRatingCount = 0,
+    this.offersFreeWifi = false,
   });
 
   double? get minPrice => dropoffs.isEmpty
@@ -70,6 +72,7 @@ class Trip {
       minPassengers: (json['minPassengers'] as num?)?.toInt() ?? 1,
       totalAmountPaid: (json['totalAmountPaid'] as num?)?.toDouble() ?? 0,
       status: json['status'] ?? 'closed',
+      offersFreeWifi: json['offersFreeWifi'] as bool? ?? false,
     );
   }
 
@@ -93,6 +96,7 @@ class Trip {
       driverProfileImageUrl: json['driverProfileImageUrl'] as String?,
       driverRating: (json['driverRating'] as num?)?.toDouble(),
       driverRatingCount: (json['driverRatingCount'] as num?)?.toInt() ?? 0,
+      offersFreeWifi: json['offersFreeWifi'] as bool? ?? false,
     );
   }
 

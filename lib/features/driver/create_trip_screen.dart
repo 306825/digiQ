@@ -23,6 +23,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
   bool submitting = false;
   DepartureWindow? selectedWindow;
   int minPassengers = 1;
+  bool offersFreeWifi = false;
 
   Future<void> submit() async {
     if (selectedRoute == null) {
@@ -73,6 +74,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
             date: date!,
             vehicleId: selectedVehicle!.id,
             minPassengers: minPassengers,
+            offersFreeWifi: offersFreeWifi,
           );
 
       ref.invalidate(driverTripsProvider);
@@ -308,6 +310,11 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                       max: selectedVehicle?.seats,
                       onChanged: (v) => setState(() => minPassengers = v),
                     ),
+                    const SizedBox(height: 12),
+                    _WifiToggle(
+                      value: offersFreeWifi,
+                      onChanged: (v) => setState(() => offersFreeWifi = v),
+                    ),
                   ],
                 ),
               ),
@@ -468,6 +475,41 @@ class _MinPassengersStepper extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WifiToggle extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _WifiToggle({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.wifi, color: value ? Colors.blue : Colors.grey, size: 20),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Free WiFi', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                Text('Passengers will see this perk when booking',
+                    style: TextStyle(fontSize: 12, color: Colors.black54)),
+              ],
+            ),
+          ),
+          Switch(value: value, onChanged: onChanged),
         ],
       ),
     );

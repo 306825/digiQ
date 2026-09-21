@@ -227,6 +227,24 @@ class _TripCard extends StatelessWidget {
                         ],
                       ),
                     ],
+                    if (trip.offersFreeWifi) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.wifi, size: 13, color: Colors.blue),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Free WiFi',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

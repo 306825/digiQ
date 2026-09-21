@@ -13,6 +13,7 @@ class TripsApi {
     required DateTime date,
     required String vehicleId,
     int minPassengers = 1,
+    bool offersFreeWifi = false,
   }) async {
     await dio.post(
       '/trips',
@@ -22,6 +23,7 @@ class TripsApi {
         'date': date.toIso8601String(),
         'vehicleId': vehicleId,
         'minPassengers': minPassengers,
+        'offersFreeWifi': offersFreeWifi,
       },
     );
   }
