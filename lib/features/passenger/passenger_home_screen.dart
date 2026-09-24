@@ -288,7 +288,7 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                   children: [
                     _PassengerActionTile(
                       icon: Icons.person_search_outlined,
-                      label: 'Find a Driver',
+                      label: 'Do you have a preferred driver?',
                       subtitle: 'Follow drivers to see their trips first',
                       onTap: () => Navigator.push(
                         context,
