@@ -26,13 +26,6 @@ class PassengerHomeScreen extends ConsumerStatefulWidget {
 class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
   RouteModel? _selectedRoute;
   DateTime? _date;
-  final _driverEmailCtrl = TextEditingController();
-
-  @override
-  void dispose() {
-    _driverEmailCtrl.dispose();
-    super.dispose();
-  }
 
   String _formatDate(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')} / '
@@ -293,6 +286,19 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
                 child: Column(
                   children: [
+                    _PassengerActionTile(
+                      icon: Icons.person_search_outlined,
+                      label: 'Find a Driver',
+                      subtitle: 'Follow drivers to see their trips first',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const FindDriverScreen()),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
                     Container(
                       decoration: BoxDecoration(
                         color: isDark
@@ -389,28 +395,6 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 14),
-
-                          // Optional driver email filter
-                          TextField(
-                            controller: _driverEmailCtrl,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.search,
-                            decoration: InputDecoration(
-                              labelText: 'Driver email (optional)',
-                              hintText: 'Filter by a specific driver',
-                              prefixIcon: Icon(
-                                Icons.person_search_outlined,
-                                color: isDark
-                                    ? AppTheme.darkTextMuted
-                                    : AppTheme.textMuted,
-                              ),
-                              fillColor: isDark
-                                  ? AppTheme.darkBackground
-                                  : AppTheme.background,
-                            ),
-                          ),
-
                           const SizedBox(height: 20),
 
                           ElevatedButton.icon(
@@ -420,7 +404,6 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                                 _selectedRoute == null || _date == null
                                     ? null
                                     : () {
-                                        final email = _driverEmailCtrl.text.trim();
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -428,7 +411,6 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                                                 TripSearchResultsScreen(
                                               route: _selectedRoute!,
                                               date: _date!,
-                                              driverEmail: email.isEmpty ? null : email,
                                             ),
                                           ),
                                         );
@@ -449,18 +431,6 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                         context,
                         MaterialPageRoute(
                             builder: (_) => const MyBookingsScreen()),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _PassengerActionTile(
-                      icon: Icons.person_search_outlined,
-                      label: 'Find a Driver',
-                      subtitle: 'Follow drivers to see their trips first',
-                      outlined: true,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const FindDriverScreen()),
                       ),
                     ),
                     const SizedBox(height: 10),
