@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strut/core/api/driver_follows_api.dart';
 import 'package:strut/models/driver_follow_model.dart';
 
+
 /* --------------------------------------------------------------------------
  * Driver public profile — keyed by driver ID
  * -------------------------------------------------------------------------- */
@@ -9,6 +10,15 @@ import 'package:strut/models/driver_follow_model.dart';
 final driverProfileProvider =
     FutureProvider.family<DriverPublicProfile, String>((ref, driverId) {
   return ref.read(driverFollowsApiProvider).publicProfile(driverId);
+});
+
+/* --------------------------------------------------------------------------
+ * Driver upcoming trips — keyed by driver ID
+ * -------------------------------------------------------------------------- */
+
+final driverUpcomingTripsProvider =
+    FutureProvider.family<List<DriverUpcomingTrip>, String>((ref, driverId) {
+  return ref.read(driverFollowsApiProvider).upcomingTrips(driverId);
 });
 
 /* --------------------------------------------------------------------------

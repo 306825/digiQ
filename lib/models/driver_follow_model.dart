@@ -1,3 +1,35 @@
+class DriverUpcomingTrip {
+  final String id;
+  final String date;
+  final String departureWindow;
+  final String from;
+  final String to;
+  final int seatsAvailable;
+  final int seatsTotal;
+
+  const DriverUpcomingTrip({
+    required this.id,
+    required this.date,
+    required this.departureWindow,
+    required this.from,
+    required this.to,
+    required this.seatsAvailable,
+    required this.seatsTotal,
+  });
+
+  factory DriverUpcomingTrip.fromJson(Map<String, dynamic> json) {
+    return DriverUpcomingTrip(
+      id: json['id'] as String,
+      date: json['date'] as String,
+      departureWindow: json['departureWindow'] as String? ?? '',
+      from: json['from'] as String? ?? '',
+      to: json['to'] as String? ?? '',
+      seatsAvailable: (json['seatsAvailable'] as num?)?.toInt() ?? 0,
+      seatsTotal: (json['seatsTotal'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 class DriverCard {
   final String id;
   final String fullName;

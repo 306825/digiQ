@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strut/core/api/driver_follows_api.dart';
 import 'package:strut/features/shared/widgets/user_avatar.dart';
+import 'package:strut/models/driver_follow_model.dart';
 import 'package:strut/providers/driver_follows_provider.dart';
 
 class DriverPublicProfileScreen extends ConsumerStatefulWidget {
@@ -205,6 +206,13 @@ class _DriverPublicProfileScreenState
                     ],
                   ),
                 ),
+
+                const SizedBox(height: 24),
+
+                // Upcoming trips
+                _UpcomingTripsSection(driverId: widget.driverId),
+
+                const SizedBox(height: 16),
               ],
             ),
           );
@@ -241,6 +249,169 @@ class _StatRow extends StatelessWidget {
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ],
+    );
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Upcoming trips section
+ * -------------------------------------------------------------------------- */
+
+class _UpcomingTripsSection extends ConsumerWidget {
+  final String driverId;
+  const _UpcomingTripsSection({required this.driverId});
+
+  String _windowLabel(String w) {
+    const map = {
+      '08-10': '08:00 – 10:00',
+      '11-13': '11:00 – 13:00',
+      '14-16': '14:00 – 16:00',
+    };
+    return map[w] ?? w;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tripsAsync = ref.watch(driverUpcomingTripsProvider(driverId));
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Upcoming Trips',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 12),
+        tripsAsync.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+          error: (_, __) => const Text(
+            'Could not load upcoming trips.',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          data: (trips) {
+            if (trips.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.directions_car_outlined,
+                        size: 40, color: Colors.grey.shade400),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'No upcoming trips scheduled',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: trips.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, i) => _TripRow(
+                trip: trips[i],
+                windowLabel: _windowLabel(trips[i].departureWindow),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _TripRow extends StatelessWidget {
+  final DriverUpcomingTrip trip;
+  final String windowLabel;
+
+  const _TripRow({required this.trip, required this.windowLabel});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          // Date block
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                trip.date,
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 2),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade700,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  windowLabel,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 14),
+          // Route
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${trip.from} → ${trip.to}',
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${trip.seatsAvailable} of ${trip.seatsTotal} seats left',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: trip.seatsAvailable == 0
+                          ? Colors.red
+                          : Colors.green.shade700,
+                      fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

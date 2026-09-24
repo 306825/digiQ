@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strut/models/driver_follow_model.dart';
 import 'api_providers.dart';
 
+
 class DriverFollowsApi {
   final Dio _dio;
   DriverFollowsApi(this._dio);
@@ -31,6 +32,12 @@ class DriverFollowsApi {
     final res = await _dio.get('/passengers/me/following');
     final list = res.data as List;
     return list.map((e) => DriverCard.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<DriverUpcomingTrip>> upcomingTrips(String driverId) async {
+    final res = await _dio.get('/drivers/$driverId/upcoming-trips');
+    final list = res.data as List;
+    return list.map((e) => DriverUpcomingTrip.fromJson(e as Map<String, dynamic>)).toList();
   }
 }
 
