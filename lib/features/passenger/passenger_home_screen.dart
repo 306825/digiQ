@@ -1,3 +1,4 @@
+import 'package:strut/features/passenger/find_driver_screen.dart';
 import 'package:strut/features/passenger/live_tracking_screen.dart';
 import 'package:strut/features/passenger/my_bookings_screen.dart';
 import 'package:strut/features/passenger/passenger_profile_screen.dart';
@@ -448,6 +449,18 @@ class _PassengerHomeScreenState extends ConsumerState<PassengerHomeScreen> {
                         context,
                         MaterialPageRoute(
                             builder: (_) => const MyBookingsScreen()),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _PassengerActionTile(
+                      icon: Icons.person_search_outlined,
+                      label: 'Find a Driver',
+                      subtitle: 'Follow drivers to see their trips first',
+                      outlined: true,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const FindDriverScreen()),
                       ),
                     ),
                     const SizedBox(height: 10),

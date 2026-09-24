@@ -1,7 +1,11 @@
+import 'package:strut/features/passenger/driver_public_profile_screen.dart';
+import 'package:strut/features/passenger/find_driver_screen.dart';
 import 'package:strut/features/passenger/passenger_identity_verification_screen.dart';
 import 'package:strut/features/shared/widgets/avatar_picker.dart';
+import 'package:strut/features/shared/widgets/user_avatar.dart';
 import 'package:strut/models/user_model.dart';
 import 'package:strut/providers/auth_provider.dart';
+import 'package:strut/providers/driver_follows_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -92,6 +96,11 @@ class _PassengerProfileScreenState
 
             // Identity verification card
             _VerificationCard(status: verStatus),
+
+            const SizedBox(height: 24),
+
+            // Following drivers section
+            _FollowingSection(),
           ],
         ),
       ),
@@ -239,6 +248,165 @@ class _VerificationCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Following Section — list of drivers this passenger follows
+ * -------------------------------------------------------------------------- */
+
+class _FollowingSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final followingAsync = ref.watch(followingProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Following',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Find driver'),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FindDriverScreen()),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        followingAsync.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (_, __) => const Text(
+            'Failed to load following list.',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          data: (drivers) {
+            if (drivers.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.person_search_outlined,
+                        size: 40,
+                        color: Colors.grey.shade400),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Not following any drivers yet',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Find a driver to follow their trips first in search results.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: drivers.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final driver = drivers[index];
+                return ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  leading: UserAvatar(
+                    displayName: driver.fullName,
+                    imageUrl: driver.profileImageUrl,
+                    size: 44,
+                  ),
+                  title: Text(
+                    driver.fullName,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: driver.ratingCount > 0
+                      ? Text(
+                          '⭐ ${driver.ratingAvg!.toStringAsFixed(1)}',
+                          style: const TextStyle(fontSize: 12),
+                        )
+                      : const Text('New driver',
+                          style: TextStyle(fontSize: 12)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.open_in_new,
+                            size: 18, color: Colors.grey),
+                        tooltip: 'View profile',
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DriverPublicProfileScreen(
+                                driverId: driver.id),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.person_remove_outlined,
+                            size: 18, color: Colors.red),
+                        tooltip: 'Unfollow',
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Unfollow driver?'),
+                              content: Text(
+                                  'Stop following ${driver.fullName}?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(ctx, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                FilledButton(
+                                  onPressed: () =>
+                                      Navigator.pop(ctx, true),
+                                  child: const Text('Unfollow'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true && context.mounted) {
+                            ref
+                                .read(followingProvider.notifier)
+                                .unfollow(driver.id);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
     );
   }
 }

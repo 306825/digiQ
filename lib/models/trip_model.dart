@@ -22,6 +22,7 @@ class Trip {
   final double? driverRating;
   final int driverRatingCount;
   final bool offersFreeWifi;
+  final bool isFollowedDriver;
 
   const Trip({
     required this.id,
@@ -41,6 +42,7 @@ class Trip {
     this.driverRating,
     this.driverRatingCount = 0,
     this.offersFreeWifi = false,
+    this.isFollowedDriver = false,
   });
 
   double? get minPrice => dropoffs.isEmpty
@@ -97,6 +99,7 @@ class Trip {
       driverRating: (json['driverRating'] as num?)?.toDouble(),
       driverRatingCount: (json['driverRatingCount'] as num?)?.toInt() ?? 0,
       offersFreeWifi: json['offersFreeWifi'] as bool? ?? false,
+      isFollowedDriver: json['isFollowedDriver'] as bool? ?? false,
     );
   }
 
