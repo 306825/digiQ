@@ -14,6 +14,7 @@ import 'package:strut/providers/auth_provider.dart';
 import 'package:strut/models/user_model.dart';
 import 'package:go_router/go_router.dart';
 import 'banking_details_screen.dart';
+import 'admin_trip_requests_screen.dart';
 
 class AdminHomeScreen extends ConsumerStatefulWidget {
   const AdminHomeScreen({super.key});
@@ -143,6 +144,21 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const AdminBankingDetailsScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.request_page_outlined),
+              title: const Text('Trip Requests'),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AdminTripRequestsScreen(),
                   ),
                 );
               },

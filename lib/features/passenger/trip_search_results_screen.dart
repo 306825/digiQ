@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/trip_search_provider.dart';
 import 'trip_details_screen.dart';
+import 'trip_request_screen.dart';
 
 class TripSearchResultsScreen extends ConsumerStatefulWidget {
   final RouteModel route;
@@ -78,7 +79,7 @@ class _TripSearchResultsScreenState
         ),
         data: (trips) {
           if (trips.isEmpty) {
-            return const _EmptyState();
+            return _NoTripsState(route: widget.route, date: widget.date);
           }
 
           return ListView.separated(
@@ -330,37 +331,52 @@ class _LoadingState extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+class _NoTripsState extends StatelessWidget {
+  final RouteModel route;
+  final DateTime date;
+  const _NoTripsState({required this.route, required this.date});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 72,
-              color: theme.colorScheme.primary.withOpacity(0.4),
-            ),
+            Icon(Icons.directions_car_outlined,
+                size: 72,
+                color: theme.colorScheme.primary.withValues(alpha: 0.45)),
             const SizedBox(height: 20),
             Text(
-              'No trips available',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              'No trips available yet',
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'Try another route or date.',
+              'Don\'t worry — we can arrange a trip for you. Reserve your seat with a 50% deposit and we\'ll confirm within 24 hours.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.black54,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: Colors.black54),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      TripRequestScreen(route: route, date: date),
+                ),
+              ),
+              icon: const Icon(Icons.add_circle_outline),
+              label: const Text('Request this trip'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
