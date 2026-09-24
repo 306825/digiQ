@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:strut/providers/auth_provider.dart';
 import 'package:strut/models/user_model.dart';
 import 'package:go_router/go_router.dart';
+import 'banking_details_screen.dart';
 
 class AdminHomeScreen extends ConsumerStatefulWidget {
   const AdminHomeScreen({super.key});
@@ -128,6 +129,22 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
               onTap: () {
                 Navigator.pop(context);
                 context.push('/feed');
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.account_balance_outlined),
+              title: const Text('Banking Details'),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AdminBankingDetailsScreen(),
+                  ),
+                );
               },
             ),
           ],
